@@ -1,0 +1,257 @@
+version: 1
+updated_at: "2026-04-23T00:00:00+08:00"
+contract_name: cmcp_host_integration_v1
+product:
+  display_name: Continuity Memory Contract Plus (CMCP)
+  owner_surface: cmcp_core
+  integration_surface: cmcp_guard
+
+goal: >-
+  Define the host-facing integration contract for CMCP Guard so hosts can swap
+  storage backends, pass explicit runtime controls, and consume persistence
+  results without redefining policy semantics.
+
+scope:
+  includes:
+    - storage_adapter_interface
+    - storage_descriptor_shape
+    - hook_payload_controls_for_storage_resolution
+    - persistence_result_shape
+    - required_section_model
+    - fail_closed_rules_for_untrusted_hosts
+  excludes:
+    - ui_copy
+    - installer_copy
+    - legacy_v2_behavior
+    - host_specific_database_schema
+    - product_page_messaging
+
+integration_principles:
+  - code: host_must_not_redefine_policy
+    rule: Host integration may choose storage mechanics but may not change CMCP policy outcomes.
+  - code: adapter_is_runtime_boundary
+    rule: Policy logic targets a storage adapter interface, not a file path or database implementation.
+  - code: resolution_precedence_is_explicit
+    rule: If multiple storage inputs are present, storageAdapter beats storage descriptor, which beats stateRoot fallback.
+  - code: fail_closed_on_missing_or_invalid_storage
+    rule: Host integration must fail closed rather than silently widening write authority.
+  - code: snapshot_is_structured_not_transcript
+    rule: `/new` integration consumes structured records and background profile, not raw transcript replay.
+  - code: adapter_writes_must_preserve_cmcp_safety
+    rule: Adapter writes must enforce the same structure, sanitization, and forbidden-content rules as CMCP Guard persistence.
+
+storage_adapter_interface:
+  contract_id: cmcp_storage_adapter_v1
+  adapter_resolution_order:
+    - payload.storageAdapter
+    - payload.storage
+    - payload.stateRoot_using_bundled_file_adapter
+  required_methods:
+    readSection:
+      signature: readSection(section)
+      returns: section_value
+    writeSection:
+      signature: writeSection(section, value)
+      returns: write_receipt_or_void
+      requirements:
+        - memory_sections_must_validate_record_shape
+        - memory_sections_must_reject_forbidden_content_even_when_shape_is_valid
+        - tombstone_writes_must_reject_forbidden_deletion_reason
+    upsertSection:
+      signature: upsertSection(section, transform)
+      returns: next_section_value
+    setSettingsValue:
+      signature: setSettingsValue(fieldPath, value)
+      returns: updated_settings_object
+      requirements:
+        - field_path_must_be_known_to_contract
+        - value_must_be_scalar
+        - string_values_must_pass_forbidden_scan
+        - typed_rules_must_be_enforced_for_known_targets
+    loadSnapshot:
+      signature: loadSnapshot()
+      returns: cmcp_state_snapshot
+  required_descriptor_fields:
+    - adapterId
+    - adapterKind
+    - stateRoot
+    - capabilities
+  required_capabilities:
+    - sectionReads
+    - sectionWrites
+    - sectionUpserts
+    - settingsWrites
+    - snapshotReads
+    - tombstones
+    - atomicSectionWrite
+  section_model:
+    settings:
+      type: object
+      required: true
+    staged:
+      type: array
+      required: true
+    tracked:
+      type: array
+      required: true
+    daily_memory:
+      type: array
+      required: true
+    long_term_personalization:
+      type: array
+      required: true
+    tombstones:
+      type: array
+      required: true
+  snapshot_shape:
+    required_fields:
+      - settings
+      - trackedRecords
+      - stagedRecords
+      - dailyRecords
+      - longTermRecords
+      - tombstones
+      - backgroundProfile
+    invariants:
+      - background_profile_must_be_derived_from_active_long_term_records_only
+      - blocked_anchor_states_must_not_reenter_new_selection
+      - tombstones_are_metadata_only_not_restored_memory
+      - corrupted_single_section_must_fail_closed_without_hiding_healthy_sections
+      - host_supplied_snapshot_arrays_must_be_sanitized_and_secret_filtered_before_selection
+
+host_hook_payload:
+  event_type_support:
+    bootstrap:
+      event_type: agent:bootstrap
+      reads:
+        - payload.storageAdapter
+        - payload.storage
+        - payload.stateRoot
+    message_received:
+      event_type: message:received
+      reads:
+        - payload.persist
+        - payload.storageAdapter
+        - payload.storage
+        - payload.stateRoot
+        - payload.policyCandidate
+        - payload.policyCandidate.hostClassifiedForbiddenCategory
+        - payload.policyCandidate.inferenceForbiddenCategory
+        - payload.policyCandidates
+        - payload.correctionAction
+        - payload.correctionActions
+    new_command:
+      event_type: command
+      action: new
+      reads:
+        - payload.readFromState
+        - payload.storageAdapter
+        - payload.storage
+        - payload.stateRoot
+        - payload.trackedRecords
+        - payload.stagedRecords
+        - payload.dailyRecords
+        - payload.tombstones
+        - payload.backgroundProfile
+  storage_controls:
+    persist:
+      type: boolean
+      meaning: Allow the hook to persist accepted writes through the resolved storage adapter.
+    readFromState:
+      type: boolean
+      meaning: Force `/new` to load continuity snapshot from the resolved storage adapter.
+    storageAdapter:
+      type: object
+      meaning: Host-provided CMCP storage adapter object implementing the required methods.
+    storage:
+      type: object
+      meaning: Host-provided adapter descriptor. v1 only standardizes `{ kind: file, stateRoot }`.
+    stateRoot:
+      type: string
+      meaning: Convenience override for the bundled file adapter.
+  fallback_behavior:
+    - if_persist_is_not_true_the_hook_must_not_write
+    - if_read_from_state_is_false_and_host_arrays_exist_new_must_use_host_arrays
+    - if_storage_resolution_fails_persistent_write_must_not_continue
+    - if_host_supplies_daily_records_without_linked_source_visibility_cmcp_guard_may_fail_closed_on_daily_fallback
+    - if_one_snapshot_section_is_corrupted_cmcp_guard_may_fail_closed_for_that_section_without_discarding_other_sections
+  semantic_forbidden_seam:
+    host_classifier_inputs:
+      - hostClassifiedForbiddenCategory
+      - inferenceForbiddenCategory
+    rule:
+      - host_may_supply_semantic_forbidden_classification_for_inference_only_risks
+      - cmcp_guard_must_treat_host_supplied_forbidden_classification_as_fail_closed_input
+      - always_forbidden_detection_takes_precedence_over_inference_forbidden_labels
+
+persistence_result_contract:
+  required_fields:
+    - persisted
+    - finalLayer
+    - storage
+    - stateRoot
+    - touchedSections
+    - createdIds
+    - updatedIds
+    - removedIds
+    - tombstoneCount
+  optional_fields:
+    - reasons
+    - memoryPersisted
+    - settingsPersisted
+    - correctionPersisted
+    - persistenceKinds
+  semantics:
+    persisted:
+      true_means: A write path committed through the resolved storage adapter.
+      false_means: No persistent mutation occurred.
+    memoryPersisted:
+      true_means: At least one persistent memory section changed.
+      false_means: No memory-layer mutation occurred.
+    settingsPersisted:
+      true_means: The settings section changed.
+      false_means: No settings mutation occurred.
+    correctionPersisted:
+      true_means: A user_correction write path committed.
+      false_means: No correction-layer mutation occurred.
+    persistenceKinds:
+      meaning: Enumerates which mutation families actually committed.
+    storage:
+      contains:
+        - adapterId
+        - adapterKind
+        - stateRoot
+        - capabilities
+    reasons:
+      use_when:
+        - write_is_rejected
+        - storage_resolution_fails
+        - adapter_input_is_incomplete
+        - target_layer_is_not_supported
+
+host_requirements:
+  must:
+    - treat_cmcp_guard_as_policy_enforcer_not_policy_author
+    - preserve_record_provenance_and_status_fields
+    - preserve_tombstone_metadata_without_restoring_deleted_content
+    - provide_atomicity_at_least_per_section_write
+    - keep_settings_and_memory_as_separate_writes
+  must_not:
+    - bypass_cmcp_guard_for_non_settings_memory_writes
+    - auto_promote_plain_chat_into_persistent_memory
+    - merge_deleted_content_back_from_host_cache
+    - reinterpret_daily_memory_as_primary_truth
+    - inject_hidden_runtime_text_as_memory_content
+
+unsupported_in_v1:
+  - distributed_transaction_contract_across_multiple_sections
+  - host_defined_new_memory_layers
+  - arbitrary_adapter_kind_registry
+  - transcript_replay_as_new_session_source
+  - background_profile_from_non_active_personalization_records
+
+implementation_notes:
+  - Hosts may implement stronger storage guarantees than the bundled file adapter.
+  - Hosts may wrap databases, KV stores, or remote persistence behind the same adapter interface.
+  - Hosts should validate adapter inputs before passing them into CMCP Guard.
+  - Hosts that expose adapter methods directly should treat them as privileged interfaces, not bypass lanes around CMCP Guard.

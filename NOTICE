@@ -1,0 +1,27 @@
+CMCP — Continuity Memory Contract Plus
+
+Original author and upstream: redwakame
+https://github.com/redwakame/cmcp
+Upstream baseline: 2bdb94d0fcd12ae85009f7a52ecf67617cab49bb
+The upstream plugin used the display name "Ice Fish"; this is retained here as provenance.
+
+This distribution and new project-authored contributions are offered under
+Apache License 2.0, except where a file states otherwise. See LICENSE.
+MIT-0 permits sublicensing; this does not revoke the MIT-0 permissions already
+granted for the upstream versions or claim a new patent grant from upstream.
+Earlier upstream material remains available under MIT-0; see LICENSES/MIT-0.txt and the baseline path/blob/hash
+index in LICENSES/upstream-MIT-0-paths.json. New revisions to inherited files do
+not revoke the permissions already granted for the upstream versions.
+
+This development line adds host-neutral write/time/History/Event boundaries,
+source-preserving retrieval, project-local skills and a local reference Runtime.
+Git history and the baseline index identify original material and later changes.
+The previous package/plugin identifier cmcp-openclaw is retained only as
+upstream provenance. The new default identifier is cmcp; the previous
+OpenClaw integration remains an optional reference adapter, not a Core owner.
+
+Runtime data, conversation sources, credentials and local verification evidence
+are not part of the public software distribution and are not relicensed by this
+notice. Separately licensed third-party material retains its own terms.
+This notice is informational, adds no mandatory advertising or per-use credit
+requirement, and claims no endorsement by Apache, OpenAI or any Host/provider.

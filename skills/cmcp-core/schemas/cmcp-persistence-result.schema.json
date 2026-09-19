@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:cmcp:schema:cmcp-persistence-result:v1",
+  "title": "CMCP Persistence Result",
+  "type": "object",
+  "required": [
+    "persisted",
+    "finalLayer",
+    "storage",
+    "stateRoot",
+    "touchedSections",
+    "createdIds",
+    "updatedIds",
+    "removedIds",
+    "tombstoneCount"
+  ],
+  "properties": {
+    "persisted": {
+      "type": "boolean"
+    },
+    "memoryPersisted": {
+      "type": "boolean"
+    },
+    "settingsPersisted": {
+      "type": "boolean"
+    },
+    "correctionPersisted": {
+      "type": "boolean"
+    },
+    "persistenceKinds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "memory",
+          "settings",
+          "correction"
+        ]
+      }
+    },
+    "finalLayer": {
+      "type": "string",
+      "minLength": 1
+    },
+    "storage": {
+      "$ref": "urn:cmcp:schema:cmcp-storage-adapter-descriptor:v1"
+    },
+    "stateRoot": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "touchedSections": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "createdIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "updatedIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "removedIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "tombstoneCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "additionalProperties": true
+}

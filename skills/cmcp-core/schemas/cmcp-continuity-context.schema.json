@@ -1,0 +1,178 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:cmcp:schema:cmcp-continuity-context:v1",
+  "title": "CmcpContinuityContext",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "continuity_source",
+    "anchor_level",
+    "memory_id",
+    "recent_user_context",
+    "latest_user_owned_clause",
+    "resolution_state",
+    "selection_priority",
+    "selected_by"
+  ],
+  "properties": {
+    "continuity_source": {
+      "type": "string",
+      "enum": [
+        "tracked",
+        "staged",
+        "daily_memory",
+        "none"
+      ]
+    },
+    "anchor_level": {
+      "type": "string",
+      "enum": [
+        "tracked_followup",
+        "staged_open_loop",
+        "unresolved_event",
+        "background_only",
+        "none"
+      ]
+    },
+    "memory_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "recent_user_context": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "text"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "latest_user_owned_clause": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "resolution_state": {
+      "type": "string",
+      "enum": [
+        "active",
+        "resolved",
+        "cancelled",
+        "superseded",
+        "none"
+      ]
+    },
+    "background_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timezone": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "language": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "locale": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "relationship": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "use_case": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "preferred_name": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "form_of_address": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "sleep_time": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "wake_time": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        },
+        "interaction_preference": {
+          "type": [
+            "string",
+            "number",
+            "boolean"
+          ]
+        }
+      }
+    },
+    "selection_priority": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "tracked.active_unresolved",
+          "staged.recent_touched_unresolved",
+          "daily_memory.linked_trace",
+          "long_term_personalization.background_only"
+        ]
+      }
+    },
+    "selected_by": {
+      "type": "string",
+      "enum": [
+        "cmcp_guard"
+      ]
+    }
+  }
+}

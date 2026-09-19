@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "Please cite CMCP-TIME when discussing this implementation or its design. This is a citation aid, not an additional license obligation."
+type: software
+title: "CMCP-TIME"
+version: "0.1.0-rc.1"
+authors:
+  - family-names: "redwakame"
+repository-code: "https://github.com/redwakame/CMCP-TIME"
+url: "https://github.com/redwakame/CMCP-TIME"
+license: "Apache-2.0"
+abstract: "Skill-first temporal continuity and memory governance for AI agents, combining authorized source history, time-aware context, bounded reading and user-controlled follow-up."
+keywords:
+  - temporal continuity
+  - source provenance
+  - AI agents
+  - user control

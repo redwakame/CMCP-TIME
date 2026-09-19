@@ -1,0 +1,49 @@
+{
+  "kind": "cmcp-time-source-candidate-verification",
+  "version": "0.1.0-rc.1",
+  "scope": "Packaging, documentation and synthetic test portability; no Runtime feature changes.",
+  "environment": {
+    "platform": "Windows",
+    "node": "24.18.0",
+    "powershell": "7.6.6",
+    "codexCli": "0.154.0",
+    "npm": "11.16.0",
+    "administratorToken": false,
+    "osSandboxIsolationClaimed": false
+  },
+  "verificationMode": "Source ZIP extracted into a different clean directory; synthetic data and no model requests.",
+  "suites": [
+    {"script": "scripts/run-cmcp-reading-smoke.mjs", "passed": 22, "total": 22, "exitCode": 0, "evidenceKind": "synthetic/injected-provider", "elapsedSeconds": 9.062},
+    {"script": "scripts/run-cmcp-setup-smoke.mjs", "passed": 12, "total": 12, "exitCode": 0, "evidenceKind": "synthetic/injected-environment plus normal CLI", "elapsedSeconds": 1.316},
+    {"script": "scripts/run-cmcp-runtime-dispatch-smoke.mjs", "passed": 28, "total": 28, "exitCode": 0, "evidenceKind": "synthetic/injected-provider; executed sequentially", "elapsedSeconds": 17.498}
+  ],
+  "entryChecks": {
+    "setupAndPlaygroundHelp": "PASS",
+    "realCodexExecutableVersionProbe": "PASS",
+    "normalPrivilegeWizardWithCodexAttachment": "PASS",
+    "configurationReadback": "PASS",
+    "installedSkillHelperStatus": "PASS",
+    "hookCliWithSyntheticUserPromptSubmit": "PASS",
+    "readAndPinCommandDiscoverability": "PASS",
+    "sequentialControlsBufferPinsReadingAndNormalExit": "PASS",
+    "setupUpdateDisableUninstallPreserveSyntheticHistoryAndConfig": "PASS",
+    "finiteGrantNotCreatedBySetup": "PASS",
+    "npmOfflineDryRunExactPackageAllowlist": "PASS"
+  },
+  "observations": [
+    "A rapid multi-command driver hit the existing work_in_progress guard. Waiting for each command to finish resolved the driver issue; Runtime and guard code were not changed. The original failure output was retained in review evidence.",
+    "The 30ms dispatch deadline test passed in sequential isolation; no product timeout, cancellation rule or assertion was relaxed.",
+    "Reading's formerly private recorded-result dependency is replaced only in the public test copy by an explicitly synthetic fixture. It is not recorded model evidence.",
+    "The interactive setup-update test can run without a real Codex installation; separate actual-machine checks used a real available CLI. Injected probes do not establish Host model behavior.",
+    "All 87 Runtime source files are byte-identical to the reviewed working-tree baseline. Package metadata, documentation, checker and three test copies changed."
+  ],
+  "usage": {"productApiRequests": 0, "codexHostModelJobs": 0, "credentialReads": 0, "newPaidGrants": 0},
+  "notEstablished": [
+    "New real-model semantic or complete Skill answering validation",
+    "Native manual or automatic context compaction in this packaging round",
+    "All supported Node versions or non-Windows deployment",
+    "OS sandbox isolation or complete least-privilege Host lifecycle",
+    "Mobile delivery, all-Host background operation or other Host adapters",
+    "New encrypted-credential storage or paid configured-provider setup"
+  ]
+}

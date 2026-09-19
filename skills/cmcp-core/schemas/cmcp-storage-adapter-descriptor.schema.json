@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:cmcp:schema:cmcp-storage-adapter-descriptor:v1",
+  "title": "CMCP Storage Adapter Descriptor",
+  "type": "object",
+  "required": [
+    "adapterId",
+    "adapterKind",
+    "stateRoot",
+    "capabilities"
+  ],
+  "properties": {
+    "adapterId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "adapterKind": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stateRoot": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "capabilities": {
+      "type": "object",
+      "required": [
+        "sectionReads",
+        "sectionWrites",
+        "sectionUpserts",
+        "settingsWrites",
+        "snapshotReads",
+        "tombstones",
+        "atomicSectionWrite"
+      ],
+      "properties": {
+        "sectionReads": {
+          "type": "boolean"
+        },
+        "sectionWrites": {
+          "type": "boolean"
+        },
+        "sectionUpserts": {
+          "type": "boolean"
+        },
+        "settingsWrites": {
+          "type": "boolean"
+        },
+        "snapshotReads": {
+          "type": "boolean"
+        },
+        "tombstones": {
+          "type": "boolean"
+        },
+        "atomicSectionWrite": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,423 @@
+version: 1
+updated_at: "2026-04-23T00:00:00+08:00"
+product_line:
+  core: CMCP Core
+  guard: CMCP Guard
+  setup: CMCP Setup
+  policy: CMCP Policy
+  host_runtime_actions: Host Runtime Actions
+  product_page: Product Page
+  migration_consumer: V2 Runtime
+
+surfaces:
+  cmcp_core:
+    display_name: CMCP Core
+    role: Canonical semantic contract and typed policy baseline.
+    owns:
+      - layer_definitions
+      - write_authorization_model
+      - promotion_rules
+      - forbidden_write_boundaries
+      - new_session_selection_policy
+      - onboarding_classification_policy
+      - user_correction_semantics
+      - schema_shapes
+    canonical_files:
+      - SKILL.md
+      - contract/cmcp-contract-v1.yaml
+      - contract/cmcp-runtime-policy.json
+      - contract/cmcp-surface-map.yaml
+      - contract/cmcp-host-integration-v1.yaml
+      - schemas/cmcp-memory-record.schema.json
+      - schemas/cmcp-continuity-context.schema.json
+      - schemas/cmcp-correction-action.schema.json
+      - schemas/cmcp-write-decision.schema.json
+      - schemas/cmcp-storage-adapter-descriptor.schema.json
+      - schemas/cmcp-persistence-result.schema.json
+    emits:
+      - canonical_rules
+      - schema_contracts
+      - invocation_area_registry
+    must_not:
+      - depend_on_ui_copy
+      - depend_on_installer_copy
+      - depend_on_legacy_v2_behavior
+      - be_redefined_by_plugin_or_ui_logic
+
+  cmcp_guard:
+    display_name: CMCP Guard
+    role: Runtime enforcement, validation, and fail-closed write gate.
+    must_read:
+      - contract/cmcp-contract-v1.yaml
+      - contract/cmcp-runtime-policy.json
+      - schemas/cmcp-memory-record.schema.json
+      - schemas/cmcp-continuity-context.schema.json
+      - schemas/cmcp-correction-action.schema.json
+      - schemas/cmcp-write-decision.schema.json
+    best_fit_for:
+      - write_candidate_evaluation
+      - forbidden_text_detection
+      - authorized_invocation_area_enforcement
+      - staged_to_tracked_promotion_checks
+      - new_session_anchor_selection
+      - correction_action_validation
+      - tombstone_writeback_control
+    may_write_only:
+      - derived_daily_memory_if_host_routes_it
+      - correction_tombstone_metadata_if_host_routes_it
+      - structured_policy_decision_logs
+    must_not:
+      - invent_new_memory_layers
+      - redefine_anchor_priority
+      - persist_forbidden_data
+      - enable_writes_without_authorized_invocation_area
+      - bypass_user_correction_precedence
+
+  cmcp_policy:
+    display_name: CMCP Policy
+    role: User-facing continuity inspection, preview, and explicit memory management surface.
+    owns_invocation_areas:
+      - cmcp_policy_manual_write
+      - cmcp_policy_manual_edit
+    should_expose:
+      - layer_badges_for_session_staged_tracked_daily_personalization
+      - write_reason_or_rejection_reason
+      - settings_vs_memory_boundary
+      - new_session_anchor_preview
+      - explicit_user_actions_replace_delete_suppress_resolve_opt_out
+      - explicit_user_action_to_write_allowed_memory
+    may_request_writes:
+      staged:
+        via:
+          - cmcp_policy_manual_write
+      tracked:
+        via:
+          - cmcp_policy_manual_write
+      long_term_personalization:
+        via:
+          - cmcp_policy_manual_write
+      user_correction:
+        via:
+          - cmcp_policy_manual_edit
+    required_guards:
+      - call_cmcp_guard_before_persist
+      - show_target_layer_before_confirm
+      - show_rejection_reason_when_write_is_blocked
+      - allow_user_to_view_edit_delete_supported_records
+    field_map:
+      manual_write:
+        invocation_area: cmcp_policy_manual_write
+        target_layer:
+          allowed_values:
+            - staged
+            - tracked
+            - long_term_personalization
+        continuity_value:
+          required_for:
+            - staged
+            - tracked
+        evidence_ref:
+          required_for:
+            - staged
+            - tracked
+        allowed_personalization_type:
+          required_for:
+            - long_term_personalization
+        surface_disclosed_memory_effect:
+          required_for:
+            - long_term_personalization
+        decision_feedback:
+          reads:
+            - decisionStep
+            - reasons
+            - ownerSurface
+            - routeKey
+      manual_edit:
+        invocation_area: cmcp_policy_manual_edit
+        action:
+          allowed_values:
+            - replace
+            - delete
+            - suppress
+            - resolve
+            - opt_out
+        target_scope:
+          allowed_values:
+            - single_record
+            - memory_type
+            - category
+            - global
+        target_memory_id:
+          required_when_target_scope: single_record
+      new_session_preview:
+        reads_route: newSessionAssembly
+        output_shape:
+          - continuity_source
+          - anchor_level
+          - latest_user_owned_clause
+          - selection_priority
+          - selected_by
+    must_not:
+      - silently_persist_from_passive_viewing
+      - auto_promote_plain_chat_into_memory
+      - expose_deleted_sensitive_raw_text
+      - redefine_policy_in_ui_copy
+
+  cmcp_setup:
+    display_name: CMCP Setup
+    role: Installer and onboarding capture flow for settings plus disclosed profile memory.
+    owns_invocation_areas:
+      - installer_disclosed_profile_capture
+      - onboarding_disclosed_profile_capture
+    should_collect:
+      - timezone
+      - sleep_time
+      - wake_time
+      - preferred_name
+      - language
+      - relationship
+      - use_case
+      - interaction_preference
+    may_request_writes:
+      settings:
+        via:
+          - installer_disclosed_profile_capture
+          - onboarding_disclosed_profile_capture
+      long_term_personalization:
+        via:
+          - installer_disclosed_profile_capture
+          - onboarding_disclosed_profile_capture
+    required_disclosure:
+      - explain_which_answers_become_settings
+      - explain_which_answers_become_long_term_personalization
+      - explain_that_current_event_answers_do_not_persist_by_default
+      - explain_that_restricted_fields_require_explicit_user_ownership
+    input_aliases:
+      language: language_preference
+      interaction_preference: proactive_preference
+    field_map:
+      timezone:
+        settings_target: routine_schedule.timezone
+        personalization_target: profile.timezone
+        personalization_type: timezone
+        restricted: true
+      sleep_time:
+        settings_target: routine_schedule.sleep_time
+        personalization_target: profile.sleep_pattern.sleep_time
+        personalization_type: sleep_time
+        restricted: true
+      wake_time:
+        settings_target: routine_schedule.wake_time
+        personalization_target: profile.sleep_pattern.wake_time
+        personalization_type: wake_time
+        restricted: true
+      preferred_name:
+        personalization_target: profile.preferred_name
+        personalization_type: preferred_name
+        restricted: true
+      language:
+        settings_target: locale.language
+        personalization_target: profile.language_preference
+        personalization_type: language_preference
+        restricted: false
+      relationship:
+        personalization_target: profile.relationship
+        personalization_type: relationship
+        restricted: true
+      use_case:
+        personalization_target: profile.use_case
+        personalization_type: use_case
+        restricted: true
+      interaction_preference:
+        settings_target: proactive_chat.enabled
+        personalization_target: profile.interaction_preference.proactive
+        personalization_type: stable_interaction_preference
+        restricted: false
+      current_unfinished_task:
+        persistent_target: none
+        default_layer: session
+      immediate_blocker:
+        persistent_target: none
+        default_layer: session
+    must_not:
+      - create_tracked_records_by_default
+      - create_staged_records_by_default
+      - create_new_session_anchor_text
+      - save_forbidden_data
+      - infer_profile_values_without_user_ownership
+
+  host_runtime_actions:
+    display_name: Host Runtime Actions
+    role: Explicit in-chat buttons, commands, or affordances outside CMCP Policy.
+    owns_invocation_areas:
+      - explicit_memory_save_action
+      - explicit_followup_action
+      - explicit_memory_correction_action
+    may_request_writes:
+      staged:
+        via:
+          - explicit_memory_save_action
+          - explicit_followup_action
+      tracked:
+        via:
+          - explicit_followup_action
+      user_correction:
+        via:
+          - explicit_memory_correction_action
+    required_guards:
+      - explicit_user_action_is_required
+      - call_cmcp_guard_before_persist
+      - do_not_treat_plain_chat_as_invocation
+    must_not:
+      - auto_fire_from_background_inference
+      - hide_the_fact_that_a_write_will_occur
+      - bypass_cmcp_core_rules
+
+  cmcp_product_page:
+    display_name: Product Page
+    role: Capability explanation without becoming policy truth.
+    may_claim_only:
+      - supports_session_staged_tracked_daily_personalization_layers
+      - supports_new_session_carryover_from_structured_state
+      - supports_disclosed_onboarding_profile_memory
+      - supports_user_correction_and_forbidden_write_rules
+      - supports_fail_closed_write_authorization
+    must_not_claim:
+      - all_chat_is_saved
+      - generic_unbounded_memory
+      - hidden_auto_memory_everywhere
+      - runtime_enforcement_without_cmcp_guard
+      - transport_or_channel_features_not_owned_by_cmcp
+
+  v2_runtime:
+    display_name: V2 Runtime
+    role: Compatibility consumer during migration.
+    should_use:
+      - classification_rules_from_cmcp_core
+      - write_authorization_model_from_cmcp_core
+      - staged_to_tracked_promotion_from_cmcp_core
+      - new_session_anchor_selection_via_cmcp_guard
+      - correction_precedence_from_cmcp_core
+    integration_mode:
+      - consume_contract_do_not_fork_it
+      - adapt_legacy_paths_to_authorized_invocation_areas
+      - route_candidate_writes_through_cmcp_guard
+      - record_drift_explicitly
+    must_not:
+      - expand_contract_to_fit_legacy_behavior
+      - silently_restore_old_auto_write_patterns
+      - become_canonical_policy_owner
+
+invocation_area_registry:
+  explicit_memory_save_action:
+    owner_surface: host_runtime_actions
+    allowed_targets:
+      - staged
+    requires:
+      - explicit_user_action
+      - visible_write_affordance
+      - cmcp_guard_evaluation
+
+  explicit_followup_action:
+    owner_surface: host_runtime_actions
+    allowed_targets:
+      - staged
+      - tracked
+    requires:
+      - explicit_user_action
+      - visible_followup_affordance
+      - cmcp_guard_evaluation
+
+  explicit_memory_correction_action:
+    owner_surface: host_runtime_actions
+    allowed_targets:
+      - user_correction
+    requires:
+      - explicit_user_action
+      - target_record_or_scope
+      - cmcp_guard_evaluation
+
+  cmcp_policy_manual_write:
+    owner_surface: cmcp_policy
+    allowed_targets:
+      - staged
+      - tracked
+      - long_term_personalization
+    requires:
+      - explicit_user_action
+      - target_layer_preview
+      - write_reason_display
+      - cmcp_guard_evaluation
+
+  cmcp_policy_manual_edit:
+    owner_surface: cmcp_policy
+    allowed_targets:
+      - user_correction
+    requires:
+      - explicit_user_action
+      - target_record_or_scope
+      - edit_reason_or_action_type
+      - cmcp_guard_evaluation
+
+  installer_disclosed_profile_capture:
+    owner_surface: cmcp_setup
+    allowed_targets:
+      - settings
+      - long_term_personalization
+    requires:
+      - disclosure_of_memory_effect
+      - explicit_user_ownership
+      - field_level_mapping
+      - cmcp_guard_evaluation_for_memory_writes
+
+  onboarding_disclosed_profile_capture:
+    owner_surface: cmcp_setup
+    allowed_targets:
+      - settings
+      - long_term_personalization
+    requires:
+      - disclosure_of_memory_effect
+      - explicit_user_ownership
+      - field_level_mapping
+      - cmcp_guard_evaluation_for_memory_writes
+
+write_routes:
+  manual_memory_write:
+    path:
+      - cmcp_policy_or_host_runtime_actions
+      - cmcp_guard
+      - cmcp_core_rules_and_schemas
+      - host_storage_layer
+    fail_closed_if:
+      - no_authorized_invocation_area
+      - rejected_by_guard
+      - schema_validation_fails
+
+  onboarding_profile_capture:
+    path:
+      - cmcp_setup
+      - cmcp_guard_for_memory_targets
+      - settings_store_or_memory_store
+    fail_closed_if:
+      - disclosure_missing
+      - user_ownership_not_explicit
+      - target_field_is_forbidden
+
+  new_session_assembly:
+    path:
+      - v2_runtime_or_host_runtime
+      - cmcp_guard
+      - tracked_staged_daily_background_profile
+    output:
+      - continuity_context_payload
+    fail_closed_if:
+      - no_valid_anchor_exists
+
+best_fit_summary:
+  canonical_policy: cmcp_core
+  runtime_enforcement: cmcp_guard
+  user_inspection_and_editing: cmcp_policy
+  initial_value_collection: cmcp_setup
+  explicit_in_chat_actions: host_runtime_actions
+  capability_explanation: cmcp_product_page
+  migration_consumer: v2_runtime

@@ -1,0 +1,135 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:cmcp:schema:cmcp-write-decision:v1",
+  "title": "CmcpWriteDecision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "accepted",
+    "persistentWrite",
+    "targetLayer",
+    "finalLayer",
+    "decisionStep",
+    "ownerSurface",
+    "invocationArea",
+    "routeKey",
+    "route",
+    "checkedSteps",
+    "reasons"
+  ],
+  "properties": {
+    "accepted": {
+      "type": "boolean"
+    },
+    "persistentWrite": {
+      "type": "boolean"
+    },
+    "persistentWriteAuthorized": {
+      "type": "boolean"
+    },
+    "targetLayer": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "settings",
+        "staged",
+        "tracked",
+        "long_term_personalization",
+        "user_correction",
+        null
+      ]
+    },
+    "finalLayer": {
+      "type": "string",
+      "enum": [
+        "session",
+        "settings",
+        "staged",
+        "tracked",
+        "long_term_personalization",
+        "user_correction"
+      ]
+    },
+    "decisionStep": {
+      "type": "string",
+      "enum": [
+        "explicit_user_correction",
+        "forbidden_persistence_filter",
+        "settings_only_routing",
+        "staged_eligibility",
+        "tracked_promotion",
+        "long_term_personalization",
+        "session_only_no_persistent_write"
+      ]
+    },
+    "ownerSurface": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "cmcp_policy",
+        "cmcp_setup",
+        "host_runtime_actions",
+        null
+      ]
+    },
+    "invocationArea": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "explicit_memory_save_action",
+        "explicit_followup_action",
+        "explicit_memory_correction_action",
+        "cmcp_policy_manual_write",
+        "cmcp_policy_manual_edit",
+        "installer_disclosed_profile_capture",
+        "onboarding_disclosed_profile_capture",
+        null
+      ]
+    },
+    "routeKey": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "manualMemoryWrite",
+        "onboardingProfileCapture",
+        null
+      ]
+    },
+    "route": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "checkedSteps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "explicit_user_correction",
+          "forbidden_persistence_filter",
+          "settings_only_routing",
+          "staged_eligibility",
+          "tracked_promotion",
+          "long_term_personalization",
+          "session_only_no_persistent_write"
+        ]
+      }
+    },
+    "reasons": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

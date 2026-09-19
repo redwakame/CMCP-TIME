@@ -1,0 +1,390 @@
+{
+  "kind": "cmcp_upstream_license_provenance",
+  "version": 1,
+  "repository": "https://github.com/redwakame/cmcp",
+  "commit": "2bdb94d0fcd12ae85009f7a52ecf67617cab49bb",
+  "license": "MIT-0",
+  "evidence": "package.json and .codex-plugin/plugin.json at this commit",
+  "files": [
+    {
+      "path": ".codex-plugin/plugin.json",
+      "upstreamSha256": "837e37535611341ce477e25264c3115a2bb0cc5f7757c50273fa40591424c43f",
+      "blob": "9f773db9d7da72d68695a1a59abb68f3332700b8"
+    },
+    {
+      "path": ".gitignore",
+      "upstreamSha256": "7ade47e7d5d998dc511c743da5a08726966566c8cc17fc773028c3dcd06cfd7b",
+      "blob": "1b1eee8c109249a38a20f4219d7c54932848e9f5"
+    },
+    {
+      "path": "README.md",
+      "upstreamSha256": "89f453d39ce84d2961463619f6a370271b4c0d60e2bad7dc6b20f7c65b0263b4",
+      "blob": "c850634e2c6b260fecff29d5a8eb1bb765734d26"
+    },
+    {
+      "path": "docs/BUG_DISPOSITION.md",
+      "upstreamSha256": "920124cf29f69dda4c72d1143c9780c313166853233f8b6dbac6652eb5fac605",
+      "blob": "818cee36d38d7a14aafdc5706b9d90c6e9f9b6ee"
+    },
+    {
+      "path": "docs/CLAUDE_REVIEW_HANDOFF.md",
+      "upstreamSha256": "40e427dca33f7a3a58455ee6518e7926437e65d3478abfd9f7a97ba4b3381f19",
+      "blob": "1a8205d20da879124159cf2996e041f45ed81def"
+    },
+    {
+      "path": "docs/CMCP_AUDIT_SUMMARY.md",
+      "upstreamSha256": "1492edd0edfe0fd153f5235090ef54f36c8f6aa99566d119dc888874b0feea79",
+      "blob": "3dfd98f8c5a7bf678aecfd36213dfd001dd86aa2"
+    },
+    {
+      "path": "docs/GITHUB_PREP_CHECKLIST.md",
+      "upstreamSha256": "e592784bba0ac28c5d536c0714ce202b4bc3e9c1dff065e1383417d0a334018a",
+      "blob": "94b1bac48a406d022d6e9e6b2a7e3f5b9dfee00c"
+    },
+    {
+      "path": "docs/OFFICIAL_SUBMISSION_MESSAGES.md",
+      "upstreamSha256": "71d9b19c7ebf956f8c005db6b3350d1f73cffb232c4016a524d06997ba6c5165",
+      "blob": "8d1231f3db0a13bd47e8a9c85bac7c46775b78f8"
+    },
+    {
+      "path": "docs/OPENAI_ANTHROPIC_SEND_LIST.md",
+      "upstreamSha256": "2b19fea87994f90ad2cad99c87623eeedddeaa16548c01d895fde3119630f745",
+      "blob": "6ab4e7ea6f508a1ea746ea33831efdb163cf392c"
+    },
+    {
+      "path": "docs/OUTREACH_EMAIL_TEMPLATES.md",
+      "upstreamSha256": "8b0bd684eb475760274c796d36bb66c37574c7676942d2c91f5bd4265a53ac1d",
+      "blob": "d42db08b04e32bf7903e209a3092efa35e90508c"
+    },
+    {
+      "path": "docs/PRODUCT_POSITIONING.md",
+      "upstreamSha256": "a6951f3403f3469eca0d2413bb898e3ff7aa8b3e4b4388ba30c99a7fab5d8c77",
+      "blob": "72fdca1a9b084684f97584c3811019c404be0886"
+    },
+    {
+      "path": "docs/PUBLISH_PLAN.md",
+      "upstreamSha256": "77e3e05bfb808f6c563a0dcaab3a89c426aaea2c95b020c75e791add53427325",
+      "blob": "70fabcad16e13bfc4765799b90e5003ed93c876f"
+    },
+    {
+      "path": "docs/REQUIREMENTS_COVERAGE.md",
+      "upstreamSha256": "011a8055401eb9ba584aa75bb7b7820f1e7bafbf3f40a32d14ea07d48ebc9b4c",
+      "blob": "b530f0dcc63588447cc7cd921c0fb7c3af0e3f41"
+    },
+    {
+      "path": "docs/REVIEW_PACKET.md",
+      "upstreamSha256": "b07017e0cb324d2cc63f3ebda3c0d8fca10fdd7924b676fafa6599f8620e40a2",
+      "blob": "dd145e247c09668fc5320b48124a795488812670"
+    },
+    {
+      "path": "docs/anthropic-cmcp-proposal-en.md",
+      "upstreamSha256": "7482a346501ce3141e3d31bf603ba4de4da785d3ba2296b5a0aabc96a0b568df",
+      "blob": "e1e57a6259b752cafa1558504903e37fe5747086"
+    },
+    {
+      "path": "docs/openai-agents-cmcp-proposal-zh-TW.md",
+      "upstreamSha256": "c2c827e0c6eb7accff9fc5c87e2d4626d8cbda5e3fe732ef26eca124b6034e7f",
+      "blob": "20b73fe093c08a2e5ffa7d852cbfbbe8fefc0e17"
+    },
+    {
+      "path": "docs/openai-cmcp-proposal-en.md",
+      "upstreamSha256": "26c3927ce97a80efa2f566168011bcfcc5fa02f88eae535d9bced73d7ef28a66",
+      "blob": "6f10d2802d5b43ce5ba508ee0a202e469f8a6a3e"
+    },
+    {
+      "path": "docs/openclaw-cmcp-proposal-en.md",
+      "upstreamSha256": "1cc842fee7861895299f3140718621c7c4ebfbaad2200041a703585754fbd039",
+      "blob": "ce2b8167d940e525659a6855ce89ce3e3d5768cf"
+    },
+    {
+      "path": "hooks/cmcp-guard/HOOK.md",
+      "upstreamSha256": "2848479a77e77ce4b3fe6570a6a5d0d84ae75933dbd82e026bd572ed5f25980d",
+      "blob": "599a7348437f185c7b37fcb02b4b41389c64c597"
+    },
+    {
+      "path": "hooks/cmcp-guard/handler.js",
+      "upstreamSha256": "f368d3725c0eb360ab8bca7cd158b5f3d8e3f3c2f3609d17622e51b192eee9e3",
+      "blob": "fc44589b6e456bba5559d8bd1416579269cc5d67"
+    },
+    {
+      "path": "package.json",
+      "upstreamSha256": "5fb4a1c1efe692a2f846a2662033940630b2c1cecc7b1fc4ec7986443d067233",
+      "blob": "96ec45e98b9e62ab6600f9bb25ff85cda0a58341"
+    },
+    {
+      "path": "runtime-data/integration-matrix/desktop_text_followup_v1/state/daily-memory.json",
+      "upstreamSha256": "16f03cf8223b1d74ab77d224f6b01b55d69354602b57438e9dbcd49fe3d23dbe",
+      "blob": "35dc03565cd9c4ed8c4e73310af9baef2dc35d63"
+    },
+    {
+      "path": "runtime-data/integration-matrix/desktop_text_followup_v1/state/staged.json",
+      "upstreamSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "blob": "0637a088a01e8ddab3bf3fa98dbe804cbde1a0dc"
+    },
+    {
+      "path": "runtime-data/integration-matrix/desktop_text_followup_v1/state/tracked.json",
+      "upstreamSha256": "e9eef4aa521476f013e60f9003e49ee3e0b57e0c6e5047e387e9c2985f0a1fbc",
+      "blob": "c194c64e4848b0dc08fc0c6864714c9e8e6ccd15"
+    },
+    {
+      "path": "runtime-data/integration-matrix/image_caption_followup_v2/state/daily-memory.json",
+      "upstreamSha256": "e7479bc4221bd9a6f305959d2e36fcf032ea1d10dbe2045e9c9a9afa5b17ac4d",
+      "blob": "df0f733f9874e2581b1f0752fd77001a77b6bbad"
+    },
+    {
+      "path": "runtime-data/integration-matrix/image_caption_followup_v2/state/staged.json",
+      "upstreamSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "blob": "0637a088a01e8ddab3bf3fa98dbe804cbde1a0dc"
+    },
+    {
+      "path": "runtime-data/integration-matrix/image_caption_followup_v2/state/tracked.json",
+      "upstreamSha256": "64ea31f5496d59145f8985039c4861a7d2e02b792bbe514e182ced896e576a06",
+      "blob": "2ff6981bc98502581b312534ebca29ca738141ae"
+    },
+    {
+      "path": "runtime-data/integration-matrix/integration-matrix-log.json",
+      "upstreamSha256": "25204b99de4727ec5450edbcf3dcb9a194f2ef44812711cb8f5c04ff535d9a6a",
+      "blob": "ff3c1dc8594ae0ae2b92cdb598e854c8959c9488"
+    },
+    {
+      "path": "runtime-data/integration-matrix/integration-matrix-report.json",
+      "upstreamSha256": "6618ff44b7ca1d39c0533f232c0544fc1c4cd773a9a2f876db42222c46ff2b5c",
+      "blob": "aeea78bf132e4918b3aeee9ff71e2e2b2f8a1eb2"
+    },
+    {
+      "path": "runtime-data/integration-matrix/legacy_v2_followup_v0_9/state/daily-memory.json",
+      "upstreamSha256": "4d7f43769a967e227fec77b641f77e43df4a7debc9d594edc18cca1fe58c09a8",
+      "blob": "b14d7362cea9e881610fa6e30098a0f31f501ed0"
+    },
+    {
+      "path": "runtime-data/integration-matrix/legacy_v2_followup_v0_9/state/staged.json",
+      "upstreamSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "blob": "0637a088a01e8ddab3bf3fa98dbe804cbde1a0dc"
+    },
+    {
+      "path": "runtime-data/integration-matrix/legacy_v2_followup_v0_9/state/tracked.json",
+      "upstreamSha256": "5cc8a905985111aafb77c36ea6c269c1b87f02fe6a0cdcf476b6f8e121f052d2",
+      "blob": "310e081e8655eae435aed8d4feb317269ec7a166"
+    },
+    {
+      "path": "runtime-data/integration-matrix/setup_form_timezone_v1/state/daily-memory.json",
+      "upstreamSha256": "5ac5fb0aa3a5bfa37a94311c8b9da8f0712a00a81aca25e506b8506377af5ef8",
+      "blob": "9253b8603234fc75eb742f62535ac3d350ecd82e"
+    },
+    {
+      "path": "runtime-data/integration-matrix/setup_form_timezone_v1/state/long-term-personalization.json",
+      "upstreamSha256": "8c02c114d4bea27303e780b5b64b129155d5d404d96ce9ae6ecb5522963d0a42",
+      "blob": "462fbaff96fcf855f2f2ab1220486dd619e68b32"
+    },
+    {
+      "path": "runtime-data/integration-matrix/voice_transcript_save_v1_1/state/daily-memory.json",
+      "upstreamSha256": "0957a58a631b33d6f4232801322b9bdda98647d6ba5ae3fdf19d583515e42641",
+      "blob": "2c1adc332fc1c9c2f168011e9e5ba969e25c3042"
+    },
+    {
+      "path": "runtime-data/integration-matrix/voice_transcript_save_v1_1/state/staged.json",
+      "upstreamSha256": "63a248cdf113f05871bf6a7ec270a63d8352a998f9883a8843e48d5a3ad29875",
+      "blob": "5f23248f6f9066d19ad197e5ea1b7d643df9680f"
+    },
+    {
+      "path": "runtime-data/mock-host-demo/demo-log.json",
+      "upstreamSha256": "4b758e3ff52cc8aafce68509cdec481298928fde3c89e3a24a8b102fcae0251f",
+      "blob": "2d2cd966297d5bbc1ff816d68bf9fa590c486608"
+    },
+    {
+      "path": "runtime-data/mock-host-demo/demo-summary.json",
+      "upstreamSha256": "0f325a83a4c1d500816535bea878e6d76170eca479635c7f1a16e20b4ec3f54c",
+      "blob": "73f768ad45bb1d86072d4e27a682a645a513db25"
+    },
+    {
+      "path": "runtime-data/mock-host-demo/state/daily-memory.json",
+      "upstreamSha256": "3b36b4edc18673169ca7ff9bbb7f75268649eacaa083f467cc850871eff96e68",
+      "blob": "0488c5473ad9d6a087dbdce3ffc5419b6bfd4101"
+    },
+    {
+      "path": "runtime-data/mock-host-demo/state/long-term-personalization.json",
+      "upstreamSha256": "8831d8b8a4891c79cf46293c8cc1013f6a7c3f0972fabe9f964a9ffab47a3ce3",
+      "blob": "d7a1f8e54484e8737fb75f3cb47d0ab1a25cab4c"
+    },
+    {
+      "path": "runtime-data/mock-host-demo/state/staged.json",
+      "upstreamSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "blob": "0637a088a01e8ddab3bf3fa98dbe804cbde1a0dc"
+    },
+    {
+      "path": "runtime-data/mock-host-demo/state/tracked.json",
+      "upstreamSha256": "9da02f30c5e40592cd14ab0f873c7ce0f6db35dddeb3541fd207a3425e9cf3b9",
+      "blob": "8a99f30e7327260995759c08e752ac4ca4b5f1e1"
+    },
+    {
+      "path": "scripts/check-cmcp-openclaw-bundle.mjs",
+      "upstreamSha256": "0eb5dc22292e6eaaca693391e80b53aa3ead37952fec934f3c69cbb297a8ee02",
+      "blob": "e06aed3b8f8fb613ea88f5d61f3535d2ea15fa7d"
+    },
+    {
+      "path": "scripts/run-cmcp-acceptance-harness.mjs",
+      "upstreamSha256": "b96c55649efab1611c33bca708fbeffc2484cf31de4de61d8a37e142958aaaca",
+      "blob": "51e9dde4af7364c118ac3b21494308d3069fa304"
+    },
+    {
+      "path": "scripts/run-cmcp-adversarial-smoke.mjs",
+      "upstreamSha256": "7366007c2985887866a3a320ef1a7a1bb0ffd569016f0d4762f7d58cea9e9545",
+      "blob": "934618fc7a680c65c139d7a1815732c17ee59ba3"
+    },
+    {
+      "path": "scripts/run-cmcp-end-to-end-integration-smoke.mjs",
+      "upstreamSha256": "b4b5f1feea2bac40b320a55d78231aace9207f0126790844a1c6e55ed89cac57",
+      "blob": "f5dc044c5e197476c3f6dbcfddb8128803e612b4"
+    },
+    {
+      "path": "scripts/run-cmcp-host-integration-smoke.mjs",
+      "upstreamSha256": "ce5d0850059035ae6824a173cbc604ff56a7866ca35c8a9a9481ee7bfba09a3f",
+      "blob": "726c07df48a147af44d4ce04ab69d72b2b2ff682"
+    },
+    {
+      "path": "scripts/run-cmcp-integration-matrix.mjs",
+      "upstreamSha256": "e3f0ad8efbb8be0d595d687cb9ab0359cae305deb886712f228db59fed9798d1",
+      "blob": "178c3e82fb196afb6c080a9eaaf26c90c1a71ab5"
+    },
+    {
+      "path": "scripts/run-cmcp-mock-host-demo.mjs",
+      "upstreamSha256": "4976060d2ed9d423086448cae53dd0b34a69ccc8076aada57705bd4f582d27c3",
+      "blob": "866d17c0a82dd487549556db872a84d7f0c7f807"
+    },
+    {
+      "path": "scripts/run-cmcp-runtime-schema-smoke.mjs",
+      "upstreamSha256": "f2b89a3bf72fec93cdf5fc27b12a39d4408d02c6794b755413a9cb3be5e74c0f",
+      "blob": "559c0d622bc7d8133e077e5f740bd6845c6f77ea"
+    },
+    {
+      "path": "scripts/run-cmcp-write-pipeline-smoke.mjs",
+      "upstreamSha256": "308a3f54b61a8c2f0749c4978d72c295662bd197c78368f8388621248468d8aa",
+      "blob": "4cab0a56aa449be8db6c306e9063d3726f64e4c0"
+    },
+    {
+      "path": "skills/cmcp-core/SKILL.md",
+      "upstreamSha256": "5dd2effa51ef876e94a1678ead84d02f7a0e224ed518ff42d9443d60e21b7da3",
+      "blob": "961acc2e46b5cc81aeccb6abad93fd06ab4552d9"
+    },
+    {
+      "path": "skills/cmcp-core/_meta.json",
+      "upstreamSha256": "f64eae3d832442f08df49e80c699a4d99acabdfe1ddb37317f65b26fbafe659b",
+      "blob": "65a6107c21e1b39df9da101691ce29909d1eae3b"
+    },
+    {
+      "path": "skills/cmcp-core/contract/cmcp-contract-v1.yaml",
+      "upstreamSha256": "e752b4aa9d73b84dca8870d141891e0a0b1f59d2247d7e198ca3cd267d2c63ef",
+      "blob": "74b1409ad94890cebc3f89c085603c469e63e28a"
+    },
+    {
+      "path": "skills/cmcp-core/contract/cmcp-host-integration-v1.yaml",
+      "upstreamSha256": "92d6b431a2fb6af73c13ae0a97cf310e268ab5c7212908561be38072c40e694c",
+      "blob": "b7961461f243626d02bf14b45ef523dd48c42844"
+    },
+    {
+      "path": "skills/cmcp-core/contract/cmcp-runtime-policy.json",
+      "upstreamSha256": "64e4643869ce1814ba8aefa0630d32ad37a5792f3da733055c445b358339b24f",
+      "blob": "c12423d903b266659fd2d7883e7f79ba6445693f"
+    },
+    {
+      "path": "skills/cmcp-core/contract/cmcp-surface-map.yaml",
+      "upstreamSha256": "995a6d3b84e08f1ece25724d14996d95d79f454f29bb6c4fd867ec58cf339c37",
+      "blob": "bc0a545b957896c12a5a92fa6fa75d79ce90067e"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-continuity-context.schema.json",
+      "upstreamSha256": "2397b2fb96beb0093bd41db2adce19d38905a1d57db13551e42cfa5651218c63",
+      "blob": "c45d22d915737010c1d5bd0e58e2828caff5c50a"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-correction-action.schema.json",
+      "upstreamSha256": "56045373a207f2396fff93e33b1de79d03f255c582520ea1f6fac4d195e076e6",
+      "blob": "e1945445e5db5ede82beefe89d331a698acca833"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-memory-record.schema.json",
+      "upstreamSha256": "ccc078270e00733bdbb742878a6f8d82319e3f9c5883079bc85bdddc674883c5",
+      "blob": "188ef036311be112238a7b7333e6c3e297e28474"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-persistence-result.schema.json",
+      "upstreamSha256": "b878d1ff96b34347442ffc1b830d86d5e0f51bbb39394148723e150945c563e0",
+      "blob": "9cc7e45e02c42d7b81f30db1d75f8bf6f0ae18f5"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-storage-adapter-descriptor.schema.json",
+      "upstreamSha256": "49107312deda2b3f46ec6ddbf96d691ad483c05040ea0461aedacae40f3629f5",
+      "blob": "2920d87ba76bbb498e61b50a6d49a752ca5678f0"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-write-decision.schema.json",
+      "upstreamSha256": "ce74f397a687d3470c4a37e2475715a3d25fc17a993199d54cf4f0070d75d73e",
+      "blob": "e37b0ddf5782e150058cc05759b8f316692138f1"
+    },
+    {
+      "path": "src/cmcp-guard/apply-cmcp-correction-action.js",
+      "upstreamSha256": "52fd17a6e8a321aeb52e1e7684177f97e2742a1fd324da1baa4360b970aac419",
+      "blob": "b9d74056d2fcef2f9322689763fc3300d36ec6a9"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-content-safety.js",
+      "upstreamSha256": "9ddbafd8ebf57c06a6395972bf32fc636a8aeabfd4d0119edd49babe682de9fd",
+      "blob": "3c8623069751cb8788e292868b2e88d091dc1e30"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-file-storage-adapter.js",
+      "upstreamSha256": "45d3b052096dc1b3cc7bc3d7b399367b6041bae6f65460e612a97d37430d85ee",
+      "blob": "0118aa467b87a73f038dd240260a647910f100cf"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-file-store.js",
+      "upstreamSha256": "c9cf477fb6cc9d7c4fd4223dfd7ace605afa5e1d7ef0332dd19226db48569ffc",
+      "blob": "d2984acabd4c6b07188ea7c28d080700b6b07ca1"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-settings-policy.js",
+      "upstreamSha256": "de3e47c6c5c57a86eb7b6378f63d639f2525dba5898bdeef78cc4dd1cc5735ab",
+      "blob": "98b34dea35123e4fbf72dc7c29c83f95fc368ea6"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-storage-adapter.js",
+      "upstreamSha256": "5449f9c9f141a1f9d9a499c849d43bac7511e1496d7924a11da51983d19e06a1",
+      "blob": "4ddbfdc5f5b788d7b5b8362eedee375d32e885da"
+    },
+    {
+      "path": "src/cmcp-guard/detect-cmcp-forbidden-text.js",
+      "upstreamSha256": "d280f9ce76deb9b5c95f15f1124dcd266f88b7c01381450cc187bc381e89452e",
+      "blob": "494a0e1fe3d30ae5721bb07afb4d5910026a347c"
+    },
+    {
+      "path": "src/cmcp-guard/evaluate-cmcp-write-candidate.js",
+      "upstreamSha256": "5ee6a269ded96a695dda0cc2657f5c9d6071a5169a1f3381436aa001ed3f5885",
+      "blob": "4efd2b4b32da305277cd62756ebdd7bb566b5363"
+    },
+    {
+      "path": "src/cmcp-guard/get-cmcp-runtime-policy.js",
+      "upstreamSha256": "80a30a1f3cfc90ac1935bbfcee984ecf89190c58ac24282e082497f4d2d0e7fd",
+      "blob": "181ad8025b43495456f281359964a28871dd8008"
+    },
+    {
+      "path": "src/cmcp-guard/persist-cmcp-write.js",
+      "upstreamSha256": "d970ad379bbe4bd65e73cfed779d804739434fde490bed6c41ae1de5417456bd",
+      "blob": "d1cf4c8a5d2e4a3834b8f7b357371a20d6150ad7"
+    },
+    {
+      "path": "src/cmcp-guard/select-cmcp-new-anchor.js",
+      "upstreamSha256": "e511d82d3d7a1276f88d9024cefc5f933d36baf9e590669b6ff4f9022afb1e8a",
+      "blob": "4ba2acd867051ac7de99cbbe9211264fb75bde9c"
+    },
+    {
+      "path": "src/cmcp-guard/validate-cmcp-record.js",
+      "upstreamSha256": "d7eb97dc85d048bd4138acad5ce61f808de663a14c2f8184e21e6c78daf68968",
+      "blob": "c91511de1309ba864f92976f8f615c9baa278b6e"
+    },
+    {
+      "path": "src/cmcp-guard/validate-cmcp-runtime-shapes.js",
+      "upstreamSha256": "774998f34ccf7349105ca7f95f35a96d485b2304298c3c41226ac930cdc846fb",
+      "blob": "d7d244fe1ebc5b3e3cd2dbc350b5ec3a682d763e"
+    }
+  ]
+}

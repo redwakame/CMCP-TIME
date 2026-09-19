@@ -1,0 +1,15 @@
+# Generated data and private configuration are never part of this source candidate.
+/local-data/
+/runtime-data/
+/logs/
+/.cmcp/
+/.codex/
+/reports/
+/node_modules/
+/release/
+.env
+.env.*
+*.dpapi
+*.secret
+*.tgz
+*.zip

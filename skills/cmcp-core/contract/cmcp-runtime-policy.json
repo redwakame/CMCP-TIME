@@ -1,0 +1,648 @@
+{
+  "version": 1,
+  "productLine": {
+    "core": "CMCP Core",
+    "guard": "CMCP Guard",
+    "setup": "CMCP Setup",
+    "policy": "CMCP Policy",
+    "hostRuntimeActions": "Host Runtime Actions",
+    "productPage": "Product Page",
+    "migrationConsumer": "V2 Runtime"
+  },
+  "layerOrder": [
+    "session",
+    "staged",
+    "tracked",
+    "daily_memory",
+    "long_term_personalization"
+  ],
+  "newSessionSelectionPriority": [
+    "tracked.active_unresolved",
+    "staged.recent_touched_unresolved",
+    "daily_memory.linked_trace",
+    "long_term_personalization.background_only"
+  ],
+  "correctionPrecedence": [
+    "explicit_user_correction",
+    "latest_direct_user_statement",
+    "tracked_or_staged_memory",
+    "daily_memory_summary",
+    "assistant_inference"
+  ],
+  "decisionOrder": [
+    "explicit_user_correction",
+    "forbidden_persistence_filter",
+    "settings_only_routing",
+    "staged_eligibility",
+    "tracked_promotion",
+    "long_term_personalization",
+    "session_only_no_persistent_write"
+  ],
+  "writeAuthorization": {
+    "defaultUserMode": "content_read_only_no_write",
+    "persistentWriteDefault": "denied",
+    "fallbackBehavior": "session_only",
+    "authorizedInvocationAreas": {
+      "staged": [
+        "explicit_memory_save_action",
+        "explicit_followup_action",
+        "cmcp_policy_manual_write"
+      ],
+      "tracked": [
+        "explicit_followup_action",
+        "cmcp_policy_manual_write"
+      ],
+      "long_term_personalization": [
+        "installer_disclosed_profile_capture",
+        "onboarding_disclosed_profile_capture",
+        "cmcp_policy_manual_write"
+      ],
+      "user_correction": [
+        "explicit_memory_correction_action",
+        "cmcp_policy_manual_edit"
+      ]
+    },
+    "restrictedLongTermPolicy": {
+      "default": "denied",
+      "allowedIfAll": [
+        "persistent_write_is_authorized",
+        "invocation_area_is_authorized",
+        "user_ownership_is_explicit",
+        "surface_disclosed_memory_effect"
+      ]
+    },
+    "invocationAreaRules": [
+      "only_surface_owned_invocation_areas_may_request_persistent_writes",
+      "all_non_settings_memory_writes_must_route_through_cmcp_guard",
+      "invocation_area_ownership_is_defined_in_cmcp_surface_map"
+    ]
+  },
+  "surfaceOwnership": {
+    "canonicalPolicy": "cmcp_core",
+    "runtimeEnforcement": "cmcp_guard",
+    "userInspectionAndEditing": "cmcp_policy",
+    "setupCapture": "cmcp_setup",
+    "explicitInChatActions": "host_runtime_actions",
+    "capabilityExplanation": "cmcp_product_page",
+    "migrationConsumer": "v2_runtime"
+  },
+  "hostIntegration": {
+    "storageAdapterContract": "cmcp_storage_adapter_v1",
+    "resolutionOrder": [
+      "payload.storageAdapter",
+      "payload.storage",
+      "payload.stateRoot_using_bundled_file_adapter"
+    ],
+    "requiredAdapterMethods": [
+      "readSection",
+      "writeSection",
+      "upsertSection",
+      "setSettingsValue",
+      "loadSnapshot"
+    ],
+    "requiredPersistenceResultFields": [
+      "persisted",
+      "finalLayer",
+      "storage",
+      "stateRoot",
+      "touchedSections",
+      "createdIds",
+      "updatedIds",
+      "removedIds",
+      "tombstoneCount"
+    ],
+    "optionalPersistenceResultFields": [
+      "memoryPersisted",
+      "settingsPersisted",
+      "correctionPersisted",
+      "persistenceKinds",
+      "reasons"
+    ],
+    "failClosedRules": [
+      "host_must_not_widen_write_authority",
+      "invalid_storage_resolution_must_block_persistence",
+      "new_session_must_use_structured_snapshot_not_transcript_replay"
+    ]
+  },
+  "settingsOnly": [
+    "heartbeat.interval",
+    "retry.interval",
+    "quiet_hours.start",
+    "quiet_hours.end",
+    "dispatch.policy",
+    "max_unanswered_before_park"
+  ],
+  "settingsValidation": {
+    "allowedTargetsMustBeDeclaredInContract": true,
+    "allowedTargetPrefixes": [
+      "memory_policy.opt_out_categories.",
+      "memory_policy.opt_out_memory_types."
+    ],
+    "valuesMustBeScalar": true,
+    "stringValuesMustPassForbiddenScan": true,
+    "typedRules": {
+      "quiet_hours.start": "hh:mm",
+      "quiet_hours.end": "hh:mm",
+      "routine_schedule.sleep_time": "hh:mm",
+      "routine_schedule.wake_time": "hh:mm",
+      "proactive_chat.enabled": "boolean",
+      "heartbeat.interval": "finite_number",
+      "retry.interval": "finite_number",
+      "max_unanswered_before_park": "finite_number",
+      "memory_policy.global_opt_out": "boolean"
+    }
+  },
+  "dualSurfaceFields": {
+    "timezone": {
+      "settingsTarget": "routine_schedule.timezone",
+      "personalizationTarget": "profile.timezone",
+      "newAnchorAllowed": false
+    },
+    "sleep_time": {
+      "settingsTarget": "routine_schedule.sleep_time",
+      "personalizationTarget": "profile.sleep_pattern.sleep_time",
+      "newAnchorAllowed": false
+    },
+    "wake_time": {
+      "settingsTarget": "routine_schedule.wake_time",
+      "personalizationTarget": "profile.sleep_pattern.wake_time",
+      "newAnchorAllowed": false
+    },
+    "language": {
+      "settingsTarget": "locale.language",
+      "personalizationTarget": "profile.language_preference",
+      "newAnchorAllowed": false
+    },
+    "proactive_preference": {
+      "settingsTarget": "proactive_chat.enabled",
+      "personalizationTarget": "profile.interaction_preference.proactive",
+      "newAnchorAllowed": false
+    }
+  },
+  "profileOnlyFields": {
+    "preferred_name": {
+      "personalizationTarget": "profile.preferred_name",
+      "newAnchorAllowed": false
+    },
+    "form_of_address": {
+      "personalizationTarget": "profile.form_of_address",
+      "newAnchorAllowed": false
+    },
+    "relationship": {
+      "personalizationTarget": "profile.relationship",
+      "newAnchorAllowed": false
+    },
+    "use_case": {
+      "personalizationTarget": "profile.use_case",
+      "newAnchorAllowed": false
+    }
+  },
+  "setupInputAliases": {
+    "language": "language_preference",
+    "interaction_preference": "proactive_preference"
+  },
+  "neverTrackKinds": [
+    "guided_settings",
+    "operator_feedback",
+    "installer_answers_as_settings_only"
+  ],
+  "allowedPersonalizationTypes": [
+    "preferred_name",
+    "form_of_address",
+    "language_preference",
+    "locale",
+    "timezone",
+    "sleep_time",
+    "wake_time",
+    "relationship",
+    "use_case",
+    "stable_interaction_preference"
+  ],
+  "restrictedFields": [
+    "timezone",
+    "sleep_time",
+    "wake_time",
+    "relationship",
+    "use_case",
+    "preferred_name"
+  ],
+  "forbiddenCategories": {
+    "alwaysForbidden": [
+      "password",
+      "api_key",
+      "otp",
+      "session_cookie",
+      "private_key",
+      "payment_credentials",
+      "government_id",
+      "passport_number",
+      "driver_license_number",
+      "exact_home_address",
+      "precise_gps",
+      "door_code",
+      "medical_record_detail",
+      "medication_detail",
+      "sexual_content",
+      "biometric_data",
+      "minor_sensitive_data",
+      "third_party_private_secret",
+      "raw_attachment_dump",
+      "full_email_body_as_long_term_memory",
+      "internal_prompt_text",
+      "bridge_or_hook_control_text",
+      "hidden_reasoning"
+    ],
+    "inferenceForbidden": [
+      "mental_health_diagnosis",
+      "personality_label",
+      "relationship_guess",
+      "financial_status_guess",
+      "legal_risk_guess"
+    ]
+  },
+  "writeSafety": {
+    "detectedTextScanFields": [
+      "continuity_value",
+      "stored_value_when_string",
+      "latest_user_owned_clause",
+      "source_ref",
+      "resolution_condition",
+      "field_key",
+      "personalization_type",
+      "anchor_turns.text",
+      "correction.reason",
+      "settings_value_when_string"
+    ],
+    "detectedForbiddenBehavior": [
+      "reject_persistence_do_not_redact_and_accept",
+      "write_reason_may_record_category_but_must_not_copy_secret_text",
+      "if_host_flag_and_scanner_disagree_the_more_restrictive_result_wins"
+    ],
+    "forbiddenCategoryPriority": [
+      "alwaysForbidden_over_inferenceForbidden"
+    ],
+    "hostInferenceForbiddenFields": [
+      "hostClassifiedForbiddenCategory",
+      "inferenceForbiddenCategory"
+    ],
+    "fieldSizeLimits": {
+      "continuityValueMaxChars": 4096,
+      "latestUserOwnedClauseMaxChars": 4096,
+      "storedValueStringMaxChars": 1024,
+      "sourceRefMaxChars": 512,
+      "resolutionConditionMaxChars": 512,
+      "fieldKeyMaxChars": 256,
+      "personalizationTypeMaxChars": 128,
+      "anchorTurnTextMaxChars": 1024,
+      "anchorTurnMaxItems": 50,
+      "correctionReasonMaxChars": 256,
+      "settingsStringMaxChars": 128
+    },
+    "textSanitization": {
+      "remove": [
+        "control_characters",
+        "null_bytes",
+        "bidi_override_and_isolate_characters",
+        "zero_width_and_invisible_format_characters"
+      ],
+      "detectWith": [
+        "unicode_nfkc_normalization",
+        "separated_keyword_detection_for_password_like_terms"
+      ]
+    }
+  },
+  "correctionExecutionInvariants": [
+    "invalid_apply_to_layers_must_fail_closed",
+    "single_record_target_must_exist_or_operation_fails_closed",
+    "repeated_delete_of_same_target_must_be_idempotent",
+    "replace_requires_live_replacement_record",
+    "delete_must_cleanup_prior_daily_derivatives_even_when_daily_memory_is_not_in_apply_to_layers"
+  ],
+  "statusModel": {
+    "anchorBlockedStates": [
+      "resolved",
+      "cancelled",
+      "superseded",
+      "deleted",
+      "expired"
+    ]
+  },
+  "anchorRules": {
+    "requiredRecordStates": [
+      "active"
+    ],
+    "blockedStates": [
+      "resolved",
+      "cancelled",
+      "superseded",
+      "deleted",
+      "expired"
+    ],
+    "maxRecentUserContextTurns": 4,
+    "dailyLinkedTraceRequiresLiveSource": true,
+    "dailyLinkedTraceRequiresKnownSource": true,
+    "dailyLinkedTraceMayPopulateRecentUserContext": false
+  },
+  "stagedRule": {
+    "defaultTtlHours": 12,
+    "writeIfAll": [
+      "source_is_user_or_user_confirmed",
+      "has_continuity_value",
+      "unresolved",
+      "not_forbidden",
+      "has_evidence"
+    ],
+    "expiryBehavior": [
+      "default_expiry_is_created_at_plus_12_hours",
+      "on_expiry_without_promotion_mark_expired",
+      "expired_records_must_not_remain_new_session_anchors"
+    ],
+    "requiredFields": [
+      "memory_id",
+      "memory_type",
+      "source_ref",
+      "anchor_turns",
+      "expires_at",
+      "status",
+      "sensitivity"
+    ]
+  },
+  "promotionSemantics": {
+    "stagedToTrackedDefault": "create_tracked_record_and_supersede_source_staged_record",
+    "allowParallelActiveForSameFocus": false
+  },
+  "trackedRule": {
+    "promoteWhenAny": [
+      "explicit_tracking_request",
+      "repeated_unresolved_topic",
+      "reopened_across_sessions",
+      "due_or_retry_signal"
+    ],
+    "requiredFields": [
+      "memory_id",
+      "memory_type",
+      "source_ref",
+      "continuity_value",
+      "resolution_condition",
+      "latest_user_owned_clause",
+      "updated_at",
+      "status",
+      "sensitivity"
+    ]
+  },
+  "dailyMemoryRule": {
+    "maxDialogueTurns": 4,
+    "derivedOnly": true,
+    "allowedChangeTypes": [
+      "created",
+      "touched",
+      "promoted",
+      "resolved",
+      "cancelled",
+      "superseded",
+      "deleted"
+    ]
+  },
+  "longTermRule": {
+    "promoteIfAll": [
+      "allowed_type",
+      "not_forbidden",
+      "user_ownership_is_explicit_or_stable",
+      "user_can_later_view_edit_or_delete"
+    ],
+    "promoteWhenAny": [
+      "explicit_onboarding_answer",
+      "direct_user_instruction_to_remember_preference",
+      "repeated_consistent_signal_without_conflict"
+    ]
+  },
+  "onboardingFieldClasses": {
+    "settingsOnly": [
+      "heartbeat.interval",
+      "retry.interval",
+      "quiet_hours.start",
+      "quiet_hours.end",
+      "dispatch.policy"
+    ],
+    "profileMemory": [
+      "timezone",
+      "sleep_time",
+      "wake_time",
+      "preferred_name",
+      "language_preference",
+      "relationship",
+      "use_case",
+      "proactive_preference"
+    ],
+    "currentEvent": [
+      "current_unfinished_task",
+      "immediate_blocker"
+    ],
+    "deterministicProfileFields": [
+      "timezone",
+      "sleep_time",
+      "wake_time",
+      "preferred_name",
+      "language_preference",
+      "relationship",
+      "use_case"
+    ]
+  },
+  "invocationAreaRegistry": {
+    "explicit_memory_save_action": {
+      "ownerSurface": "host_runtime_actions",
+      "allowedTargets": [
+        "staged"
+      ]
+    },
+    "explicit_followup_action": {
+      "ownerSurface": "host_runtime_actions",
+      "allowedTargets": [
+        "staged",
+        "tracked"
+      ]
+    },
+    "explicit_memory_correction_action": {
+      "ownerSurface": "host_runtime_actions",
+      "allowedTargets": [
+        "user_correction"
+      ]
+    },
+    "cmcp_policy_manual_write": {
+      "ownerSurface": "cmcp_policy",
+      "allowedTargets": [
+        "staged",
+        "tracked",
+        "long_term_personalization"
+      ]
+    },
+    "cmcp_policy_manual_edit": {
+      "ownerSurface": "cmcp_policy",
+      "allowedTargets": [
+        "user_correction"
+      ]
+    },
+    "installer_disclosed_profile_capture": {
+      "ownerSurface": "cmcp_setup",
+      "allowedTargets": [
+        "settings",
+        "long_term_personalization"
+      ]
+    },
+    "onboarding_disclosed_profile_capture": {
+      "ownerSurface": "cmcp_setup",
+      "allowedTargets": [
+        "settings",
+        "long_term_personalization"
+      ]
+    }
+  },
+  "writeRoutes": {
+    "manualMemoryWrite": [
+      "cmcp_policy_or_host_runtime_actions",
+      "cmcp_guard",
+      "cmcp_core_rules_and_schemas",
+      "host_storage_layer"
+    ],
+    "onboardingProfileCapture": [
+      "cmcp_setup",
+      "cmcp_guard_for_memory_targets",
+      "settings_store_or_memory_store"
+    ],
+    "newSessionAssembly": [
+      "v2_runtime_or_host_runtime",
+      "cmcp_guard",
+      "tracked_staged_daily_background_profile"
+    ]
+  },
+  "surfaceFieldMapping": {
+    "cmcpPolicy": {
+      "manualWrite": {
+        "invocationArea": "cmcp_policy_manual_write",
+        "allowedTargetLayers": [
+          "staged",
+          "tracked",
+          "long_term_personalization"
+        ],
+        "requiredInputsByTarget": {
+          "staged": [
+            "continuityValue",
+            "evidenceRef"
+          ],
+          "tracked": [
+            "continuityValue",
+            "evidenceRef"
+          ],
+          "long_term_personalization": [
+            "allowedPersonalizationType",
+            "surfaceDisclosedMemoryEffect"
+          ]
+        },
+        "decisionFeedback": [
+          "decisionStep",
+          "reasons",
+          "ownerSurface",
+          "routeKey"
+        ]
+      },
+      "manualEdit": {
+        "invocationArea": "cmcp_policy_manual_edit",
+        "allowedActions": [
+          "replace",
+          "delete",
+          "suppress",
+          "resolve",
+          "opt_out"
+        ],
+        "requiredInputs": [
+          "action",
+          "targetScope"
+        ],
+        "singleRecordRequires": [
+          "targetMemoryId"
+        ]
+      },
+      "newSessionPreview": {
+        "readsRoute": "newSessionAssembly",
+        "output": [
+          "continuity_source",
+          "anchor_level",
+          "latest_user_owned_clause",
+          "selection_priority",
+          "selected_by"
+        ]
+      }
+    },
+    "cmcpSetup": {
+      "inputAliases": {
+        "language": "language_preference",
+        "interaction_preference": "proactive_preference"
+      },
+      "fields": {
+        "timezone": {
+          "settingsTarget": "routine_schedule.timezone",
+          "personalizationTarget": "profile.timezone",
+          "personalizationType": "timezone",
+          "restricted": true,
+          "disclosedCaptureRequired": true
+        },
+        "sleep_time": {
+          "settingsTarget": "routine_schedule.sleep_time",
+          "personalizationTarget": "profile.sleep_pattern.sleep_time",
+          "personalizationType": "sleep_time",
+          "restricted": true,
+          "disclosedCaptureRequired": true
+        },
+        "wake_time": {
+          "settingsTarget": "routine_schedule.wake_time",
+          "personalizationTarget": "profile.sleep_pattern.wake_time",
+          "personalizationType": "wake_time",
+          "restricted": true,
+          "disclosedCaptureRequired": true
+        },
+        "preferred_name": {
+          "personalizationTarget": "profile.preferred_name",
+          "personalizationType": "preferred_name",
+          "restricted": true,
+          "disclosedCaptureRequired": true
+        },
+        "language": {
+          "settingsTarget": "locale.language",
+          "personalizationTarget": "profile.language_preference",
+          "personalizationType": "language_preference",
+          "restricted": false,
+          "disclosedCaptureRequired": true
+        },
+        "relationship": {
+          "personalizationTarget": "profile.relationship",
+          "personalizationType": "relationship",
+          "restricted": true,
+          "disclosedCaptureRequired": true
+        },
+        "use_case": {
+          "personalizationTarget": "profile.use_case",
+          "personalizationType": "use_case",
+          "restricted": true,
+          "disclosedCaptureRequired": true
+        },
+        "interaction_preference": {
+          "settingsTarget": "proactive_chat.enabled",
+          "personalizationTarget": "profile.interaction_preference.proactive",
+          "personalizationType": "stable_interaction_preference",
+          "restricted": false,
+          "disclosedCaptureRequired": true
+        },
+        "current_unfinished_task": {
+          "persistentTarget": "none",
+          "defaultLayer": "session",
+          "disclosedCaptureRequired": false
+        },
+        "immediate_blocker": {
+          "persistentTarget": "none",
+          "defaultLayer": "session",
+          "disclosedCaptureRequired": false
+        }
+      }
+    }
+  }
+}

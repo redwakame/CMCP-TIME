@@ -1,0 +1,98 @@
+{
+  "kind": "cmcp-time-publication-preparation-verification",
+  "productVersion": "0.1.0-rc.1",
+  "publicationRevision": "20260920-docs.1",
+  "intendedRepository": "https://github.com/redwakame/CMCP-TIME",
+  "remoteAttempt": {
+    "account": "redwakame",
+    "operation": "create_file CITATION.cff",
+    "responseStatus": 404,
+    "meaning": "Target repository unavailable or not found to the connector; no commit created."
+  },
+  "basis": {
+    "sourceZip": "CMCP-TIME-0.1.0-rc.1-reviewed-source.zip",
+    "sha256": "d67a88e2006fa819cf57c4e3159c2642d093f6a50e9d642ab2bbb7b7a9265a8c",
+    "coreFilesUnchanged": 87,
+    "originalPackagingRecord": "VERIFICATION.json"
+  },
+  "executableChanges": [
+    {
+      "path": "scripts/run-cmcp-runtime-dispatch-smoke.mjs",
+      "kind": "test-only",
+      "reason": "Control fixture clock/timers for deterministic late-result deadline coverage; retain 30ms bound, zero-save/zero-delivery and no-retry assertions."
+    }
+  ],
+  "environment": {
+    "platform": "Linux",
+    "node": "22.16.0",
+    "testUid": 65534,
+    "networkSocketAndConnectDenied": true,
+    "localSocketPairsAllowedForChildProcesses": true,
+    "realCodexAvailable": false
+  },
+  "tests": [
+    {
+      "name": "network-block-probe",
+      "exitCode": 1,
+      "elapsedSeconds": 0.602,
+      "networkDenied": true
+    },
+    {
+      "name": "reading",
+      "exitCode": 0,
+      "elapsedSeconds": 4.647,
+      "passed": 22,
+      "total": 22
+    },
+    {
+      "name": "setup",
+      "exitCode": 0,
+      "elapsedSeconds": 0.72,
+      "passed": 12,
+      "total": 12
+    },
+    {
+      "name": "dispatch",
+      "exitCode": 0,
+      "elapsedSeconds": 15.78,
+      "passed": 28,
+      "total": 28
+    },
+    {
+      "name": "setup-help",
+      "exitCode": 0,
+      "elapsedSeconds": 0.082
+    },
+    {
+      "name": "playground-help",
+      "exitCode": 0,
+      "elapsedSeconds": 0.078
+    }
+  ],
+  "usage": {
+    "productModelRequests": 0,
+    "hostModelJobs": 0,
+    "credentialReads": 0
+  },
+  "notEstablished": [
+    "New live model semantic validation",
+    "Fresh Windows/real Codex execution",
+    "All hosts or operating systems",
+    "Remote GitHub publication",
+    "Universal real-time 30ms scheduling guarantee"
+  ],
+  "details": "docs/verification.md",
+  "remotePublicationAtPreparation": "NOT_COMPLETED",
+  "packagingChecks": {
+    "packageFiles": 165,
+    "relativeImports": 400,
+    "localMarkdownLinks": 114,
+    "missingLocalLinks": 0,
+    "npmOfflineDryRun": {
+      "files": 165,
+      "missing": 0,
+      "extra": 0
+    },
+    "sourceFileCount": 166
+  }
+}

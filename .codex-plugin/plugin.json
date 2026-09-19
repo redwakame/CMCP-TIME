@@ -1,0 +1,24 @@
+{
+  "name": "cmcp",
+  "version": "0.1.0-rc.1",
+  "description": "Skill-first, host-neutral temporal continuity and memory-governance Runtime with guarded source retrieval and a local reference channel.",
+  "license": "Apache-2.0",
+  "skills": "./.agents/skills",
+  "interface": {
+    "displayName": "CMCP-TIME",
+    "shortDescription": "Bounded source context with time and event continuity.",
+    "longDescription": "CMCP keeps authorized source History separate from time, event and continuity interpretation. The project-local context skill and local reference Runtime share guarded source reads; the Host answers from the returned context. Full cross-Host lifecycle integration is not claimed.",
+    "developerName": "redwakame",
+    "category": "Productivity",
+    "capabilities": [
+      "SourceContext",
+      "TemporalContinuity",
+      "GuardedReads"
+    ],
+    "defaultPrompt": [
+      "Retrieve the sources needed to continue our earlier discussion.",
+      "Read the selected discussion with its original roles and times."
+    ],
+    "brandColor": "#2156F3"
+  }
+}

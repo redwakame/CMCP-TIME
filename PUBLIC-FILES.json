@@ -1,0 +1,836 @@
+{
+  "kind": "cmcp-time-public-source-allowlist",
+  "version": "0.1.0-rc.1",
+  "publicationRevision": "20260920-docs.1",
+  "hashAlgorithm": "SHA-256",
+  "selfHash": "Archive SHA-256 covers this index; the index does not hash itself.",
+  "sourceOnlyFiles": [
+    {
+      "path": ".gitignore",
+      "bytes": 212,
+      "sha256": "61138e581f300118834e57bfb4b5c307f897f333edf2e24f811cc4183494e1b6"
+    }
+  ],
+  "files": [
+    {
+      "path": ".agents/skills/cmcp-context/SKILL.md",
+      "bytes": 13971,
+      "sha256": "da3bfe2e3e0d11edd9ecc532ac2bd79a6fd1673a1a4802dc3cb46e36e6969fe0"
+    },
+    {
+      "path": ".agents/skills/cmcp-context/agents/openai.yaml",
+      "bytes": 242,
+      "sha256": "f28e2239fbc5dc77d8e28db3c41cb0b7dfc7c3bad84186a27d43c2d33db3bf55"
+    },
+    {
+      "path": ".agents/skills/cmcp-context/scripts/recall.mjs",
+      "bytes": 390,
+      "sha256": "b5111914d8d19c4512d2ff76d6e37b3a5d060bc7d08f21c42a6975c5faafa9f3"
+    },
+    {
+      "path": ".codex-plugin/plugin.json",
+      "bytes": 1076,
+      "sha256": "837abea1e921431d3e9208879b65a6e3d953952b69f2f1f6a08b0b0dc10f2811"
+    },
+    {
+      "path": "CITATION.cff",
+      "bytes": 658,
+      "sha256": "4629e38292f5f061f0c393911834cff4e0276ea5f7bd46d0f218d31dd9136fe4"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "bytes": 2682,
+      "sha256": "387c1e538c51a11ab57842e6cd163b7cf694718daf8c4b4a346a35a8c9408e66"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "LICENSES/MIT-0.txt",
+      "bytes": 1236,
+      "sha256": "cec0ecebfa455b2d4855ebeff331ca78d131c3662d78d204e86eee3f195fe3fe"
+    },
+    {
+      "path": "LICENSES/upstream-MIT-0-paths.json",
+      "bytes": 17446,
+      "sha256": "29e6105424833e802e7887645ada05a853160d7fe3ec6a5052ee381e7a8762da"
+    },
+    {
+      "path": "NOTICE",
+      "bytes": 1684,
+      "sha256": "948387a18f57fa31548f1a8e038d9f19d08b46ee56baff680bb3e0b538a3c336"
+    },
+    {
+      "path": "PUBLICATION-VERIFICATION.json",
+      "bytes": 2586,
+      "sha256": "a23d79f61f4f76401d7340ea2f98abaaf1226a7a0d6e950cd41db9c977cbc3b3"
+    },
+    {
+      "path": "README.es.md",
+      "bytes": 8403,
+      "sha256": "5d416625c3ed76c623b9e2eb6521f80c1b0e3890a4df42dc106537cebf3d6a8d"
+    },
+    {
+      "path": "README.ja.md",
+      "bytes": 9071,
+      "sha256": "2388bae90b07adb066d567aef971ff3bc827ef43913bb628f3673c884506d203"
+    },
+    {
+      "path": "README.md",
+      "bytes": 8545,
+      "sha256": "3733d557c9b8770c0356c294b8a819e1cad852f6cca02136e95d9731a5e98ca6"
+    },
+    {
+      "path": "README.zh-TW.md",
+      "bytes": 7186,
+      "sha256": "b22f3de15ac6167a1c3b9fc22517f41e4a6b5869796a86ce1157e20316f7f0c0"
+    },
+    {
+      "path": "RELEASE-NOTES.md",
+      "bytes": 2794,
+      "sha256": "898703131ed45880604e6b064930524defe9d84a8428c85654eb728461a864bc"
+    },
+    {
+      "path": "SECURITY.md",
+      "bytes": 1837,
+      "sha256": "0edc92555e9043801aba2c62f85ccfd047403509d9a165968306c6acd566f445"
+    },
+    {
+      "path": "VERIFICATION.json",
+      "bytes": 3169,
+      "sha256": "53496a9b205915bfc3d94e613e2bfe1d926ad698a7ec21ea39c6f1d0d4a3be8f"
+    },
+    {
+      "path": "docs/assets/README.md",
+      "bytes": 955,
+      "sha256": "3f323a2e7cc7ce6ef26c333f37180ca5674ae19968d8ffd3b2acffd74b5c744b"
+    },
+    {
+      "path": "docs/assets/architecture.en.png",
+      "bytes": 132423,
+      "sha256": "e751131eede2d05a365cf05bce1d17309fce4392afac2af6d67ef9702319510c"
+    },
+    {
+      "path": "docs/assets/architecture.en.svg",
+      "bytes": 2936,
+      "sha256": "8cf068374764457685841b41d48ddb7c16fe8de15bd716f323d6d26ecae8519a"
+    },
+    {
+      "path": "docs/assets/architecture.es.png",
+      "bytes": 131531,
+      "sha256": "a769b154290ed855dfcb251257f119cc8a1c343f1325a06d5d006bc2c0800d39"
+    },
+    {
+      "path": "docs/assets/architecture.es.svg",
+      "bytes": 2982,
+      "sha256": "e3cae46332ed1feed8150d6d142d9cfb46c52eb4fe6d67e88613c0d246142895"
+    },
+    {
+      "path": "docs/assets/architecture.ja.png",
+      "bytes": 193544,
+      "sha256": "acf2563e224b2daea124b8e233431719bd3be98c34131a0093878e99cc811137"
+    },
+    {
+      "path": "docs/assets/architecture.ja.svg",
+      "bytes": 3029,
+      "sha256": "fe93b0f772822a2137ba369519c5c0b1585f178f41776f535854ea4186dd5c05"
+    },
+    {
+      "path": "docs/assets/architecture.zh-TW.png",
+      "bytes": 183177,
+      "sha256": "7cca9296092c73a1cad44bfd95190f4726c2072412a9962b243063ebfcc06a63"
+    },
+    {
+      "path": "docs/assets/architecture.zh-TW.svg",
+      "bytes": 2961,
+      "sha256": "3664473af5a763a8b42bbb60962cefd5b19ed8ec7675f28ce7ce5033bfb21c2d"
+    },
+    {
+      "path": "docs/assets/timeline.en.png",
+      "bytes": 131962,
+      "sha256": "8be7e6fd9bd62accdd9b1b9794f014b12c233e9d01e1fc9692d32b9402163e95"
+    },
+    {
+      "path": "docs/assets/timeline.en.svg",
+      "bytes": 2002,
+      "sha256": "55bd79de806abc864e4686baf157721310e070431a0868438d6cbafb31655790"
+    },
+    {
+      "path": "docs/assets/timeline.es.png",
+      "bytes": 129493,
+      "sha256": "79335f0f296578840a4f76d5af23dcc2909e18bb00c3f866c82d12f8fc59704a"
+    },
+    {
+      "path": "docs/assets/timeline.es.svg",
+      "bytes": 2017,
+      "sha256": "257326d4135e1e0c209a718023d8126c70b25425ec31675f643190dffb99f66d"
+    },
+    {
+      "path": "docs/assets/timeline.ja.png",
+      "bytes": 169074,
+      "sha256": "0cb776e818121b3a09981d66ab052199126514f7c2b724dd039f237d208a86e4"
+    },
+    {
+      "path": "docs/assets/timeline.ja.svg",
+      "bytes": 2115,
+      "sha256": "155096d772c38225026df6940ed84915791a7341c5794946a8df83eb7751f0c6"
+    },
+    {
+      "path": "docs/assets/timeline.zh-TW.png",
+      "bytes": 159701,
+      "sha256": "0c3ef7d32e30bfcb9323167abf5e244e8b5ad34b4dc1b89c049223e623a5f3ae"
+    },
+    {
+      "path": "docs/assets/timeline.zh-TW.svg",
+      "bytes": 2077,
+      "sha256": "249e6af9ccd0420706550654318655c2eb4315917394aa2ce6dd663905813186"
+    },
+    {
+      "path": "docs/commands.md",
+      "bytes": 16032,
+      "sha256": "aeb33e5c31ed0b041cbdc6e4824a48c5bfdb84bc30ef887139d49c521cfa076f"
+    },
+    {
+      "path": "docs/configuration.md",
+      "bytes": 11529,
+      "sha256": "becc277982b97a412003d2b0257e53a768a049f235660b55f2bbd25c8cfb719d"
+    },
+    {
+      "path": "docs/design.md",
+      "bytes": 3100,
+      "sha256": "887e22251362ae926cf329741a4609e0fa9573c071bd0ac6416bf147e18ebbed"
+    },
+    {
+      "path": "docs/installation-and-hosts.md",
+      "bytes": 6860,
+      "sha256": "e4084cd41b5b9bd625b82180b036efc46c4ad10fbc2478f65bf51c3c0f51d7ff"
+    },
+    {
+      "path": "docs/license-provenance-v0.1.md",
+      "bytes": 2149,
+      "sha256": "881ca890256d4a1a83934e8d56db96f0eb0253e096d79b6dae15e67e610f37a6"
+    },
+    {
+      "path": "docs/operations.zh-TW.md",
+      "bytes": 12166,
+      "sha256": "7aae03fccd0c00b6f89785a427a445d07c0c5b58121dac070dda467f0625da03"
+    },
+    {
+      "path": "docs/privacy.md",
+      "bytes": 2758,
+      "sha256": "3c07e2c2c0ded0db2dcf40c87b4de100d01ae2c22466d8c486be208a247b4bf3"
+    },
+    {
+      "path": "docs/quick-start.md",
+      "bytes": 5740,
+      "sha256": "2f4c7e98005449eda4305844b9400d8f0e3958b2098e5101d2a1f7c7c39a12e7"
+    },
+    {
+      "path": "docs/read-operations-v0.1.md",
+      "bytes": 8222,
+      "sha256": "4eac22a6ee82d48d3d15978a000b3bbf54fb847e0a21d2c89d34fad4f6e4a5dd"
+    },
+    {
+      "path": "docs/roadmap.md",
+      "bytes": 1583,
+      "sha256": "8b7e7ba85331a25e4411bb6a6db12fa9954df93f653a75720a5a49184389e1c8"
+    },
+    {
+      "path": "docs/verification.md",
+      "bytes": 4892,
+      "sha256": "03d5be5f5cb541e300dbcf1975cff8cd55d81c30038fca9ceec1572ee7f44b90"
+    },
+    {
+      "path": "examples/reading-limits.json",
+      "bytes": 123,
+      "sha256": "ba62bd04f2f4460dec01e4f3124acfacef1dce4800ad6bfd41a598b0d2174dd0"
+    },
+    {
+      "path": "examples/runtime-session-config.json",
+      "bytes": 1610,
+      "sha256": "28e483d4ae00ec35df9e4407d4e80044b9afb9056304b0b17d1b64d61cb68e43"
+    },
+    {
+      "path": "examples/setup-host.json",
+      "bytes": 871,
+      "sha256": "8304e40e413b27608dac34bfca1fdfb37ee16399b9fc32d72251903f8e2c0577"
+    },
+    {
+      "path": "package.json",
+      "bytes": 8330,
+      "sha256": "179a8933abdde6cf1ac625536baa4722438a6de859288286eea57cb139d86dd4"
+    },
+    {
+      "path": "scripts/check-cmcp-bundle.mjs",
+      "bytes": 2868,
+      "sha256": "e42bce7f3e052a68aa36cda732cdbdc2f2617fb4bbe911c384727cfe956d7634"
+    },
+    {
+      "path": "scripts/cmcp-codex-hook.mjs",
+      "bytes": 2601,
+      "sha256": "849325173253ed78e59def05deeb8be0de41ed3957e9252862f1e8add4fb8b91"
+    },
+    {
+      "path": "scripts/cmcp-codex-host-permissions.mjs",
+      "bytes": 345,
+      "sha256": "e0b1fe8ce374b9fde4be29ab54c985d8ef054eeca5e76baa58076b2792c6b0d4"
+    },
+    {
+      "path": "scripts/cmcp-host-context-cli.mjs",
+      "bytes": 15267,
+      "sha256": "049c28f7bc451285087fd4cbf6f400cb810c7d6298827601dec4bfd68f5bc5c5"
+    },
+    {
+      "path": "scripts/cmcp-host-operation.mjs",
+      "bytes": 8627,
+      "sha256": "d9a6af26d6ec1c6cbdbc0088e0d0002236389992742f98a69f39e8f16057dfd6"
+    },
+    {
+      "path": "scripts/cmcp-local-input-cli.mjs",
+      "bytes": 18756,
+      "sha256": "ce2e79a790d7cf0e7cf4b77c2f5d4f8a125e45ed6b8bb335547963c1fcddeabc"
+    },
+    {
+      "path": "scripts/cmcp-native-host-process.mjs",
+      "bytes": 13018,
+      "sha256": "b0287fcfa93cd33557431bb7fc74bbba3644047afe67d307c0b9439abbb7daef"
+    },
+    {
+      "path": "scripts/cmcp-playground.mjs",
+      "bytes": 14540,
+      "sha256": "f9cf3727a39174b91afb03c4bc0c2b1e20a54cdd43bff3b08a45cddfae313cbd"
+    },
+    {
+      "path": "scripts/cmcp-protected-credential.ps1",
+      "bytes": 5433,
+      "sha256": "a767b1ea0e223689b3c6e9a7217b6363f0f663046843a157725e0fa7637a247e"
+    },
+    {
+      "path": "scripts/cmcp-query-resume-command.mjs",
+      "bytes": 597,
+      "sha256": "6ea512b0d35afd1354255a0a293592560217fb23832d9a0b4e0fc2367349f144"
+    },
+    {
+      "path": "scripts/cmcp-review-wire-fixture.mjs",
+      "bytes": 3328,
+      "sha256": "28452f77e56b3fb441e9986a5d208d16e121021e040d18b048e9ad05ede240ee"
+    },
+    {
+      "path": "scripts/cmcp-setup.mjs",
+      "bytes": 6687,
+      "sha256": "41236b4022423b3b4ed41887a7ee3766a82348b962f8d570cfe1469234d4a0a6"
+    },
+    {
+      "path": "scripts/run-cmcp-reading-smoke.mjs",
+      "bytes": 52514,
+      "sha256": "72dd2200c6047def80665b7ca1609c1081d846fe92615f1a233374ef32689ba3"
+    },
+    {
+      "path": "scripts/run-cmcp-runtime-dispatch-smoke.mjs",
+      "bytes": 33811,
+      "sha256": "787c4eb4009b7c4d28575e8b2d48763b935de10ba89828141ae5b82e2fee72af"
+    },
+    {
+      "path": "scripts/run-cmcp-setup-smoke.mjs",
+      "bytes": 15440,
+      "sha256": "36da20e6d70dd0c71fe7fae8cc9fd5ba04f15973215ab6a3693629a136c8f5a8"
+    },
+    {
+      "path": "skills/cmcp-core/SKILL.md",
+      "bytes": 4423,
+      "sha256": "adc7ddc889b7490aa3d977a775e7b39b5612abe8291b72a0befa7fbcbdf95ce7"
+    },
+    {
+      "path": "skills/cmcp-core/_meta.json",
+      "bytes": 716,
+      "sha256": "050ecdb831570f8075be48d5d8f806ac3d11a9e919ae94d06674949d549682a8"
+    },
+    {
+      "path": "skills/cmcp-core/contract/cmcp-contract-v1.yaml",
+      "bytes": 27668,
+      "sha256": "2c9778e8fd55c3be084f1906da88cd445aaa10e2e44a8b4132cb8d69b3684573"
+    },
+    {
+      "path": "skills/cmcp-core/contract/cmcp-host-integration-v1.yaml",
+      "bytes": 9345,
+      "sha256": "d0569f411b7cf67c8f28434447737257e93dbd272d9034ffb90540d62c331e65"
+    },
+    {
+      "path": "skills/cmcp-core/contract/cmcp-runtime-policy.json",
+      "bytes": 18536,
+      "sha256": "8a18a05213f1baf6c5d93b9658299b14589d1dd08725527c5270bb86953cc826"
+    },
+    {
+      "path": "skills/cmcp-core/contract/cmcp-surface-map.yaml",
+      "bytes": 13594,
+      "sha256": "16b9dcf73f7bb15261a3bda710c81e72bf63b1bc993967ac1158ac81af2342ca"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-continuity-context.schema.json",
+      "bytes": 3513,
+      "sha256": "2433e643cdd6db144fd9ef370055c13948707e8c99aec10eef2cf0d0c46b9afa"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-correction-action.schema.json",
+      "bytes": 2112,
+      "sha256": "73e3aa4053a4954d1b901aa4baeeadcb0fc23f8b6e7714ae052a92c9e0a3fa33"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-memory-record.schema.json",
+      "bytes": 5516,
+      "sha256": "d027b300f57f3595b3c82ab5d3d5c7f19c91f515e8f0da425e2aa5145266d499"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-persistence-result.schema.json",
+      "bytes": 1784,
+      "sha256": "dd6c1b1ba572020add67ae889b7b82066377c2c7b714cc9641fdca769899a2c9"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-storage-adapter-descriptor.schema.json",
+      "bytes": 1356,
+      "sha256": "7557c0904df34a18490cc9c506cf2907673da82688b88aa3ee7c19b727a86f38"
+    },
+    {
+      "path": "skills/cmcp-core/schemas/cmcp-write-decision.schema.json",
+      "bytes": 2797,
+      "sha256": "f197b1511bb0f4a081bc10ac160d9d5f0ffd12527a230a8821771b2fee8cee58"
+    },
+    {
+      "path": "src/cmcp-guard/apply-cmcp-correction-action.js",
+      "bytes": 7474,
+      "sha256": "34a8222c77c5d4d78fc056d707d99e955fc7b75128fcda3103668fcdbfdf8e08"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-answer-history.js",
+      "bytes": 41436,
+      "sha256": "be1aed94d7472a126d3757a3b65e1de66da92319e20b7a09d90b5ff2eca55a9d"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-answer-material-need.js",
+      "bytes": 2310,
+      "sha256": "d67eada6afbe00edfaa38972ecb9bb631385e33b8438202265c931ea71aabf79"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-assistant-timing.js",
+      "bytes": 1110,
+      "sha256": "3777a6f2f3a4b18b54801330c1076c498f9fade4d580a3c4c5570b9d3cfb2565"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-auto-discussion.js",
+      "bytes": 10575,
+      "sha256": "b131d07b2514e6cd2ceb9bbfe49e9241eead56715d60c8f208ff25a2cda3913e"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-bounded-provider-adapter.js",
+      "bytes": 14470,
+      "sha256": "ef3bc6ca432bbc5d5504cc945b3959f9e02da150ef6c623b795532740be76ea4"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-buffer-lifecycle.js",
+      "bytes": 4872,
+      "sha256": "01b7b3586a72c97aebacc307859234d52df3ab3f06a0af3c4eb2ce51eaa26634"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-buffer-retention.js",
+      "bytes": 802,
+      "sha256": "45afe5a6fdb555840c69183cb08e2ee59ddc7bee0faccef84c381cef99864851"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-codex-hooks.js",
+      "bytes": 4477,
+      "sha256": "2b38389972e04307f3dcfbcb578f188b361394e9f20bb6c61b309926cedc1b61"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-content-safety.js",
+      "bytes": 8465,
+      "sha256": "b54efa06914652249e5eb77d7e7ecce513cd4d29cacb594e13a49ff7ffe6f8fb"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-deepseek-configured-adapter.js",
+      "bytes": 4406,
+      "sha256": "810993cb21c3c83d8d5a9e15cd4acbfd3789ffd6bfcd982c600655d04e3d8a62"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-dialogue-control-intent.js",
+      "bytes": 19163,
+      "sha256": "b15a3810b28d5a4cec63c75750daec716fbcb461d4e7e6cb0e0f5309be6f74ab"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-dialogue-recovery-protocol.js",
+      "bytes": 2710,
+      "sha256": "487bbf42316415cfcb6390d5a684ba5548d4a4a4abc6cd8200c050a6918b68a7"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-dialogue-source-binding.js",
+      "bytes": 3806,
+      "sha256": "9a6f3000f9614ec0a507a593ad307063c5ad755cc1e8463b8f677133ec9d29bd"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-discussion-association-protocol.js",
+      "bytes": 3893,
+      "sha256": "17dde20cf5e57c641986aa7dc4d0b19b3e11a113a3e6f16578e10d671fdc2ad2"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-discussion-segments.js",
+      "bytes": 13910,
+      "sha256": "84935a7489997b116ff7d150240387613fdacf365f452a9ee7b3b3d276d3e910"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-dispatch-arbitration.js",
+      "bytes": 14074,
+      "sha256": "6245b3f7ec9a11d0ecd06ce0ed04c620adfb6691f43c01adf7ed81ca1469c38c"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-event-content-review.js",
+      "bytes": 11859,
+      "sha256": "d8cf8f642a6372d885ce47829d9aadaa644cf209a3c0dc02adba5e3b9f982d25"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-event-lineage-store.js",
+      "bytes": 9676,
+      "sha256": "b057349966dab69b8c5f9bcf87a6cafb2474574b5cdca02f97a6944ff12e9e9c"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-event-lineage.js",
+      "bytes": 11118,
+      "sha256": "f35bbe91f33a546a2af9db00bf28a665c5feafbb462fa901467f37c72f224b84"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-event-working-set.js",
+      "bytes": 14376,
+      "sha256": "1aeb9eaf9b0430bfaadb2795c347db59df44bad22eceae4466ad0e36fa529536"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-feature-controls.js",
+      "bytes": 8659,
+      "sha256": "671362ef8b8cce227f92d7c863fc0e5e9e957e3f94a95e93118452917c5233f9"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-file-history-backend.js",
+      "bytes": 3334,
+      "sha256": "6c925ac473f9abb263bc244bb09258b7aeb2aeabe8e3f887440da4497f750c6a"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-file-storage-adapter.js",
+      "bytes": 4023,
+      "sha256": "8a3c572db3d2ea8532b846f6861767e01d970ab7803250a9b3833e77db2f9962"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-file-store.js",
+      "bytes": 5100,
+      "sha256": "b1fc2c014a4907ea5a293daa43881d3734d865eabfaea233efb1edf719db5758"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-groq-configured-adapter.js",
+      "bytes": 1030,
+      "sha256": "6188061814c948de5ab677a42fa45eeed344a623a477fde9604a5a0f3d100ccc"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-history-aggregation.js",
+      "bytes": 16146,
+      "sha256": "9b63565ebf54fa91a554b35c8f8f1c896f080ec97e7c634d2e0de8b62aabeed6"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-history-provider.js",
+      "bytes": 3759,
+      "sha256": "758e522a321c4f439762e3baa5477c395ff6fa5fa378b2611ad1d3f9b4ad4f9a"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-history-query-runtime.js",
+      "bytes": 19081,
+      "sha256": "617ca4a9da01f7401e744f6a311f260da9a8486400ba44a027c7cb0414a42ea7"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-history-query.js",
+      "bytes": 5513,
+      "sha256": "6edad5130c2c9c6a4ee1f2ce603bbe92d6439be13b0455849a11278974b9e9e0"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-history-reactivation.js",
+      "bytes": 36383,
+      "sha256": "e29fbfa992d28e7c5aea71b6b40cb2fd5434aeeba5f8a07401db42edbdaf0449"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-host-context.js",
+      "bytes": 657,
+      "sha256": "54c28098ae14d6ab8634c44b56af2a6a3d41fda5b196b4f9ec2faafda22fbb1d"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-interaction-time.js",
+      "bytes": 6251,
+      "sha256": "1fe3a4ad0ba9a8ff9288b059e55150858b5915bb45594eaa9b3867c04c9e8e49"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-json-framing.js",
+      "bytes": 1277,
+      "sha256": "46019763bb3527f6ed84a861dcdb126997304f2d7cf20ea0f63a3e76a6d7e70a"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-local-candidates.js",
+      "bytes": 30157,
+      "sha256": "4959a86d8a429cdb8be3420f247965b50d4fb0cb6475824c8f81bdc60e1836bc"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-local-continuity-loop.js",
+      "bytes": 80555,
+      "sha256": "c3229ccb0404240d78763bb80d81e2c2992fbb9656da07b8f3d877bbfe9d8993"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-local-history-provider.js",
+      "bytes": 8442,
+      "sha256": "c90a325560cc3865e8237b9cfe6886bc1ed30cb3d7d30f75398fdb80c7f0c978"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-local-input.js",
+      "bytes": 110337,
+      "sha256": "81f826baa654d043d1cb31cfb64c60692afe36e1e1e59fac5ca5a531b5cceb22"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-local-loop-journal.js",
+      "bytes": 5427,
+      "sha256": "4fbce2d32480165fc381cd596ad863a96005ac9a9d0774417ff716cc11b02caf"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-local-loop-protocol.js",
+      "bytes": 47611,
+      "sha256": "85302fe952256dd9c174639fa2dad9f8a8447315928b7aa5e480243615ddcfc1"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-local-loop-scope.js",
+      "bytes": 1199,
+      "sha256": "c87c1cb15f747f5754591b412d1021c46fa1ba9bd6380b973ea25e9bf0259785"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-local-loop-status.js",
+      "bytes": 4147,
+      "sha256": "86888425cc9566f80535f1694fc8b885ebdd60efdd3b672df3b1c0da8a2ac813"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-memory-history-provider.js",
+      "bytes": 2511,
+      "sha256": "850d5ef2657f25898415e0539bc63ded96a311d1e6a33c025f580bcb4fe37c6d"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-model-job-budget.js",
+      "bytes": 10677,
+      "sha256": "248f7982de6b5d61c9e4ef2255045f7f7e41e8715163ea93d50ccb536b554cd5"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-natural-temporal-reading.js",
+      "bytes": 22264,
+      "sha256": "0c0e15b9503d9f44155237be0a5e485dcf44c7fb1b881b1a0ed1bf3d59bd7ea6"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-pin-lifecycle.js",
+      "bytes": 6430,
+      "sha256": "5a3895c4aec7880b53d54497dfdb827f96b91c7ff4c796ef6606506856ec3f64"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-playground.js",
+      "bytes": 11160,
+      "sha256": "2231cee5900bf87218a9758e9dcc1d203eedac5d49532c677cfa6bcb8b24d822"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-proactive-history.js",
+      "bytes": 10926,
+      "sha256": "22bed391b9a7f404a2fd76b3652d6fd90498d1997fa8bafe9be2d362da2caa23"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-project-paths.js",
+      "bytes": 1047,
+      "sha256": "6f53534f61062daf8afe68513e5fc4094e496a1bdfc2e5e3fb2933a10d5b82a4"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-protected-credential.js",
+      "bytes": 1991,
+      "sha256": "33988bf3f3645869e3b1b211113116818af82f1dcd048e667224c437c6add814"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-provider-policy.js",
+      "bytes": 654,
+      "sha256": "dad6e10ecba2aeda0604a91b843dc54dddfc05bc6082cca4c5e10764518f65c7"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-reading-progress-locators.js",
+      "bytes": 15022,
+      "sha256": "1421d3560e775dfe93935dc73574fc9c301115f0398effe8d496eee75500d8e6"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-reading-query-authorization.js",
+      "bytes": 2772,
+      "sha256": "4fcdfd68ca52a229eb78b0a6a30e85d006685a61ac524a35598ce878b488fc2a"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-reading.js",
+      "bytes": 35159,
+      "sha256": "77937f9b56f7f2f11fd38ffdfaa66e1d1bfce8d56a582075264049c5ad6202c3"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-responses-transport.js",
+      "bytes": 37763,
+      "sha256": "fe76de566c65f10947641da4e0bedccc81d0a1161c584e196906ab2de1f55c1c"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-runtime-dispatch.js",
+      "bytes": 24786,
+      "sha256": "529f00118d68b0123b918c8afb0a40174a6160b2a6cd678dc28414ad36c9dd2a"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-runtime-session.js",
+      "bytes": 90367,
+      "sha256": "d1bc085eb2edeeb562483f9d45ac73a681c71bd803de5ff24abb0d0a22973b40"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-runtime-work.js",
+      "bytes": 4814,
+      "sha256": "553f301b2a38c9fc69830e33de6f94cc816211d3710aa7ebd774c1459e40aa45"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-semantic-definitions.js",
+      "bytes": 1167,
+      "sha256": "7e4b817703c356670c9df56a24c52695dd95e261652fad4db2b96916d662abff"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-semantic-intake.js",
+      "bytes": 19661,
+      "sha256": "d834a98fbb769a243df9c055706013e312dac424263d94c37b2cde36624b673c"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-semantic-provider-bridge.js",
+      "bytes": 6126,
+      "sha256": "b07b5188a8fd66d17f5b384d863bfce773c504ccbe90ea103054d17ab3ae8e6e"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-semantic-wire.js",
+      "bytes": 8987,
+      "sha256": "67fc0706f707d66861c5ef502be71385461f34b0600396b56d7e4727266b8c60"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-settings-policy.js",
+      "bytes": 4295,
+      "sha256": "7adc5f3f5663d34a0faf02d46932d8d1b57995a506f9559a26d32b7b513dbdb0"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-setup.js",
+      "bytes": 14771,
+      "sha256": "cd9992df2fb7a177a250e985d2bbbe7b3e2843aac7e9e481c4af173ef127bf63"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-source-citations.js",
+      "bytes": 3939,
+      "sha256": "56199f010f5e348f225ed9c15acb4cab66c4c32ca455561a5377ef90fde1a301"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-source-evidence.js",
+      "bytes": 2488,
+      "sha256": "b9bd9424981e455c9b9196d660d7bdfca3998a4dcee18754648b586e476d3c07"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-source-index-segments.js",
+      "bytes": 4098,
+      "sha256": "3d422b3e30353dd58737c3b39de054482ef5311ee18b643dbc55f91bce526819"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-source-pointer.js",
+      "bytes": 1549,
+      "sha256": "ebe01992c86c8ed38acfdcc7619ca5f7558fc70937c68da2e0850f7bd7795ba7"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-storage-adapter.js",
+      "bytes": 3521,
+      "sha256": "f033686db55af94e889495dbdac0be49022898032c47000b8dd19671b873f3b9"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-temporal-encoding-trial.js",
+      "bytes": 3546,
+      "sha256": "776a9b2584b418c7faa6775922426ef5b628d3256b8944e70641963604f28a10"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-temporal-observation.js",
+      "bytes": 15661,
+      "sha256": "e7cae81bd2836eee618d28d5fcb983ece2d3b4f40903fb161787dcf02f7d399b"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-turn-intent.js",
+      "bytes": 6750,
+      "sha256": "c820d420ce1989a625af81a4e1d552eea1e49a2166204f8a284c09d91d2d42fd"
+    },
+    {
+      "path": "src/cmcp-guard/cmcp-write-decision-binding.js",
+      "bytes": 575,
+      "sha256": "2e0f9256f3f22046f08410ae7798e083224a68842e5e6d6ed932ee229a4d5041"
+    },
+    {
+      "path": "src/cmcp-guard/detect-cmcp-forbidden-text.js",
+      "bytes": 2599,
+      "sha256": "14360276b22424e1a415beb8ede9e05d2e2ce9937f8e6bfb0b59a6b52c0bed54"
+    },
+    {
+      "path": "src/cmcp-guard/evaluate-cmcp-write-candidate.js",
+      "bytes": 15008,
+      "sha256": "0b7074b2a66ae363594b0ebdf90c0e5e8ef37ff11319d5f2c41059e96ad9f354"
+    },
+    {
+      "path": "src/cmcp-guard/execute-cmcp-write-command.js",
+      "bytes": 3130,
+      "sha256": "ff85a47fc25e46265a6fdd8e00a0dea940c46ccaed5f9c3d068bc811393fa1d5"
+    },
+    {
+      "path": "src/cmcp-guard/get-cmcp-runtime-policy.js",
+      "bytes": 1361,
+      "sha256": "ff1d73ec49ac4e8877a5d5acb591a799e645493ad73d0e589346944e3725f1f4"
+    },
+    {
+      "path": "src/cmcp-guard/persist-cmcp-write.js",
+      "bytes": 30075,
+      "sha256": "57a8ca8d705eabbab192fcb5eb17db3f6412de5e32dfea71bc1a30dec6f99082"
+    },
+    {
+      "path": "src/cmcp-guard/project-cmcp-compact-continuity.js",
+      "bytes": 9149,
+      "sha256": "aec58ae05b96a80d3732c7977e3c423aa157348ff40be444c336280d473fb138"
+    },
+    {
+      "path": "src/cmcp-guard/project-cmcp-event-view.js",
+      "bytes": 4472,
+      "sha256": "b4da4d2d1465bce5bfd05a37071abfb21cc45b6b20b06446ca40c57c0f90e4ed"
+    },
+    {
+      "path": "src/cmcp-guard/project-cmcp-local-time.js",
+      "bytes": 2290,
+      "sha256": "3e87ef59f719be18bc95dea70e1983ad8195a4b13e0f5eb1a72d5fd1713dd6aa"
+    },
+    {
+      "path": "src/cmcp-guard/project-cmcp-temporal-evidence.js",
+      "bytes": 5127,
+      "sha256": "4014d7d9f0e2116fbcf4ec4029e556eed6bef2ce8a176b9cbfa4dac3f794572c"
+    },
+    {
+      "path": "src/cmcp-guard/resolve-cmcp-temporal-evidence.js",
+      "bytes": 2642,
+      "sha256": "f35ecf4c74b7918d94032e407221777dcc27c0d354b9668249d2f4cbb34bb531"
+    },
+    {
+      "path": "src/cmcp-guard/resolve-cmcp-time-context.js",
+      "bytes": 3307,
+      "sha256": "4824061c04de78f3f0a0c0a12d2b0ed05ec408dcf100eef44f1b9441684f316f"
+    },
+    {
+      "path": "src/cmcp-guard/select-cmcp-new-anchor.js",
+      "bytes": 8711,
+      "sha256": "a3624e87db9dbd908676ef87b8cf28b394b01af57ac56dd74148f00bcd5dc4d8"
+    },
+    {
+      "path": "src/cmcp-guard/validate-cmcp-record.js",
+      "bytes": 4694,
+      "sha256": "49591cc32727d4b4a98c9db8e860703b2730f95810ae178d174cc56fd838844a"
+    },
+    {
+      "path": "src/cmcp-guard/validate-cmcp-runtime-shapes.js",
+      "bytes": 6916,
+      "sha256": "6f0141e02a5a56bb562c4c3c8710b1eb4248b1683efa655360f04c09ca3e9c80"
+    }
+  ]
+}

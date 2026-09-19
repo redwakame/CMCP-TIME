@@ -1,0 +1,22 @@
+{
+  "name": "cmcp-core",
+  "version": "0.1.0",
+  "description": "Host-neutral CMCP guarded write and continuity policy contract.",
+  "cmcp": {
+    "skill_type": "policy",
+    "contract_files": [
+      "contract/cmcp-contract-v1.yaml",
+      "contract/cmcp-runtime-policy.json",
+      "contract/cmcp-surface-map.yaml",
+      "contract/cmcp-host-integration-v1.yaml"
+    ],
+    "schemas": [
+      "schemas/cmcp-memory-record.schema.json",
+      "schemas/cmcp-continuity-context.schema.json",
+      "schemas/cmcp-correction-action.schema.json",
+      "schemas/cmcp-write-decision.schema.json",
+      "schemas/cmcp-storage-adapter-descriptor.schema.json",
+      "schemas/cmcp-persistence-result.schema.json"
+    ]
+  }
+}

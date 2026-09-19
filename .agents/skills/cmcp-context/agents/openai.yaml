@@ -1,0 +1,4 @@
+interface:
+  display_name: "CMCP Context"
+  short_description: "Retrieve bounded historical sources and time for this project"
+  default_prompt: "Use $cmcp-context to recall relevant sources for my question with the authorized local config."

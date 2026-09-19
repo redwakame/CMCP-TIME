@@ -1,0 +1,7 @@
+{
+  "maxSources": 64,
+  "maxTotalBytes": 65536,
+  "maxPageBytes": 1400,
+  "maxPages": 80,
+  "maxProjectionBytes": 16384
+}

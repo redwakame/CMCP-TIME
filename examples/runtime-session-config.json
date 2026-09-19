@@ -1,0 +1,73 @@
+{
+  "kind": "cmcp_runtime_config",
+  "version": 1,
+  "runtimeId": "synthetic-runtime-example",
+  "input": {
+    "root": "local-data\\runtime-example\\state",
+    "scopeId": "synthetic-runtime-example",
+    "events": [],
+    "limits": {
+      "maxEntries": 12,
+      "maxCatalogBytes": 7000,
+      "maxSources": 2,
+      "maxSourceBytes": 4096,
+      "maxProjectionBytes": 8500
+    },
+    "storageCapacity": {
+      "maxSources": 256,
+      "maxSourceBytes": 65536
+    },
+    "timezone": "Etc/UTC",
+    "loopTiming": {
+      "ttlMs": 600000,
+      "inactivityMs": 60000,
+      "activityWindowMs": 600000
+    }
+  },
+  "sourceCatalog": {
+    "maxSegments": 64
+  },
+  "localRetrieval": {
+    "maxStoredSources": 256,
+    "maxCandidates": 4,
+    "maxCandidateBytes": 6000,
+    "maxExcerptCodePoints": 420,
+    "maxQueryBytes": 4096,
+    "maxIndexSourceBytes": 65536,
+    "maxIndexTokens": 131072,
+    "maxReadSources": 2,
+    "maxReadBytes": 4096,
+    "maxProjectionBytes": 8500
+  },
+  "recallLimits": {
+    "maxEntries": 12,
+    "maxCatalogBytes": 10000,
+    "maxSources": 2,
+    "maxSourceBytes": 4096,
+    "maxProjectionBytes": 8500
+  },
+  "receiptRoot": "local-data\\runtime-example\\receipts",
+  "sourceAuthorization": {
+    "saveUser": true,
+    "saveAssistant": true
+  },
+  "responsePreferences": {
+    "language": "en"
+  },
+  "controls": {
+    "enabled": true,
+    "clean": false,
+    "proactive": false
+  },
+  "deepseekStream": false,
+  "bufferRetention": {
+    "hours": 12
+  },
+  "discussionAssociation": {
+    "enabled": true
+  },
+  "answerHistory": {
+    "enabled": true
+  },
+  "providerMode": "host"
+}

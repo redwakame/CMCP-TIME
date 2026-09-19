@@ -1,0 +1,28 @@
+{
+  "timezone": "Europe/Berlin",
+  "language": "en",
+  "scopeId": "synthetic-setup-example",
+  "owner": {"id": "self", "label": "Synthetic example owner"},
+  "people": [],
+  "saveUser": true,
+  "saveAssistant": true,
+  "enabled": true,
+  "clean": false,
+  "proactive": false,
+  "attachCodex": true,
+  "providerMode": "host",
+  "allowPaidCalls": false,
+  "bufferHours": 12,
+  "events": [],
+  "featureControls": {
+    "buffer": true,
+    "timeIndex": true,
+    "historyRecall": true,
+    "answerHistory": true,
+    "discussionAssociation": true,
+    "pins": true,
+    "doNotDisturb": {"enabled": false, "timezone": null, "windows": []},
+    "readingLimits": {"maxSources": 64, "maxReadBytes": 65536, "maxProjectionBytes": 16384, "pageBytes": 1400}
+  },
+  "authorizedBy": "Explicit synthetic example installation; replace with your own choices before using personal data"
+}

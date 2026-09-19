@@ -1,0 +1,829 @@
+version: 1
+updated_at: "2026-04-23T00:00:00+08:00"
+product:
+  display_name: Continuity Memory Contract Plus (CMCP)
+  slug: cmcp
+  goal: >-
+    Define one policy baseline for continuity memory so skill behavior, UI,
+    addons, product copy, installer flows, and V2 runtime all map to the same
+    rules.
+  product_line:
+    core: CMCP Core
+    guard: CMCP Guard
+    setup: CMCP Setup
+    policy: CMCP Policy
+    host_runtime_actions: Host Runtime Actions
+    product_page: Product Page
+    migration_consumer: V2 Runtime
+
+canonical_truth:
+  owner_surface: cmcp_core
+  files:
+    - SKILL.md
+    - contract/cmcp-contract-v1.yaml
+    - contract/cmcp-runtime-policy.json
+    - contract/cmcp-surface-map.yaml
+    - contract/cmcp-host-integration-v1.yaml
+    - schemas/cmcp-memory-record.schema.json
+    - schemas/cmcp-continuity-context.schema.json
+    - schemas/cmcp-correction-action.schema.json
+    - schemas/cmcp-write-decision.schema.json
+    - schemas/cmcp-storage-adapter-descriptor.schema.json
+    - schemas/cmcp-persistence-result.schema.json
+  notes:
+    - CMCP Core is the canonical owner surface.
+    - CMCP Guard enforces policy but does not redefine it.
+    - Host storage integration must implement the CMCP adapter boundary rather than binding policy logic to backend details.
+    - UI copy is explanatory, not canonical.
+    - Product page copy is explanatory, not canonical.
+    - Installer prompts collect values but do not define policy.
+    - Legacy V2 runtime behavior is evidence, not truth.
+
+principles:
+  - code: memory_supports_continuity
+    rule: Memory exists to support continuity, not to archive every chat turn.
+  - code: settings_are_not_memory
+    rule: Settings and memory may share fields but remain separate writes.
+  - code: structured_state_beats_summary
+    rule: Structured state beats daily summaries when both exist.
+  - code: latest_user_correction_wins
+    rule: The latest explicit user correction outranks older memory and assistant inference.
+  - code: provenance_required
+    rule: Persistent memory must carry source provenance and user ownership.
+  - code: forbidden_is_never_persistent
+    rule: Forbidden data is never written to persistent memory layers.
+
+write_authorization:
+  default_user_mode: content_read_only_no_write
+  session_behavior:
+    - ordinary_user_content_may_be_read_and_held_in_ephemeral_session_context
+    - session_context_does_not_grant_persistent_write_permission
+  persistent_write_default: denied
+  fallback_rule:
+    - if_the_runtime_cannot_identify_an_authorized_write_invocation_area_it_must_fall_back_to_session_only
+  authorized_invocation_areas:
+    staged:
+      - explicit_memory_save_action
+      - explicit_followup_action
+      - cmcp_policy_manual_write
+    tracked:
+      - explicit_followup_action
+      - cmcp_policy_manual_write
+    long_term_personalization:
+      - installer_disclosed_profile_capture
+      - onboarding_disclosed_profile_capture
+      - cmcp_policy_manual_write
+    user_correction:
+      - explicit_memory_correction_action
+      - cmcp_policy_manual_edit
+  restricted_long_term_policy:
+    default: denied
+    allowed_if_all:
+      - persistent_write_is_authorized
+      - invocation_area_is_authorized
+      - user_ownership_is_explicit
+      - surface_disclosed_memory_effect
+  invocation_area_rules:
+    - only_surface_owned_invocation_areas_may_request_persistent_writes
+    - all_non_settings_memory_writes_must_route_through_cmcp_guard
+    - invocation_area_ownership_is_defined_in_cmcp_surface_map
+  notes:
+    - ordinary_chat_must_not_create_persistent_memory_by_default
+    - permission_should_fail_closed_not_open
+
+decision_order:
+  steps:
+    - explicit_user_correction
+    - forbidden_persistence_filter
+    - settings_only_routing
+    - staged_eligibility
+    - tracked_promotion
+    - long_term_personalization
+    - session_only_no_persistent_write
+  invariants:
+    - one_decision_pass_must_not_write_the_same_fact_into_multiple_primary_persistent_layers
+    - daily_memory_is_allowed_only_as_derived_writeback
+    - tracked_promotion_beats_continued_staged_state_for_the_same_focus
+
+settings_boundary:
+  settings_only:
+    - heartbeat.interval
+    - retry.interval
+    - quiet_hours.start
+    - quiet_hours.end
+    - dispatch.policy
+    - max_unanswered_before_park
+  dual_surface_fields:
+    timezone:
+      settings_target: routine_schedule.timezone
+      personalization_target: profile.timezone
+      new_anchor_allowed: false
+    sleep_time:
+      settings_target: routine_schedule.sleep_time
+      personalization_target: profile.sleep_pattern.sleep_time
+      new_anchor_allowed: false
+    wake_time:
+      settings_target: routine_schedule.wake_time
+      personalization_target: profile.sleep_pattern.wake_time
+      new_anchor_allowed: false
+    language:
+      settings_target: locale.language
+      personalization_target: profile.language_preference
+      new_anchor_allowed: false
+    proactive_preference:
+      settings_target: proactive_chat.enabled
+      personalization_target: profile.interaction_preference.proactive
+      new_anchor_allowed: false
+  profile_only_fields:
+    preferred_name:
+      personalization_target: profile.preferred_name
+      new_anchor_allowed: false
+    form_of_address:
+      personalization_target: profile.form_of_address
+      new_anchor_allowed: false
+    relationship:
+      personalization_target: profile.relationship
+      new_anchor_allowed: false
+    use_case:
+      personalization_target: profile.use_case
+      new_anchor_allowed: false
+  setup_input_aliases:
+    language: language_preference
+    interaction_preference: proactive_preference
+  never_promote_to_tracked:
+    - guided_settings
+    - operator_feedback
+    - installer_answers_as_settings_only
+
+status_model:
+  active:
+    meaning: Eligible to affect continuity and `/new` selection.
+  resolved:
+    meaning: Completed and no longer eligible for active follow-up.
+  cancelled:
+    meaning: Intentionally stopped or suppressed from active follow-up.
+  superseded:
+    meaning: Replaced by a newer canonical record and no longer eligible as anchor.
+  deleted:
+    meaning: Removed by user or policy and never eligible as anchor.
+  expired:
+    meaning: A staged record whose TTL ended without promotion.
+  anchor_blocked_states:
+    - resolved
+    - cancelled
+    - superseded
+    - deleted
+    - expired
+
+layers:
+  session:
+    purpose: Ephemeral working context inside the current conversation.
+    persistence: ephemeral
+    allowed:
+      - current_turn_raw_text
+      - recent_mixed_dialogue
+      - tentative_parse_results
+      - unresolved_candidates_not_yet_written
+      - pending_corrections_before_sync
+    disallowed:
+      - treating_session_as_long_term_truth
+      - reviving_deleted_memory_from_session_cache
+      - promoting_sensitive_raw_text_without_filtering
+    required_behavior:
+      - apply_correction_immediately_in_session_view
+      - drop_unpromoted_session_state_across_new
+
+  staged:
+    purpose: Short-to-medium-term unresolved continuity buffer.
+    persistence: durable
+    default_ttl: 12h
+    allowed:
+      - open_loop_task
+      - deferred_topic
+      - later_step_to_resume
+      - unresolved_watch_item
+      - short_term_preference_that_may_need_confirmation
+    disallowed:
+      - casual_chitchat
+      - one_off_mood_without_continuity_value
+      - assistant_generated_reminder_text
+      - settings_echo
+      - onboarding_question_text
+      - unsupported_inference
+    write_if_all:
+      - source_is_user_or_user_confirmed
+      - has_continuity_value
+      - unresolved
+      - not_forbidden
+      - has_evidence
+    required_fields:
+      - memory_id
+      - memory_type
+      - source_ref
+      - anchor_turns
+      - expires_at
+      - status
+      - sensitivity
+    expiry_behavior:
+      - default_expiry_is_created_at_plus_12_hours
+      - on_expiry_without_promotion_mark_expired
+      - expired_records_must_not_remain_new_session_anchors
+
+  tracked:
+    purpose: Formal follow-up line that should survive `/new`.
+    persistence: durable
+    promote_from: staged
+    allowed:
+      - explicit_follow_up_request
+      - repeated_unresolved_topic
+      - due_or_retry_bound_work_item
+      - cross_session_unresolved_focus
+    promote_when_any:
+      - user_explicitly_requests_tracking_or_reminder
+      - same_topic_is_repeated_in_multiple_turns_and_still_unresolved
+      - same_topic_reopens_across_sessions_or_days
+      - record_has_due_at_or_retry_after_or_followup_window
+    disallowed:
+      - assistant_only_story
+      - settings_change
+      - onboarding_field_by_itself
+      - internal_prompt_or_hook_text
+      - already_resolved_event
+    required_fields:
+      - memory_id
+      - memory_type
+      - source_ref
+      - continuity_value
+      - resolution_condition
+      - latest_user_owned_clause
+      - updated_at
+      - status
+      - sensitivity
+
+  daily_memory:
+    purpose: Derived writeback and audit trace for same-day continuity changes.
+    persistence: durable
+    allowed:
+      - staged_created_or_touched
+      - tracked_created_or_touched
+      - promote_resolve_cancel_supersede_events
+      - profile_or_personalization_corrections
+      - compact_dialogue_trace
+    disallowed:
+      - raw_full_transcript
+      - private_attachment_dump
+      - using_daily_memory_as_only_truth_source
+      - rehydrating_blocked_or_expired_structured_source_as_new_anchor
+    required_fields:
+      - memory_id
+      - derived_from
+      - change_type
+      - source_ref
+      - updated_at
+    limits:
+      max_dialogue_turns: 4
+
+  long_term_personalization:
+    purpose: Stable, low-risk, user-owned long-term profile memory.
+    persistence: durable
+    allowed_types:
+      - preferred_name
+      - form_of_address
+      - language_preference
+      - locale
+      - timezone
+      - sleep_time
+      - wake_time
+      - relationship
+      - use_case
+      - stable_interaction_preference
+    disallowed:
+      - one_day_mood
+      - one_off_schedule
+      - personality_guess
+      - relationship_guess
+      - assistant_inferred_identity_label
+      - high_risk_sensitive_data
+    promote_if_all:
+      - allowed_type
+      - not_forbidden
+      - user_ownership_is_explicit_or_stable
+      - user_can_later_view_edit_or_delete
+    promote_when_any:
+      - explicit_onboarding_answer
+      - direct_user_instruction_to_remember_preference
+      - repeated_consistent_signal_without_conflict
+    required_fields:
+      - memory_id
+      - memory_type
+      - source_ref
+      - stability_basis
+      - updated_at
+      - status
+      - sensitivity
+
+sensitivity:
+  ordinary:
+    description: Low-risk continuity content.
+    examples:
+      - open_loop_task
+      - blocked_step
+      - low_risk_interaction_preference
+  restricted:
+    description: Useful but more private profile content.
+    examples:
+      - timezone
+      - sleep_time
+      - wake_time
+      - relationship
+      - use_case
+      - preferred_name
+    rules:
+      - never_write_from_assistant_inference_only
+      - keep_daily_memory_summary_minimal
+  forbidden:
+    description: Must never persist.
+
+forbidden_writes:
+  always_forbidden:
+    - password
+    - api_key
+    - otp
+    - session_cookie
+    - private_key
+    - payment_credentials
+    - government_id
+    - passport_number
+    - driver_license_number
+    - exact_home_address
+    - precise_gps
+    - door_code
+    - medical_record_detail
+    - medication_detail
+    - sexual_content
+    - biometric_data
+    - minor_sensitive_data
+    - third_party_private_secret
+    - raw_attachment_dump
+    - full_email_body_as_long_term_memory
+    - internal_prompt_text
+    - bridge_or_hook_control_text
+    - hidden_reasoning
+  inference_forbidden:
+    - mental_health_diagnosis
+    - personality_label
+    - relationship_guess
+    - financial_status_guess
+    - legal_risk_guess
+  user_opt_out_respected:
+    - never_write_content_the_user_explicitly_said_not_to_store
+
+write_safety:
+  detected_text_scan_fields:
+    - continuity_value
+    - stored_value_when_string
+    - latest_user_owned_clause
+    - source_ref
+    - resolution_condition
+    - field_key
+    - personalization_type
+    - anchor_turns.text
+    - correction.reason
+    - settings_value_when_string
+  detected_forbidden_behavior:
+    - reject_persistence_do_not_redact_and_accept
+    - write_reason_may_record_category_but_must_not_copy_secret_text
+    - if_host_flag_and_scanner_disagree_the_more_restrictive_result_wins
+  host_inference_forbidden_seam:
+    accepted_input_fields:
+      - hostClassifiedForbiddenCategory
+      - inferenceForbiddenCategory
+    rule:
+      - host_may_supply_inference_forbidden_classification_for_semantic_risks_not_detectable_by_regex
+      - unknown_host_supplied_forbidden_category_must_fail_closed
+      - if_no_host_classifier_is_present_inference_forbidden_detection_is_not_automatic_in_v1
+  field_size_limits:
+    continuity_value_max_chars: 4096
+    latest_user_owned_clause_max_chars: 4096
+    stored_value_string_max_chars: 1024
+    source_ref_max_chars: 512
+    resolution_condition_max_chars: 512
+    field_key_max_chars: 256
+    personalization_type_max_chars: 128
+    anchor_turn_text_max_chars: 1024
+    anchor_turn_max_items: 50
+    correction_reason_max_chars: 256
+    settings_value_string_max_chars: 128
+  text_sanitization:
+    remove:
+      - control_characters
+      - null_bytes
+      - bidi_override_and_isolate_characters
+      - zero_width_and_invisible_format_characters
+    detect_with:
+      - unicode_nfkc_normalization
+      - separated_keyword_detection_for_password_like_terms
+
+settings_validation:
+  allowed_targets_must_be_declared_in_contract: true
+  allowed_target_prefixes:
+    - memory_policy.opt_out_categories.
+    - memory_policy.opt_out_memory_types.
+  values_must_be_scalar: true
+  string_values_must_pass_forbidden_scan: true
+  typed_rules:
+    quiet_hours.start: hh:mm
+    quiet_hours.end: hh:mm
+    routine_schedule.sleep_time: hh:mm
+    routine_schedule.wake_time: hh:mm
+    proactive_chat.enabled: boolean
+    heartbeat.interval: finite_number
+    retry.interval: finite_number
+    max_unanswered_before_park: finite_number
+    memory_policy.global_opt_out: boolean
+
+write_pipeline:
+  order:
+    - session
+    - staged_if_eligible
+    - tracked_if_promoted
+    - daily_memory_on_change
+    - long_term_personalization_if_stable
+  guardrails:
+    - avoid_write_amplification
+    - do_not_copy_same_text_into_all_layers
+    - do_not_treat_settings_echo_as_memory
+    - do_not_keep_the_same_focus_active_in_both_staged_and_tracked_without_explicit_linkage
+  promotion_behavior:
+    staged_to_tracked:
+      default: create_tracked_record_and_mark_source_staged_record_as_superseded
+      alternative: in_place_layer_mutation_is_allowed_only_if_the_runtime_preserves_audit_linkage
+      must_not:
+        - leave_two_active_primary_records_for_the_same_focus_without_explicit_reason
+  derived_writeback_behavior:
+    daily_memory:
+      allowed_change_types:
+        - created
+        - touched
+        - promoted
+        - resolved
+        - cancelled
+        - superseded
+        - deleted
+      must_not:
+        - restate_sensitive_deleted_content
+        - become_only_truth_source_when_structured_state_exists
+
+surface_ownership:
+  cmcp_core:
+    role: canonical_policy_owner
+    responsibilities:
+      - define_layers
+      - define_write_authorization
+      - define_promotion_rules
+      - define_forbidden_writes
+      - define_new_session_rules
+      - define_user_correction_semantics
+  cmcp_guard:
+    role: runtime_enforcement_owner
+    responsibilities:
+      - evaluate_write_candidates
+      - block_forbidden_or_unauthorized_writes
+      - enforce_invocation_area_rules
+      - assemble_new_session_context
+  cmcp_policy:
+    role: user_inspection_and_manual_memory_management_owner
+    responsibilities:
+      - preview_target_layer_before_write
+      - expose_write_or_rejection_reason
+      - trigger_cmcp_policy_manual_write
+      - trigger_cmcp_policy_manual_edit
+  cmcp_setup:
+    role: disclosed_settings_and_profile_capture_owner
+    responsibilities:
+      - collect_onboarding_answers
+      - disclose_memory_effect
+      - map_fields_to_settings_or_personalization
+  host_runtime_actions:
+    role: explicit_in_chat_action_owner
+    responsibilities:
+      - emit_explicit_memory_save_action
+      - emit_explicit_followup_action
+      - emit_explicit_memory_correction_action
+  cmcp_product_page:
+    role: capability_explanation_only
+  v2_runtime:
+    role: migration_consumer_only
+  cross_surface_rules:
+    - only_surface_owned_invocation_areas_may_request_persistent_writes
+    - every_persistent_write_request_must_be_evaluable_by_cmcp_guard
+    - ui_or_installer_copy_must_not_create_policy
+    - v2_runtime_must_consume_not_fork_contract
+
+surface_field_mapping:
+  cmcp_policy:
+    manual_write:
+      invocation_area: cmcp_policy_manual_write
+      target_layer_selector:
+        allowed_values:
+          - staged
+          - tracked
+          - long_term_personalization
+      required_inputs_by_target:
+        staged:
+          - continuity_value
+          - evidence_ref
+        tracked:
+          - continuity_value
+          - evidence_ref
+        long_term_personalization:
+          - allowed_personalization_type
+          - surface_disclosed_memory_effect
+      decision_feedback:
+        - decision_step
+        - reasons
+        - owner_surface
+        - route_key
+    manual_edit:
+      invocation_area: cmcp_policy_manual_edit
+      supported_actions:
+        - replace
+        - delete
+        - suppress
+        - resolve
+        - opt_out
+      required_inputs:
+        - action
+        - target_scope
+      single_record_requires:
+        - target_memory_id
+    new_session_preview:
+      reads:
+        - continuity_context_payload
+      must_show:
+        - continuity_source
+        - anchor_level
+        - latest_user_owned_clause
+        - selection_priority
+        - selected_by
+  cmcp_setup:
+    input_aliases:
+      language: language_preference
+      interaction_preference: proactive_preference
+    fields:
+      timezone:
+        settings_target: routine_schedule.timezone
+        personalization_target: profile.timezone
+        personalization_type: timezone
+        restricted: true
+        disclosed_capture_required: true
+      sleep_time:
+        settings_target: routine_schedule.sleep_time
+        personalization_target: profile.sleep_pattern.sleep_time
+        personalization_type: sleep_time
+        restricted: true
+        disclosed_capture_required: true
+      wake_time:
+        settings_target: routine_schedule.wake_time
+        personalization_target: profile.sleep_pattern.wake_time
+        personalization_type: wake_time
+        restricted: true
+        disclosed_capture_required: true
+      preferred_name:
+        personalization_target: profile.preferred_name
+        personalization_type: preferred_name
+        restricted: true
+        disclosed_capture_required: true
+      language:
+        settings_target: locale.language
+        personalization_target: profile.language_preference
+        personalization_type: language_preference
+        restricted: false
+        disclosed_capture_required: true
+      relationship:
+        personalization_target: profile.relationship
+        personalization_type: relationship
+        restricted: true
+        disclosed_capture_required: true
+      use_case:
+        personalization_target: profile.use_case
+        personalization_type: use_case
+        restricted: true
+        disclosed_capture_required: true
+      interaction_preference:
+        settings_target: proactive_chat.enabled
+        personalization_target: profile.interaction_preference.proactive
+        personalization_type: stable_interaction_preference
+        restricted: false
+        disclosed_capture_required: true
+      current_unfinished_task:
+        persistent_target: none
+        default_layer: session
+        disclosed_capture_required: false
+      immediate_blocker:
+        persistent_target: none
+        default_layer: session
+        disclosed_capture_required: false
+
+new_session:
+  goal: Reattach valid continuity without replaying all old chat.
+  selection_priority:
+    - tracked.active_unresolved
+    - staged.recent_touched_unresolved
+    - daily_memory.linked_trace
+    - long_term_personalization.background_only
+  anchor_rules:
+    - only_use_active_non_deleted_non_superseded_non_resolved_records
+    - prefer_latest_user_owned_unresolved_clause
+    - do_not_let_assistant_reminder_text_override_the_user_blocker
+    - guided_settings_and_operator_feedback_are_not_anchors
+    - onboarding_answers_are_background_not_primary_anchor
+    - host_supplied_new_session_records_must_be_sanitized_and_forbidden_scanned_before_selection
+    - daily_linked_trace_must_not_outlive_or_reconstruct_blocked_structured_source
+    - daily_linked_trace_requires_known_live_structured_source
+    - if_no_valid_continuity_exists_return_blank_state_honestly
+  context_payload:
+    required:
+      - continuity_source
+      - anchor_level
+      - memory_id
+      - recent_user_context
+      - latest_user_owned_clause
+      - resolution_state
+    limits:
+      recent_user_context_max_turns: 4
+  frontstage_constraints:
+    - do_not_expose_internal_labels
+    - do_not_quote_daily_memory_verbatim
+    - daily_memory_background_only_must_not_rehydrate_recent_user_context
+    - do_not_revive_expired_or_corrected_memory
+
+onboarding:
+  owner_surface: cmcp_setup
+  goal: Create initial settings and allowed profile memory without manufacturing continuity.
+  authorized_invocation_areas:
+    - installer_disclosed_profile_capture
+    - onboarding_disclosed_profile_capture
+  field_classes:
+    settings_only:
+      - heartbeat.interval
+      - retry.interval
+      - quiet_hours.start
+      - quiet_hours.end
+      - dispatch.policy
+    profile_memory:
+      - timezone
+      - sleep_time
+      - wake_time
+      - preferred_name
+      - language_preference
+      - relationship
+      - use_case
+      - proactive_preference
+    current_event:
+      - current_unfinished_task
+      - immediate_blocker
+  flow:
+    - classify_each_answer
+    - write_settings_only_fields_to_settings
+    - write_allowed_profile_fields_to_long_term_personalization_only_if_disclosed_write_surface_is_active
+    - do_not_persist_current_event_by_default
+  never_create_directly:
+    - tracked_from_onboarding_by_default
+    - psychological_inference
+    - forbidden_data
+    - unsupported_background_assumption
+  deterministic_profile_fields:
+    - timezone
+    - sleep_time
+    - wake_time
+    - preferred_name
+    - language_preference
+    - relationship
+    - use_case
+  field_mapping_ref:
+    - surface_field_mapping.cmcp_setup
+
+user_correction:
+  owner_surfaces:
+    - cmcp_policy
+    - host_runtime_actions
+  authorized_invocation_areas:
+    - cmcp_policy_manual_edit
+    - explicit_memory_correction_action
+  supported_operations:
+    replace:
+      examples:
+        - not_A_is_B
+        - change_relationship_from_coworker_to_friend
+      effect:
+        - supersede_old_record
+        - activate_new_value
+    delete:
+      examples:
+        - forget_that
+        - do_not_store_this
+      effect:
+        - mark_deleted_or_suppressed
+        - remove_from_future_anchor_selection
+        - mandatory_cleanup_of_prior_daily_derivatives_even_if_apply_to_layers_omits_daily_memory
+    suppress:
+      examples:
+        - do_not_remind_me_about_this_again
+      effect:
+        - disable_follow_up_without_erasing_every_audit_marker
+    resolve:
+      examples:
+        - this_is_done_now
+      effect:
+        - mark_record_resolved
+        - remove_from_active_follow_up
+    opt_out:
+      examples:
+        - never_save_this_kind_of_information
+      effect:
+        - add_category_level_suppression
+        - persist_suppression_rule_for_future_writes
+        - cancel_matching_active_records_without_replaying_deleted_content
+  precedence:
+    - explicit_user_correction
+    - latest_direct_user_statement
+    - tracked_or_staged_memory
+    - daily_memory_summary
+    - assistant_inference
+  execution_invariants:
+    - invalid_apply_to_layers_must_fail_closed
+    - single_record_target_must_exist_or_operation_fails_closed
+    - repeated_delete_of_same_target_must_be_idempotent
+    - replace_requires_live_replacement_record
+  deletion_tombstone:
+    allowed_metadata_only:
+      - memory_id
+      - deleted_at
+      - deleted_by
+      - deletion_reason
+    forbidden_to_keep:
+      - deleted_sensitive_content
+      - deleted_raw_text
+    rules:
+      - deletion_reason_must_be_sanitized
+      - deletion_reason_must_pass_forbidden_scan
+
+acceptance_cases:
+  - case: plain_chat_without_invocation_area_fails_closed
+    input: maybe_remind_me_about_the_refactor_later
+    expected:
+      write_layer: session_only
+      persistent_write: false
+      reason: no_authorized_invocation_area
+  - case: ordinary_chat_deferred_task_stays_session_only
+    input: service_C_rollback_step_needs_to_be_finished_later
+    expected:
+      write_layer: session_only
+      persistent_write: false
+  - case: cmcp_policy_manual_write_can_stage_authorized_memory
+    input: save_this_open_loop_for_later_review
+    expected:
+      surface: cmcp_policy
+      write_layer: staged
+      persistent_write: true
+      invocation_area: cmcp_policy_manual_write
+  - case: explicit_followup_request_promotes_to_tracked
+    input: remind_me_tomorrow_to_resume_service_C_rollback
+    expected:
+      surface: host_runtime_actions
+      write_layer: tracked
+      new_anchor_candidate: true
+      invocation_area: explicit_followup_action
+  - case: disclosed_onboarding_schedule_becomes_settings_and_profile
+    input: utc_plus_8_sleep_0500_wake_1230_with_disclosed_capture
+    expected:
+      surface: cmcp_setup
+      settings_written: true
+      personalization_written: true
+      tracked_created: false
+      invocation_area: onboarding_disclosed_profile_capture
+  - case: onboarding_current_event_stays_session_only
+    input: current_unfinished_task_from_setup
+    expected:
+      surface: cmcp_setup
+      write_layer: session_only
+      persistent_write: false
+  - case: user_delete_removes_future_anchor
+    input: forget_the_thing_i_just_said
+    expected:
+      removed_from_new_anchor: true
+      deleted_content_not_repeated_in_daily_memory: true
+      invocation_area: explicit_memory_correction_action
+  - case: policy_manual_write_requires_personalization_disclosure
+    input: save_timezone_from_policy_without_disclosure
+    expected:
+      surface: cmcp_policy
+      write_layer: session_only
+      persistent_write: false
+      reason: surface_disclosed_memory_effect_required
+  - case: forbidden_secret_never_persists
+    input: api_key_or_otp
+    expected:
+      persistent_write: false
+      daily_memory_raw_trace: false
