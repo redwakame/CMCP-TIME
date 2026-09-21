@@ -58,9 +58,9 @@ El catálogo no caduca con las entradas de Buffer. Una charla cotidiana puede qu
 
 **Paquete oficial de npm:** [`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time). **Comando:** `cmcp-time`. **Repositorio:** `redwakame/CMCP-TIME`.
 
-La versión npm `0.1.0-rc.2` está publicada. Un tag de GitHub, una versión npm y una etiqueta mutable son identificadores distintos. Usa `@next` para el canal de candidatos o `@0.1.0-rc.2` para reproducir esa versión publicada. `latest` no certifica estabilidad: en la comprobación de rc.2, tanto `next` como `latest` apuntaban a rc.2.
+**`0.1.0-rc.3` está publicada en npm y sigue siendo una versión candidata preliminar.** Usa `@redwakame-skill/cmcp-time@next` para el canal de candidatos o `@redwakame-skill/cmcp-time@0.1.0-rc.3` para fijar esta versión. Su código fuente en GitHub corresponde a [v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0-rc.3); `main` puede incluir actualizaciones posteriores de documentación. Esta versión incluye `cmcp-time context --help`.
 
-**Este documento acompaña a `0.1.0-rc.3`**, con `context --help` y documentación actualizada. Durante la preparación, la comprobación del 2026-09-22 (Asia/Taipei) situaba la base publicada y verificada rc.2 tanto en `next` como en `latest`. La disponibilidad publicada se comprueba por separado: consulta el registry, el `@next` actual y tu `--version` instalada antes de utilizar la ayuda de rc.3. Consulta las [notas de versión](RELEASE-NOTES.md).
+Comprobación del registry a las **2026-09-22 06:01:41 +08:00 (Asia/Taipei)**: `next = 0.1.0-rc.3`, `latest = 0.1.0-rc.2`. Según esta comprobación, instalar sin versión ni etiqueta selecciona el candidato anterior rc.2; `latest` no certifica estabilidad. Las etiquetas pueden cambiar: usa la versión exacta para fijar la instalación y `cmcp-time --version` para consultarla. Las [notas de versión](RELEASE-NOTES.md) conservan el registro histórico de preparación.
 
 ### Instala y después abre el asistente
 

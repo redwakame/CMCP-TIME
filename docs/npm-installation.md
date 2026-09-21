@@ -1,8 +1,8 @@
 # npm installation and updates
 
-The official npm package is [`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time), with command `cmcp-time`. **`0.1.0-rc.2` is published** and was installed anonymously from the registry during its publication checks. Use `@next` for the published candidate channel, or `@0.1.0-rc.2` for that exact baseline. The rc.2 publication checks and release-sync preflight on 2026-09-22 (Asia/Taipei) found both `next` and `latest` at rc.2. Dist-tags can move; `latest` is not a stability guarantee.
+The official npm package is [`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time), with command `cmcp-time`. **`0.1.0-rc.3` is published and remains a prerelease candidate.** Use `@redwakame-skill/cmcp-time@next` for the candidate channel, or `@redwakame-skill/cmcp-time@0.1.0-rc.3` to pin this version. Its GitHub source is [v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0-rc.3); `main` may contain later documentation updates.
 
-**This document accompanies `0.1.0-rc.3`, a help/documentation update.** The verified published baseline at preparation was rc.2. Check the registry/current `@next` and the installed `--version` for published availability; the source version alone is not a publication receipt. To inspect a local candidate, use its source entry or an actual reviewed tarball with its verification record. Each publication needs its own registry and integrity readback. The internal compatibility identifier remains `cmcp`.
+Registry check at **2026-09-22 06:01:41 +08:00 (Asia/Taipei)**: `next = 0.1.0-rc.3`, `latest = 0.1.0-rc.2`. Installing without a version or tag therefore selects the older rc.2 candidate at that observation; `latest` is not a stability guarantee. Tags can change. Use an exact version for a fixed installation and `cmcp-time --version` to inspect it. The internal compatibility identifier remains `cmcp`.
 
 ## Requirements and directories
 
@@ -22,7 +22,7 @@ The installed package requires an explicit `--workspace` for data operations. Cr
 
 ## Install from npm
 
-The following PowerShell example downloads the published candidate into a persistent prefix. Choose different persistent directory names if these already serve another purpose. It does not require administrator rights or change the system PATH or global npm configuration. Replace `@next` with `@0.1.0-rc.2` to reproduce the published baseline.
+The following PowerShell example downloads the published candidate into a persistent prefix. Choose different persistent directory names if these already serve another purpose. It does not require administrator rights or change the system PATH or global npm configuration. Replace `@next` with `@0.1.0-rc.3` to pin this release.
 
 ```powershell
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'
@@ -46,7 +46,7 @@ npm install --global --prefix "$cmcp_prefix" @redwakame-skill/cmcp-time@next --i
 "$cmcp_prefix/bin/cmcp-time" setup --workspace "$cmcp_workspace"
 ```
 
-The npm step downloads and installs code; `setup` starts the interactive configuration wizard. The rc.2 publication check verified anonymous registry installation; the persistent global-prefix layout was checked in the preceding same-content Windows candidate. The POSIX example describes npm's layout, not a new operating-system verification. The configured DeepSeek credential path still requires Windows DPAPI and PowerShell 7. Host mode uses the Host's own authorized model access and does not require DeepSeek.
+The npm step downloads and installs code; `setup` starts the interactive configuration wizard. Publication checks include anonymous registry installation, with the persistent global-prefix layout checked in the preceding Windows candidate. The POSIX example describes npm's layout, not a new operating-system verification. The configured DeepSeek credential path still requires Windows DPAPI and PowerShell 7. Host mode uses the Host's own authorized model access and does not require DeepSeek.
 
 ### Install a reviewed local tarball instead
 
@@ -79,7 +79,7 @@ Run the first command for a new installation; if it already exists, use `update`
 
 For automated explicit choices, put the answers file inside the selected workspace and pass `setup --answers choices.json`. Review the supplied [Host choices example](../examples/setup-host.json) and adapt consent and scope deliberately; a synthetic example is not consent to save real conversations. To choose a different Host location, pass `--host-workspace host` on the first setup; it resolves inside the selected workspace. Do not change that bound Host location when updating the same installation root. The resulting managed Skill/helper and Hook commands refer to the persistent installed assets and the authorized workspace.
 
-The advanced `context` command forwards the existing Host helper options, including `--config`. It obtains Runtime context; it does not run a separate final-answer model. This rc.3 source adds `cmcp-time context --help`, which prints usage before opening configuration or Runtime and needs no workspace, credentials or grant. The published rc.2 helper does not provide this help option. Prefer the installed Skill for Host use and the [command reference](commands.md#host-skillhelper) for precise options. Never read the Store or credential files directly to bypass that helper.
+The advanced `context` command forwards the existing Host helper options, including `--config`. It obtains Runtime context; it does not run a separate final-answer model. The published rc.3 includes `cmcp-time context --help`, which prints usage before opening configuration or Runtime and needs no workspace, credentials or grant. The older rc.2 helper does not provide this help option. Prefer the installed Skill for Host use and the [command reference](commands.md#host-skillhelper) for precise options. Never read the Store or credential files directly to bypass that helper.
 
 Configured Playground use still requires separately configured credentials and a finite explicit grant. See [configuration](configuration.md). A package install, update, status or restart does not authorize provider calls, refresh User time/TTL, reopen stopped targets or reset budget. No model calls are needed to check setup or paths.
 
@@ -130,4 +130,4 @@ Replace the example path with an actual existing directory. The older direct `sc
 
 ## Version and publication evidence
 
-The published rc.2 package and its registry installation are the prior baseline. This rc.3 source contains newer help/documentation changes; neither a source checkout nor a local `.tgz` proves that rc.3 is available on npm. GitHub tags/assets, exact npm versions and mutable npm dist-tags identify different things. Always check `cmcp-time --version` for the installation you are using. The package is `@redwakame-skill/cmcp-time`; `npm install cmcp` does not identify this project. See [release notes](../RELEASE-NOTES.md) for retained historical preparation notes and the current candidate status.
+The published [npm rc.3 page](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0-rc.3) and [GitHub v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.0-rc.3) identify this prerelease. GitHub `main` documentation updates do not alter the README already packed into npm rc.3; the default npm package page may still display `latest` (rc.2 at the check above). GitHub tags/assets, exact npm versions and mutable npm dist-tags identify different things. The package is `@redwakame-skill/cmcp-time`; `npm install cmcp` does not identify this project. [Release notes](../RELEASE-NOTES.md) retain historical preparation statements from before publication.

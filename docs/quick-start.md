@@ -1,6 +1,8 @@
 # Quick start
 
-The source examples below run from the extracted **candidate root**. `local-data/my-cmcp` and `local-data/my-cmcp-host` are example locations for a new installation, not shipped user data. The npm package `@redwakame-skill/cmcp-time` has a published `0.1.0-rc.2` baseline, available through `@next` at the 2026-09-22 release-sync preflight. This document accompanies the `0.1.0-rc.3` help/documentation update; published availability is verified separately. First follow [the npm or local tarball installation guide](npm-installation.md), then use the installed `cmcp-time` command with `--workspace <existing-workspace>`. Check the registry/current `@next` and `--version` for the version you are using. Do not run from inside `node_modules` to store personal data.
+The source examples below run from the extracted **candidate root**. `local-data/my-cmcp` and `local-data/my-cmcp-host` are example locations for a new installation, not shipped user data. **`@redwakame-skill/cmcp-time@0.1.0-rc.3` is published and remains a prerelease candidate.** Use `@next` for the candidate channel or `@0.1.0-rc.3` to pin this release. Its GitHub source is [v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0-rc.3); `main` may contain later documentation updates. First follow [the npm or local tarball installation guide](npm-installation.md), then use the installed `cmcp-time` command with `--workspace <existing-workspace>`. Do not run from inside `node_modules` to store personal data.
+
+Registry check at **2026-09-22 06:01:41 +08:00 (Asia/Taipei)**: `next = 0.1.0-rc.3`, `latest = 0.1.0-rc.2`. Installing without a version or tag therefore selects the older rc.2 candidate at that observation. Tags can change and do not certify stability; use an exact version for a fixed installation and `cmcp-time --version` to inspect it.
 
 ## Installed command shortcut
 

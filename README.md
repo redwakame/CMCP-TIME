@@ -58,9 +58,9 @@ The catalog is independent of expiring Buffer entries and can be accessed from t
 
 **Official npm package:** [`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time). **Command:** `cmcp-time`. **Source repository:** `redwakame/CMCP-TIME`.
 
-The npm release `0.1.0-rc.2` has been published. A GitHub source release, an npm version and a mutable dist-tag are different identifiers. Use `@next` for the candidate channel, or `@0.1.0-rc.2` to reproduce that published baseline. A tag named `latest` is not a stability certification; the rc.2 publication check found both `next` and `latest` pointing to rc.2.
+**`0.1.0-rc.3` is published on npm and remains a prerelease candidate.** Use `@redwakame-skill/cmcp-time@next` for the candidate channel, or `@redwakame-skill/cmcp-time@0.1.0-rc.3` to pin this version. Its GitHub source is [v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0-rc.3); `main` may contain later documentation updates. This release includes `cmcp-time context --help`.
 
-**This document accompanies `0.1.0-rc.3`**, with `context --help` and documentation updates. At preparation, the release-sync preflight on 2026-09-22 (Asia/Taipei) found the verified published baseline rc.2 at both `next` and `latest`. Publication availability is checked separately: consult the registry/current `@next` and your installed `--version` before relying on rc.3 help. See [release notes](RELEASE-NOTES.md) for the distinction.
+Registry check at **2026-09-22 06:01:41 +08:00 (Asia/Taipei)**: `next = 0.1.0-rc.3`, `latest = 0.1.0-rc.2`. Installing without a version or tag therefore selects the older rc.2 candidate at that observation; `latest` does not certify stability. Tags can change, so use the exact version for a fixed installation and `cmcp-time --version` to inspect it. [Release notes](RELEASE-NOTES.md) retain the historical preparation record.
 
 ### Install, then run the wizard
 

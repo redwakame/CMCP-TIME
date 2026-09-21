@@ -58,9 +58,9 @@ CMCP 保留獲授權的對話原文、角色與時間，透過時間／來源清
 
 **正式 npm 套件：**[`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time)。**命令：**`cmcp-time`。**原始碼倉庫：**`redwakame/CMCP-TIME`。
 
-npm 的 `0.1.0-rc.2` 已經發布。GitHub 原始碼版本、npm 版本與可移動的標籤是不同識別；候選通道用 `@next`，要重現該已發布基準則用 `@0.1.0-rc.2`。`latest` 不是穩定性認證；rc.2 發布核對時，`next` 和 `latest` 都指向 rc.2。
+**`0.1.0-rc.3` 已在 npm 發布，仍是預發布候選版。**使用 `@redwakame-skill/cmcp-time@next` 取得候選通道版本；需要固定此版則使用 `@redwakame-skill/cmcp-time@0.1.0-rc.3`。GitHub 對應來源為 [v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0-rc.3)；`main` 可有後續文件更新。此版已包含 `cmcp-time context --help`。
 
-**這份文件隨 `0.1.0-rc.3` 提供**，包含 `context --help` 與文件更新。準備時的 2026-09-22（Asia/Taipei）發布同步預檢確認，已發布基準 rc.2 同時位於 `next` 和 `latest`。實際發布可用性須另行核對：使用 rc.3 help 前，請查閱 registry／當時的 `@next`，並以 `--version` 確認已安裝版本。詳見[版本說明](RELEASE-NOTES.md)。
+官方 registry 查核時間：**2026-09-22 06:01:41 +08:00（Asia/Taipei）**，`next = 0.1.0-rc.3`、`latest = 0.1.0-rc.2`。依此次查核，未指定版本或標籤的安裝會取得較舊的 rc.2 候選；`latest` 不代表穩定版認證。標籤可變動，固定安裝請指定完整版本，並用 `cmcp-time --version` 查看已安裝版本。[版本說明](RELEASE-NOTES.md)保留歷史準備紀錄。
 
 ### 先安裝，再啟動精靈
 

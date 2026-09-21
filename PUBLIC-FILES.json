@@ -1,7 +1,7 @@
 {
   "kind": "cmcp-time-public-source-allowlist",
   "version": "0.1.0-rc.3",
-  "publicationRevision": "release-sync-20260922.2-contact",
+  "publicationRevision": "docs-current-version-20260922",
   "hashAlgorithm": "SHA-256",
   "selfHash": "Git commit and archive digest cover this index; the index does not hash itself.",
   "sourceOnlyFiles": [
@@ -79,23 +79,23 @@
     },
     {
       "path": "README.es.md",
-      "bytes": 13023,
-      "sha256": "c1ce1d32f4915ad302cf4e58ad00a1aee00756f2d1b7efc36bfc972015c1c38c"
+      "bytes": 13156,
+      "sha256": "1bddbe08289618f381b94cb102e77fbfdfca0976fa0b0642c6d5abd74ad0ee76"
     },
     {
       "path": "README.ja.md",
-      "bytes": 14414,
-      "sha256": "c4cb3d9d66d78dc3267e4b63784f7bc2452715a9f542ef2521dd6687f0e6489a"
+      "bytes": 14582,
+      "sha256": "532121a33b4a6eccf1cd4497dd73faec396eb326dfc178c8e65e0512387b04cd"
     },
     {
       "path": "README.md",
-      "bytes": 13056,
-      "sha256": "a9aac16971861e4c8826259e8f59e42208317bbc48138ed5e658a70a83b02bda"
+      "bytes": 13074,
+      "sha256": "db82a533427816bd6f55faabb30ce64f42ac9719d8be37aeeea08d069fa48864"
     },
     {
       "path": "README.zh-TW.md",
-      "bytes": 11287,
-      "sha256": "bdd7d95ec115b281ce545728743eb52924846423d0566c978bc72cf2eb420216"
+      "bytes": 11404,
+      "sha256": "9f367548a840a198e57f73ffa034c619ef84e8a4fec375a6e427396db3c416b6"
     },
     {
       "path": "RELEASE-NOTES.md",
@@ -204,8 +204,8 @@
     },
     {
       "path": "docs/commands.md",
-      "bytes": 19547,
-      "sha256": "4d96399700eb77f699eaa6c1be86fd7e5bf8221104c7103f064bca294eb3a03f"
+      "bytes": 19504,
+      "sha256": "b53c08d2915999ac3e8d7e7b9003c3c387b428011f46289c047a733045e419ac"
     },
     {
       "path": "docs/configuration.md",
@@ -219,8 +219,8 @@
     },
     {
       "path": "docs/installation-and-hosts.md",
-      "bytes": 8634,
-      "sha256": "2bc6b73445eb769107991a420578a56ce829d019b0d5324632fc61311fd78a7a"
+      "bytes": 8646,
+      "sha256": "8296cf7a90955390f79f80108a0a43286fb78eca964783ede8e8c16a942a917d"
     },
     {
       "path": "docs/license-provenance-v0.1.md",
@@ -229,13 +229,13 @@
     },
     {
       "path": "docs/npm-installation.md",
-      "bytes": 12111,
-      "sha256": "14a509aa089581c7a860dc96f4d42a3f9c192cb01339ede44102b38d984a1ff3"
+      "bytes": 12009,
+      "sha256": "18996dd0478d2f71e18670395b08a09b678b0ed228aca07feefd071d67014b00"
     },
     {
       "path": "docs/operations.zh-TW.md",
-      "bytes": 17603,
-      "sha256": "75e45ff74df7a199109348d508b962af67b2469681f921f6299763cfeee5bd08"
+      "bytes": 17751,
+      "sha256": "b1e13e562917d0cfbb52c60e537932e3138bbb922b245ed273e8362f7a4ba2f6"
     },
     {
       "path": "docs/privacy.md",
@@ -244,8 +244,8 @@
     },
     {
       "path": "docs/quick-start.md",
-      "bytes": 7736,
-      "sha256": "4eb38867f88d740b55e468a4950cea4a0554db4aad1494cd532724842844f550"
+      "bytes": 8037,
+      "sha256": "70193062bbdc7a6b3287bb19ae92363b04f41fd367e8c2e43c1b4f39bdf40506"
     },
     {
       "path": "docs/read-operations-v0.1.md",

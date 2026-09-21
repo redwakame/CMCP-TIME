@@ -1,10 +1,10 @@
 # CMCP-TIME 完整操作導覽
 
-CMCP 是日常簡稱。正式 npm 套件為 `@redwakame-skill/cmcp-time`，`0.1.0-rc.2` 已發布並通過匿名 registry 安裝驗收；2026-09-22（Asia/Taipei）的發布同步預檢中，`next` 和 `latest` 都指向 rc.2。這份文件隨 `0.1.0-rc.3` 提供，說明 `context --help` 與文件更新；實際發布可用性另以 registry／當時的 `@next` 和已安裝 `--version` 核對。它不是雲端服務或全部 Host 整合完成宣告。產品回答預設英文；使用者／Host 明確語言設定優先。來源原文保留原語言，本文採臺灣繁體中文。
+CMCP 是日常簡稱。正式 npm 套件 `@redwakame-skill/cmcp-time` 的 **`0.1.0-rc.3` 已發布，仍是預發布候選版**，包含 `context --help` 與文件更新。GitHub 對應來源為 [v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0-rc.3)；`main` 可有後續文件更新。官方 registry 查核時間為 **2026-09-22 06:01:41 +08:00（Asia/Taipei）**：`next = 0.1.0-rc.3`、`latest = 0.1.0-rc.2`；未指定版本或標籤會依 `latest` 取得較舊候選。這不是雲端服務或全部 Host 整合完成宣告。產品回答預設英文；使用者／Host 明確語言設定優先。來源原文保留原語言，本文採臺灣繁體中文。
 
 ## npm 候選：程式與資料分開
 
-先自行準備 Node.js 與 npm。以下 PowerShell 範例由 npm 下載已發布的候選通道，另建兩個持久且一般使用者可寫入的位置；若名稱已有其他用途，請改用自己的目錄。命令不需管理員、不修改全域 npm 設定或系統 PATH。要固定已發布基準，將 `@next` 換成 `@0.1.0-rc.2`；`latest` 標籤不是穩定性認證。
+先自行準備 Node.js 與 npm。以下 PowerShell 範例由 npm 下載已發布的候選通道，另建兩個持久且一般使用者可寫入的位置；若名稱已有其他用途，請改用自己的目錄。命令不需管理員、不修改全域 npm 設定或系統 PATH。要固定此版，將 `@next` 換成 `@0.1.0-rc.3`；標籤可變動，`latest` 不是穩定性認證，安裝後可用 `cmcp-time --version` 確認版本。
 
 ```powershell
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'

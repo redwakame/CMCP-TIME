@@ -58,9 +58,9 @@ CMCP は許可されたテキストの原文、役割、時刻を保存し、時
 
 **公式 npm パッケージ：**[`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time)。**コマンド：**`cmcp-time`。**ソース：**`redwakame/CMCP-TIME`。
 
-npm の `0.1.0-rc.2` は公開済みです。GitHub のタグ、npm のバージョン、移動可能な dist-tag は別の識別子です。候補版の配布先には `@next`、その公開基準を再現する場合には `@0.1.0-rc.2` を使います。`latest` は安定性の認証ではありません。rc.2 の公開確認時には `next` と `latest` の両方が rc.2 を指していました。
+**`0.1.0-rc.3` は npm で公開済みで、引き続きプレリリース候補版です。**候補版チャネルには `@redwakame-skill/cmcp-time@next`、この版に固定する場合には `@redwakame-skill/cmcp-time@0.1.0-rc.3` を使います。対応する GitHub ソースは [v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0-rc.3) です。`main` には後日の文書更新が含まれる場合があります。この版には `cmcp-time context --help` が含まれます。
 
-**この文書は `0.1.0-rc.3` に付属し**、`context --help` と文書の更新を説明します。準備時の 2026-09-22（Asia/Taipei）の事前確認では、公開・検証済みの基準版 rc.2 が `next` と `latest` の両方に設定されていました。公開状況は別途確認してください。rc.3 のヘルプを使う前に、registry、現在の `@next`、インストール済みの `--version` を確認してください。[リリースノート](RELEASE-NOTES.md)を参照してください。
+registry の確認時刻は **2026-09-22 06:01:41 +08:00（Asia/Taipei）**で、`next = 0.1.0-rc.3`、`latest = 0.1.0-rc.2` でした。この確認時点では、バージョンやタグを指定せずにインストールすると以前の候補版 rc.2 が選ばれます。`latest` は安定版の認証ではありません。タグは変更されるため、固定する場合は完全なバージョンを指定し、`cmcp-time --version` でインストール済みの版を確認してください。[リリースノート](RELEASE-NOTES.md)には準備時の履歴を残しています。
 
 ### インストール後にウィザードを起動
 
