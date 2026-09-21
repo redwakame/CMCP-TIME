@@ -1,6 +1,6 @@
 {
   "name": "@redwakame-skill/cmcp-time",
-  "version": "0.1.0-rc.2",
+  "version": "0.1.0-rc.3",
   "private": false,
   "description": "CMCP-TIME: Skill-first, host-neutral temporal continuity with source-preserving History, bounded reading, independent controls and a local reference Runtime.",
   "type": "module",

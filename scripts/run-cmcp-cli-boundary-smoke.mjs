@@ -13,6 +13,7 @@ const workspace=path.join(testRoot,'workspace'),other=path.join(testRoot,'unrela
 await fs.mkdir(workspace);await fs.mkdir(other);
 const packageRoot=fileURLToPath(new URL('../',import.meta.url));
 const bin=path.join(packageRoot,'bin/cmcp-time.mjs'),playground=path.join(packageRoot,'scripts/cmcp-playground.mjs');
+const context=path.join(packageRoot,'scripts/cmcp-host-context-cli.mjs');
 const choices={timezone:'Europe/Berlin',language:'en',scopeId:'synthetic-cli-boundary',owner:{id:'self',label:'Synthetic owner'},people:[],
   saveUser:true,saveAssistant:true,enabled:true,clean:false,proactive:false,attachCodex:false,providerMode:'host',allowPaidCalls:false,
   authorizedBy:'Explicit synthetic CLI boundary test',events:[]};
@@ -32,10 +33,38 @@ async function snapshot(directory=workspace){
 }
 async function test(name,action){try{await action();results.push({name,status:'PASS'});}catch(error){results.push({name,status:'FAIL',error:error.message});}}
 async function unchanged(action){const before=await snapshot();await action();assert.deepEqual(await snapshot(),before);}
+async function allUnchanged(action){
+  const state=async()=>({files:await snapshot(testRoot),entries:(await fs.readdir(testRoot,{recursive:true})).sort()});
+  const before=await state();await action();assert.deepEqual(await state(),before);
+}
+const contextEntries=[{script:bin,prefix:['context']},{script:context,prefix:[]}];
 const workspaceArgs=['--workspace',workspace,'--root','local-data/cmcp'];
 const grantArgs=['--authorize','synthetic-rejected-grant','--posts','1','--authorized-by','Explicit synthetic boundary test'];
 await test('bin_help_version_do_not_access_workspace',async()=>{
   await unchanged(async()=>{assert.match(success(invoke(bin,['--help'])),/CMCP-TIME/);assert.match(success(invoke(bin,['--version'])),/CMCP-TIME/);});
+});
+await test('context_help_requires_no_workspace_config_grant_or_credential',async()=>{
+  await allUnchanged(async()=>{for(const {script,prefix} of contextEntries){
+    const output=success(invoke(script,[...prefix,'--help']));
+    assert.match(output,/Usage: cmcp-time context/);assert.match(output,/--local-candidates/);
+    assert.match(output,/--read-progress/);assert.match(output,/no data writes or model calls/);
+  }});
+});
+await test('context_help_returns_before_resolving_paths_or_running_actions',async()=>{
+  await allUnchanged(async()=>{for(const {script,prefix} of contextEntries){
+    for(const root of [other,path.join(testRoot,'nonexistent-workspace')]){
+      success(invoke(script,[...prefix,'--workspace',root,'--config','missing-config.json','--manifest','missing-manifest.json',
+        '--text','Synthetic help must not save this body','--status','--help']));
+    }
+  }});
+});
+await test('context_help_keeps_unknown_options_and_positionals_strict',async()=>{
+  await allUnchanged(async()=>{for(const {script,prefix} of contextEntries){
+    rejected(invoke(script,[...prefix,'--help','--unknown-flag']),/Unknown option/);
+    rejected(invoke(script,[...prefix,'--unknown-flag','--help']),/Unknown option/);
+    rejected(invoke(script,[...prefix,'--help','unexpected-positional']),/Unexpected argument/);
+    rejected(invoke(script,[...prefix,'--help',...grantArgs]),/Unknown option/);
+  }});
 });
 await test('unknown_command_and_argument_rejected_without_mutation',async()=>{
   await unchanged(async()=>{rejected(invoke(bin,['unknown-command']),/unknown_command/);rejected(invoke(bin,['status',...workspaceArgs,'--unknown-flag']),/Unknown option/);});
@@ -68,6 +97,13 @@ await test('status_reopen_preserves_grant_and_all_stored_bytes',async()=>{
     const output=JSON.parse(success(invoke(script,args)));assert.equal(output.modelCalls,0);assert.equal(output.readOnly,true);
     assert.equal(output.budget.remaining.deepseek,2);assert.equal(output.budget.authorizationId,'synthetic-explicit-grant');
   }});
+});
+await test('context_status_and_check_preserve_grant_and_all_stored_bytes',async()=>{
+  await allUnchanged(async()=>{for(const {script,prefix} of contextEntries){for(const mode of ['--status','--check']){
+    const output=JSON.parse(success(invoke(script,[...prefix,'--workspace',workspace,'--config','local-data/cmcp/config.json',mode])));
+    assert.equal(output.modelCalls,0);assert.equal(output.readOnly,true);
+    assert.equal(output.budget.remaining.deepseek,2);assert.equal(output.budget.authorizationId,'synthetic-explicit-grant');
+  }}});
 });
 await test('wrong_workspace_does_not_initialize_another_root',async()=>{
   const before=await snapshot(other);rejected(invoke(bin,['status','--workspace',other]),/configuration_missing_run_setup_first/);assert.deepEqual(await snapshot(other),before);

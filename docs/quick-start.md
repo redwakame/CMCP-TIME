@@ -1,10 +1,10 @@
 # Quick start
 
-The source examples below run from the extracted **candidate root**. `local-data/my-cmcp` and `local-data/my-cmcp-host` are example locations for a new installation, not shipped user data. The `0.1.0-rc.2` npm candidate is not registry-published: first follow [the local tarball installation guide](npm-installation.md), then use the installed `cmcp-time` command with `--workspace <existing-workspace>`. Do not run from inside `node_modules` to store personal data.
+The source examples below run from the extracted **candidate root**. `local-data/my-cmcp` and `local-data/my-cmcp-host` are example locations for a new installation, not shipped user data. The npm package `@redwakame-skill/cmcp-time` has a published `0.1.0-rc.2` baseline, available through `@next` at the 2026-09-22 release-sync preflight. This document accompanies the `0.1.0-rc.3` help/documentation update; published availability is verified separately. First follow [the npm or local tarball installation guide](npm-installation.md), then use the installed `cmcp-time` command with `--workspace <existing-workspace>`. Check the registry/current `@next` and `--version` for the version you are using. Do not run from inside `node_modules` to store personal data.
 
 ## Installed command shortcut
 
-After persistent tarball installation, substitute the actual prefix executable for `cmcp-time` (`<prefix>/cmcp-time.cmd` on Windows or `<prefix>/bin/cmcp-time` on POSIX):
+After persistent npm or reviewed-tarball installation, substitute the actual prefix executable for `cmcp-time` (`<prefix>/cmcp-time.cmd` on Windows or `<prefix>/bin/cmcp-time` on POSIX):
 
 ```text
 cmcp-time setup --workspace <existing-workspace>
@@ -16,7 +16,7 @@ Setup asks for the same explicit choices described below. Data defaults to `loca
 
 ## Obtain this source candidate
 
-Use `git clone https://github.com/redwakame/CMCP-TIME.git`, `gh repo clone redwakame/CMCP-TIME`, SSH `git@github.com:redwakame/CMCP-TIME.git`, or GitHub Code → Download ZIP. Run the following commands from the resulting source directory. No npm registry release is implied.
+Use `git clone https://github.com/redwakame/CMCP-TIME.git`, `gh repo clone redwakame/CMCP-TIME`, SSH `git@github.com:redwakame/CMCP-TIME.git`, or GitHub Code → Download ZIP. Run the following commands from the resulting source directory. Select a release tag for a fixed snapshot; `main` may contain newer documents. A source snapshot and a published npm version are separate identifiers.
 
 ## 1. Check prerequisites and choose the source
 
@@ -100,7 +100,7 @@ Those settings persist; `/session-set <key> <value>` is temporary. Clear only cl
 
 ## 5. Update, disable or remove managed attachment
 
-Installed equivalent: `cmcp-time update|disable|uninstall --workspace <workspace> --root <existing-root>`, selecting one command, not the literal bar-separated text. Install a reviewed replacement tarball into the same prefix **before** `update`; this command refreshes bindings/settings and does not perform an npm upgrade. See [update and detach details](npm-installation.md#update-installed-code-then-refresh-managed-attachment).
+Installed equivalent: `cmcp-time update|disable|uninstall --workspace <workspace> --root <existing-root>`, selecting one command, not the literal bar-separated text. Install a reviewed published version or replacement tarball into the same prefix **before** `update`; this command refreshes bindings/settings and does not perform an npm upgrade. See [update and detach details](npm-installation.md#update-installed-code-then-refresh-managed-attachment).
 
 ```powershell
 node scripts/cmcp-setup.mjs --root local-data/my-cmcp --status

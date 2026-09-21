@@ -1,4 +1,20 @@
-# CMCP-TIME 0.1.0-rc.2 — local npm candidate
+# CMCP-TIME 0.1.0-rc.3 — help and documentation update
+
+This document accompanies `0.1.0-rc.3`. At preparation, the verified published baseline was `@redwakame-skill/cmcp-time@0.1.0-rc.2`. Its publication checks included anonymous registry installation, and the release-sync preflight on 2026-09-22 (Asia/Taipei) found `next` and `latest` pointing to rc.2. Published availability is verified separately: consult the registry/current `@next` and the installed `--version`. A mutable tag does not certify stability, and source contents alone do not prove registry publication.
+
+## Changes in this source
+
+- Add `cmcp-time context --help` and direct Host context CLI help. Strict argument parsing precedes the help return; help needs no workspace, config, credentials or grant and exits before opening configuration or Runtime. Unknown options and positional arguments remain rejected. This does not change Runtime, provider, setup, update, disable or grant semantics.
+- Integrate the four complete README introductions, retaining their illustrations, product boundaries and provenance. Distinguish the verified published rc.2 baseline, the mutable `@next` channel and the rc.3 source/documentation revision.
+- Synchronize the npm guide, quick start and command reference. npm downloads/replaces program files; `update` refreshes managed attachment. `disable` retains the manual Skill; detach/uninstall retains the separate History workspace.
+
+English remains the default documentation entry. These changes do not establish new model behavior, new Host compatibility or a new platform matrix. A local package check is not evidence of rc.3 registry publication; that requires a separate version/integrity readback.
+
+## Published rc.2 baseline and retained preparation notes
+
+The following rc.2 preparation notes are retained as a historical snapshot. Their statements that rc.2 was not yet published describe that earlier preparation stage; rc.2 was subsequently published and installed from the registry. They do not describe the current release-sync status or imply that rc.3 is published.
+
+## CMCP-TIME 0.1.0-rc.2 — local npm candidate (historical preparation)
 
 This candidate prepares proposed package `@redwakame-skill/cmcp-time` for a later, separately authorized public npm RC using `next`. It is **not yet registry-published**. The public `0.1.0-rc.1` Git commit/tag and assets remain unchanged; the internal compatibility identifier remains `cmcp`.
 

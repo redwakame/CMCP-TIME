@@ -6,7 +6,19 @@
 
 **Una skill de continuidad temporal para agentes de IA.** CMCP ayuda a un agente existente a retomar una conversación con las fuentes, las fechas y el estado adecuados, sin volver a introducir todo el historial en cada solicitud al modelo.
 
-**Candidato npm local `0.1.0-rc.2` · Apache-2.0 · Autor original: [redwakame](https://github.com/redwakame)**
+**Versiones preliminares · Apache-2.0 · Autor original: [redwakame](https://github.com/redwakame)**
+
+## Tres situaciones cotidianas
+
+| Tu situación | Qué aporta CMCP |
+| --- | --- |
+| Vuelves mañana para cambiar una parte de un borrador. | Localiza el original y su versión, en lugar de reconstruirlo a partir de un resumen impreciso. |
+| Retomas la conversación después de una pausa larga. | Proporciona las fechas originales y el tiempo transcurrido, sin inventar lo sucedido durante la pausa. |
+| Dejas un trabajo pendiente o fijas explícitamente un seguimiento. | Gestiona Buffer y Pin por separado, con controles independientes y envío automático desactivado por defecto. |
+
+Son ejemplos de uso, no respuestas grabadas de un modelo. Siguen siendo necesarias las fuentes autorizadas y una integración funcional; la interpretación del modelo puede ser incorrecta.
+
+**Empieza con la integración documentada de Codex o con Playground.** Un núcleo independiente del anfitrión no significa que todos los agentes ya tengan un adaptador funcional. [Instalación](#start-here) · [Comandos](docs/commands.md) · [Límites de los hosts](docs/installation-and-hosts.md).
 
 ![Ejemplo ilustrativo de continuidad temporal; no es una prueba grabada](docs/assets/timeline.es.png)
 
@@ -41,31 +53,56 @@ Esta versión no necesita una base de datos vectorial ni descargar un modelo de 
 
 El catálogo no caduca con las entradas de Buffer. Una charla cotidiana puede quedar fuera de Buffer y seguir siendo consultable. Solo se aporta al modelo lo necesario ahora. Las propuestas del asistente no se convierten en decisiones del usuario, y las fechas desconocidas siguen siendo desconocidas.
 
-## Instalar el candidato npm local
+<a id="start-here"></a>
+## Instalación y configuración
 
-El nombre propuesto es `@redwakame-skill/cmcp-time`; **todavía no está publicado en npm**. Instala el `.tgz` suministrado en un prefijo persistente con permisos de usuario y ejecuta `cmcp-time setup --workspace <directorio-existente>`. Los archivos del programa y los datos persistentes están separados. En Windows usa `<prefix>/cmcp-time.cmd`; en POSIX, `<prefix>/bin/cmcp-time`. Consulta la [guía de instalación y actualización](docs/npm-installation.md), en inglés, para los comandos completos. No se admite una conexión persistente de Hook/Skill basada en la caché de `npx`. Instalar no conecta un Host, lee History, concede llamadas de pago ni activa avisos automáticos.
+**Paquete oficial de npm:** [`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time). **Comando:** `cmcp-time`. **Repositorio:** `redwakame/CMCP-TIME`.
 
-## Obtener el código e iniciar la configuración
+La versión npm `0.1.0-rc.2` está publicada. Un tag de GitHub, una versión npm y una etiqueta mutable son identificadores distintos. Usa `@next` para el canal de candidatos o `@0.1.0-rc.2` para reproducir esa versión publicada. `latest` no certifica estabilidad: en la comprobación de rc.2, tanto `next` como `latest` apuntaban a rc.2.
+
+**Este documento acompaña a `0.1.0-rc.3`**, con `context --help` y documentación actualizada. Durante la preparación, la comprobación del 2026-09-22 (Asia/Taipei) situaba la base publicada y verificada rc.2 tanto en `next` como en `latest`. La disponibilidad publicada se comprueba por separado: consulta el registry, el `@next` actual y tu `--version` instalada antes de utilizar la ayuda de rc.3. Consulta las [notas de versión](RELEASE-NOTES.md).
+
+### Instala y después abre el asistente
+
+Ejemplo para Windows PowerShell, desde un directorio donde quieras conservar la instalación y el espacio de trabajo por separado. Elige ubicaciones nuevas o cuyo uso ya hayas confirmado. No requiere administrador ni modificar el PATH del sistema.
+
+```powershell
+$cmcpPrefix = Join-Path $PWD 'cmcp-install'
+$cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
+New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
+npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@next --ignore-scripts --no-audit --no-fund
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
+```
+
+La instalación descarga el paquete; `setup` abre el asistente interactivo para revisar guardado, alcance, zona horaria, idioma y funciones opcionales. **Instalar no autoriza el acceso a conversaciones privadas, las llamadas de pago ni los mensajes proactivos.**
+
+La comprobación de publicación incluyó una instalación anónima desde el registry. El diseño global-prefix persistente anterior se verificó en las pruebas previas del candidato Windows con el mismo contenido, no en una matriz multiplataforma completa. Consulta la [guía npm](docs/npm-installation.md), en inglés.
+
+**Codex:** selecciona host y revisa la integración Skill/Hook generada en el proyecto. Utiliza el modelo del anfitrión, sin una clave adicional de DeepSeek. **Playground:** el modo configured-provider necesita proveedor explícito, credencial protegida y presupuesto finito. La ruta de credenciales suministrada depende de Windows DPAPI y PowerShell 7; DeepSeek es la referencia implementada, no una obligación del núcleo.
+
+### Actualizar o detener sin borrar el historial
+
+Mantén separados el prefijo de instalación y el espacio de trabajo. Tras instalar una versión aprobada en el mismo prefijo, ejecuta `cmcp-time update --workspace <tu-espacio>` para actualizar las rutas de integración. `update` no descarga versiones npm. `disable` detiene los hooks gestionados y `uninstall` retira la integración gestionada; ninguno elimina el espacio de History. No vincules hooks permanentes a la caché temporal de `npx`. Consulta [comandos](docs/commands.md) y [configuración](docs/configuration.md).
+
+### Obtener el código fuente
 
 ```sh
 git clone https://github.com/redwakame/CMCP-TIME.git
 cd CMCP-TIME
 ```
 
-También: `gh repo clone redwakame/CMCP-TIME`, SSH `git clone git@github.com:redwakame/CMCP-TIME.git`, o **Code → Download ZIP** en GitHub. Las etiquetas y los archivos de una publicación identifican versiones fijas cuando estén disponibles. Esta distribución de fuentes no implica que exista una publicación en npm; no supongas que `npm install cmcp` instala este proyecto.
+También puedes usar `gh repo clone redwakame/CMCP-TIME`, SSH `git clone git@github.com:redwakame/CMCP-TIME.git` o **Code → Download ZIP**. Elige los [tags de publicación](https://github.com/redwakame/CMCP-TIME/releases) para fijar una versión; `main` puede incluir documentación posterior. `npm install cmcp` no es el nombre completo de este paquete.
 
-Instala Node.js por separado. El mínimo declarado es Node 18. La verificación de configuración en Windows utilizó **Node 24.18.0, PowerShell 7.6.6 y Codex CLI 0.154.0**; no es una matriz completa de compatibilidad.
+Desde la raíz del código fuente:
 
 ```sh
 node scripts/cmcp-setup.mjs --help
 node scripts/cmcp-setup.mjs --root local-data/my-cmcp --host-workspace local-data/my-cmcp-host
 ```
 
-El asistente confirma guardado, alcance autorizado, zona horaria, idioma y controles. Configura CMCP y, opcionalmente, hooks locales de Codex. **No instala Node ni agentes, no inicia sesión, no concede llamadas de pago y no autoriza avisos en tu nombre.** No hay dependencias de ejecución de npm que instalar.
-
-**Con Codex:** selecciona el modo host y revisa los hooks generados. Se utiliza el modelo del anfitrión y no hace falta una clave de DeepSeek. Consulta [inicio rápido](docs/quick-start.md) y [límites de instalación y hosts](docs/installation-and-hosts.md), en inglés.
-
-**Playground independiente:** necesita un proveedor configurado, una credencial protegida y autorización finita. La ruta de credenciales incluida actualmente depende de **Windows DPAPI y PowerShell 7**. DeepSeek es la integración de referencia implementada, no una restricción conceptual del núcleo. Consulta [configuración](docs/configuration.md).
+Instala Node.js por separado. El mínimo declarado es Node 18; las pruebas npm utilizaron Windows, Node 24.18.0, npm 11.16.0 y PowerShell 7.6.6. La evidencia existente de Codex corresponde a CLI 0.154.0. No son garantías para todas las versiones. El asistente no instala Node ni agentes. Este candidato no requiere dependencias npm de ejecución ni descargar un modelo de embeddings.
 
 ## Controles utilizables
 
@@ -93,6 +130,10 @@ Es una **versión candidata de ingeniería utilizable**, no una garantía univer
 La base revisada incluye recuperación acotada, tarjetas temporales, controles separados, avisos locales Buffer/Pin y una ruta probada de hooks y compactación manual de Codex. El empaquetado también tuvo verificaciones reales del asistente y helper en Windows sin token de administrador. Las pruebas sintéticas no son nuevas pruebas con modelos reales.
 
 **No se afirma** compatibilidad completa con todos los hosts, sistemas operativos o versiones; compactación automática totalmente fiable; capacidad ilimitada; interpretación perfecta; sincronización en la nube; avisos móviles; ni gestión integral de borrado de History. Claude Code, OpenClaw, Hermes, DeepSeek Harness y Grok Bot siguen siendo destinos de adaptación, no una lista de integraciones verificadas. La traducción de documentos no certifica el comportamiento del producto en cada idioma.
+
+## Qué repositorio consultar
+
+**CMCP-TIME es la línea actual de desarrollo.** [OpenClaw Continuity](https://github.com/redwakame/openclaw-continuity) conserva la skill anterior específica de OpenClaw; [cmcp](https://github.com/redwakame/cmcp) conserva el contrato de políticas y el material de revisión anteriores. Su código, licencias y evidencia siguen separados. No se anuncia CMCP-TIME como sustitución directa de la skill anterior ni se implica una migración automática de datos.
 
 ## Autoría y colaboración
 

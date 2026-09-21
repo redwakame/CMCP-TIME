@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "Please cite CMCP-TIME when discussing this implementation or its design. This is a citation aid, not an additional license obligation."
 type: software
 title: "CMCP-TIME"
-version: "0.1.0-rc.2"
+version: "0.1.0-rc.3"
 authors:
   - family-names: "redwakame"
 repository-code: "https://github.com/redwakame/CMCP-TIME"

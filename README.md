@@ -6,7 +6,19 @@
 
 **A time-aware continuity skill for AI agents.** CMCP helps an existing agent resume an earlier discussion using the right source, original time and current state, without putting the entire conversation history back into every prompt.
 
-**Local npm candidate `0.1.0-rc.2` · Apache-2.0 · Original author: [redwakame](https://github.com/redwakame)**
+**Preview releases · Apache-2.0 · Original author: [redwakame](https://github.com/redwakame)**
+
+## Three everyday reasons to use it
+
+| Your situation | What CMCP adds |
+| --- | --- |
+| You return tomorrow and ask to change one part of a draft. | Locate the matching original and its version instead of reconstructing it from a vague summary. |
+| A conversation resumes after a long gap. | Supply the original interaction times and elapsed time, without inventing what happened while you were away. |
+| You pause unfinished work or explicitly pin a follow-up. | Keep recent continuity and Pins separate, with independent controls and automatic delivery OFF by default. |
+
+These are illustrative use cases, not recorded model outputs. Source availability, authorization and the host connection still matter; model interpretation can be wrong.
+
+**Start with the documented Codex route or the standalone Playground.** A host-neutral core is not a claim that every agent already has a working adapter. [Installation](#start-here) · [Commands](docs/commands.md) · [Host boundaries](docs/installation-and-hosts.md).
 
 ![Illustrative time-aware continuation, not a recorded model result](docs/assets/timeline.en.png)
 
@@ -41,38 +53,56 @@ No vector database or embedding-model download is required by this candidate. Lo
 
 The catalog is independent of expiring Buffer entries and can be accessed from the continuity workflow. Ordinary conversation can remain outside Buffer and still be found later. Only the material needed now goes to the model. User decisions, Assistant proposals and unknown event times stay distinguishable.
 
-## Get the source
+<a id="start-here"></a>
+## Start here
 
-Use the dedicated repository, not an old development checkout:
+**Official npm package:** [`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time). **Command:** `cmcp-time`. **Source repository:** `redwakame/CMCP-TIME`.
+
+The npm release `0.1.0-rc.2` has been published. A GitHub source release, an npm version and a mutable dist-tag are different identifiers. Use `@next` for the candidate channel, or `@0.1.0-rc.2` to reproduce that published baseline. A tag named `latest` is not a stability certification; the rc.2 publication check found both `next` and `latest` pointing to rc.2.
+
+**This document accompanies `0.1.0-rc.3`**, with `context --help` and documentation updates. At preparation, the release-sync preflight on 2026-09-22 (Asia/Taipei) found the verified published baseline rc.2 at both `next` and `latest`. Publication availability is checked separately: consult the registry/current `@next` and your installed `--version` before relying on rc.3 help. See [release notes](RELEASE-NOTES.md) for the distinction.
+
+### Install, then run the wizard
+
+Windows PowerShell example, from a directory where you want to keep the installation and its separate workspace. Use a new or deliberately selected location. Administrator rights and a system PATH change are not required.
+
+```powershell
+$cmcpPrefix = Join-Path $PWD 'cmcp-install'
+$cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
+New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
+npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@next --ignore-scripts --no-audit --no-fund
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
+```
+
+The npm command downloads the package; the setup command starts the interactive wizard. Choose saving scope, timezone, language and optional features. **Installing does not grant access to private conversations, authorize paid model calls or enable proactive messages.**
+
+The publication check installed the package anonymously from the registry. The persistent global-prefix layout above was verified in the preceding same-content Windows candidate checks. These records are not a full cross-platform test matrix. See the [npm installation guide](docs/npm-installation.md).
+
+**Codex:** choose host mode and review the generated project-local Skill/Hook integration in Codex. This route uses the host model and does not require a separate DeepSeek key. **Playground:** configured-provider mode requires an explicitly configured provider, protected credentials and a finite call budget. Its supplied credential route still depends on Windows DPAPI and PowerShell 7; DeepSeek is the implemented reference route, not the definition of the core.
+
+### Update or stop without deleting history
+
+Keep the installation prefix and workspace separate. After an approved package update at the same prefix, run `cmcp-time update --workspace <your-workspace>` to refresh managed integration paths. `update` does not download a new npm version. `disable` stops managed hooks; `uninstall` detaches managed integration. Neither is a command to delete the separate History workspace. Do not bind persistent hooks to an ephemeral `npx` cache. See [commands](docs/commands.md) and [configuration](docs/configuration.md).
+
+### Prefer a source checkout?
 
 ```sh
 git clone https://github.com/redwakame/CMCP-TIME.git
 cd CMCP-TIME
 ```
 
-GitHub CLI: `gh repo clone redwakame/CMCP-TIME`  
-SSH: `git clone git@github.com:redwakame/CMCP-TIME.git`
+GitHub CLI: `gh repo clone redwakame/CMCP-TIME`. SSH: `git clone git@github.com:redwakame/CMCP-TIME.git`. GitHub **Code → Download ZIP** is also available. Use the [release tags](https://github.com/redwakame/CMCP-TIME/releases) for fixed snapshots; `main` may contain later documentation. Do not assume the unrelated command `npm install cmcp` installs this project.
 
-Or use GitHub **Code → Download ZIP** and extract it into a writable directory. Release tags/assets identify published snapshots when available. This source release does **not** imply an npm-registry publication; do not assume `npm install cmcp` obtains this project.
-
-## Install the local npm candidate
-
-The proposed package is `@redwakame-skill/cmcp-time`; **it is not yet published to npm**. Install the supplied `.tgz` into a persistent user-writable prefix, then run `cmcp-time setup --workspace <existing-workspace>`. Program assets and saved data are separate. On Windows the command is `<prefix>/cmcp-time.cmd`; on POSIX it is `<prefix>/bin/cmcp-time`. Follow the [complete npm installation and update guide](docs/npm-installation.md) for exact commands. Persistent `npx` Hook/Skill installation is not supported. Installation itself does not attach a Host, access History, authorize paid calls or enable proactive delivery.
-
-## Start with the setup wizard
-
-Have Node.js available first. The declared minimum is Node 18; the reported Windows candidate setup used **Node 24.18.0, PowerShell 7.6.6 and Codex CLI 0.154.0**. A version declaration is not a full version/platform test matrix.
+From a source checkout:
 
 ```sh
 node scripts/cmcp-setup.mjs --help
 node scripts/cmcp-setup.mjs --root local-data/my-cmcp --host-workspace local-data/my-cmcp-host
 ```
 
-The wizard asks about saving, authorized scope, timezone, language and features. It configures CMCP and optional project-local Codex hooks. **It does not install Node or an agent, authenticate accounts, enable paid usage, or silently authorize proactive messages.** No npm runtime dependencies need installing.
-
-**Codex route:** select host mode and review the generated hook commands in Codex. This route uses the host's model; a DeepSeek key is not required. See [quick start](docs/quick-start.md) and [host/version boundaries](docs/installation-and-hosts.md).
-
-**Standalone Playground route:** needs an explicitly configured provider, protected credential and finite authorization. The currently documented configured credential path depends on **Windows DPAPI and PowerShell 7**. DeepSeek is the implemented reference path, not the definition of the CMCP core. See [configuration](docs/configuration.md).
+Install Node.js separately. The declared minimum is Node 18; the npm installation checks used Windows with Node 24.18.0, npm 11.16.0 and PowerShell 7.6.6. The existing Codex integration evidence uses CLI 0.154.0. These are versioned observations, not a guarantee for all versions. The wizard does not install Node or an agent. No npm runtime dependencies or embedding-model weights are required by this candidate.
 
 ## The controls are part of the product
 
@@ -100,6 +130,10 @@ This is a **usable engineering release candidate**, not a blanket production-rea
 The reviewed baseline includes bounded recall, per-turn time cards, separate controls, local Buffer/Pin delivery and a tested Codex hook/manual-compaction path. Candidate packaging also received real Windows setup/helper checks under a non-administrator token. Local fixture tests are not fresh live-model evidence.
 
 **Not claimed:** all hosts, all operating systems, automatic-compaction reliability, unlimited history/index capacity, flawless model interpretation, cloud synchronization, mobile delivery, or complete History-deletion governance. Claude Code, OpenClaw, Hermes, DeepSeek Harness and Grok Bot remain adaptation targets, not an all-green compatibility list. Four-language documentation is not four-language behavioral certification.
+
+## Which repository should I use?
+
+**CMCP-TIME is the current development line.** [OpenClaw Continuity](https://github.com/redwakame/openclaw-continuity) preserves the earlier OpenClaw-specific skill, while [cmcp](https://github.com/redwakame/cmcp) preserves the earlier policy contract and review artifact. Their historical code, licenses and verification claims remain separate. CMCP-TIME is not advertised as a drop-in replacement for the older OpenClaw skill, and no automatic data migration is implied.
 
 ## Documentation and contribution
 

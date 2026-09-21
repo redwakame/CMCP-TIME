@@ -7,6 +7,67 @@ import {loopHash} from '../src/cmcp-guard/cmcp-local-loop-journal.js';
 import {createCmcpRuntimeSession} from '../src/cmcp-guard/cmcp-runtime-session.js';
 import {resolveCmcpWorkspaceRoot,cmcpWorkspacePath} from '../src/cmcp-guard/cmcp-project-paths.js';
 const json=file=>fs.readFile(file,'utf8').then(JSON.parse);
+const help=`CMCP-TIME context — advanced Host context helper
+Usage: cmcp-time context --workspace <directory> --config <file> [options]
+       cmcp-time context --help
+
+General options:
+  --help                     Show this help; no workspace, config, grant or credential required
+  --workspace <directory>    Existing persistent workspace (required for npm installs)
+  --config <file>            Existing context/Runtime configuration; no default is supplied
+  --text <text>              New User text or reading question
+  --status                   Inspect current state without writes or model calls
+  --check                    Inspect normal Runtime state without writes or model calls
+  --disabled                 Disable enhancement for this invocation
+  --clean                    Enable Clean mode for this invocation
+  --now <timestamp>          Explicit time context, using the configured timezone
+
+Local retrieval (normal Runtime configuration):
+  --local-candidates         Find candidates for --text
+  --source-id <id>           Bind --local-candidates or --read-scope to a saved User source
+  --local-read <ticket>      Read selected candidates using the ticket's saved question
+  --refs <c1,c2,...>          Required candidate references for --local-read
+  --continue-ref <cN>        Continue one candidate; --refs must be the same single reference
+  --range-start <integer>    Continuation start in Unicode code points (zero-based, inclusive)
+  --range-end <integer>      Continuation end in Unicode code points (exclusive)
+
+Reading (normal Runtime configuration; choose one reading mode):
+  --read-scope               Find the scope for a reading question
+  --read                     Open a bounded reading and return its outline when ready
+  --read-all                 Open a bounded reading of the selected complete scope
+  --reading-limits <file>    Limits JSON file, required for --read and --read-all
+  --navigation-ticket <id>   Reuse saved navigation with --read-scope, --read or --read-all
+  --scope-json <json>        Explicit selection JSON; required with --navigation-ticket
+  --query-text <text>        Ephemeral query text for navigation-ticket operations
+  --read-outline <ticket>    Return an existing reading's outline
+  --read-page <ticket>       Read the next page of an existing reading
+  --project-page            Request a projection with --read-page
+  --read-progress <ticket>   Inspect reading progress without writes or model calls
+  --revoke-reading <ticket> Revoke an existing reading
+
+Host work and legacy experiments:
+  --resume-source <file>     Resume saved source JSON; cannot combine with --text
+  --work-id <id>             Explicit work identifier
+  --deadline-at <timestamp> Deadline for the operation
+  --lifecycle-file <file>    Write Host work lifecycle records to this new file
+  --manifest <file>          Frozen legacy experiment manifest; not accepted by normal Runtime
+
+All file paths must stay inside the workspace. Context uses existing configuration
+and authorization; it does not grant paid calls or initialize a workspace.
+Help exits before opening configuration or Runtime, with no data writes or model calls.
+Unknown options and positional arguments are rejected, including with --help.
+Normal context/retrieval work may save sources or receipts and use authorized model calls;
+this one-shot helper does not enable proactive delivery.
+Local modes cannot combine with reading, status/check, resume-source or manifest modes.
+Reading modes cannot combine with status/check, resume-source or manifest modes.
+Opening a reading requires --text or --navigation-ticket plus --scope-json; a navigation
+ticket cannot combine with --text. Existing reading/local-read tickets reuse saved questions.
+
+Examples:
+  cmcp-time context --workspace <directory> --config local-data/cmcp/config.json --status
+  cmcp-time context --workspace <directory> --config local-data/cmcp/config.json --text "Continue our discussion"
+  cmcp-time context --workspace <directory> --config local-data/cmcp/config.json --read --text "Find the source" --reading-limits limits.json
+  cmcp-time context --workspace <directory> --config local-data/cmcp/config.json --read-page <ticket>`;
 /** Presentation metadata only. Stored reading receipts and their version/hash checks are unchanged. */
 export function projectCmcpHostReadingUnits(host){
   if(!host||typeof host!=='object'||!host.coverage?.cumulative)return host;
@@ -30,7 +91,7 @@ export function retainCmcpHostReadingReceipt(output){
   kept.queryBodyRetention='not_saved_ephemeral_operation';return kept;
 }
 export async function runCmcpHostContextCli(argv=process.argv.slice(2)){
-  const {values:a}=parseArgs({args:argv,options:{workspace:{type:'string'},config:{type:'string'},manifest:{type:'string'},text:{type:'string'},now:{type:'string'},
+  const {values:a}=parseArgs({args:argv,options:{help:{type:'boolean'},workspace:{type:'string'},config:{type:'string'},manifest:{type:'string'},text:{type:'string'},now:{type:'string'},
     status:{type:'boolean'},check:{type:'boolean'},disabled:{type:'boolean'},clean:{type:'boolean'},
     'resume-source':{type:'string'},'work-id':{type:'string'},'deadline-at':{type:'string'},'lifecycle-file':{type:'string'},
     'local-candidates':{type:'boolean'},'local-read':{type:'string'},refs:{type:'string'},'source-id':{type:'string'},
@@ -38,6 +99,7 @@ export async function runCmcpHostContextCli(argv=process.argv.slice(2)){
     'read-scope':{type:'boolean'},'navigation-ticket':{type:'string'},'scope-json':{type:'string'},'query-text':{type:'string'},'read-outline':{type:'string'},
     'revoke-reading':{type:'string'},'reading-limits':{type:'string'},'project-page':{type:'boolean'},
     'continue-ref':{type:'string'},'range-start':{type:'string'},'range-end':{type:'string'}}});
+  if(a.help){console.log(help);return;}
   const repo=resolveCmcpWorkspaceRoot(a.workspace);
   const within=value=>{if(typeof value!=='string')throw Error('explicit_repo_path_required');const full=path.resolve(repo,value),rel=path.relative(repo,full);
     if(!rel||rel.startsWith('..')||path.isAbsolute(rel))throw Error('repo_local_path_required');return cmcpWorkspacePath(repo,full);};

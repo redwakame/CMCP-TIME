@@ -6,7 +6,19 @@
 
 **既存の AI エージェントに時間を踏まえた対話の継続を加えるスキルです。** CMCP は、元の発言、時刻、現在の状態を使って過去の話題を再開できるよう支援します。毎回すべての履歴をプロンプトに入れ直す仕組みではありません。
 
-**ローカル npm 候補 `0.1.0-rc.2` · Apache-2.0 · 原作者：[redwakame](https://github.com/redwakame)**
+**プレビュー版 · Apache-2.0 · 原作者：[redwakame](https://github.com/redwakame)**
+
+## 三つの使いどころ
+
+| 状況 | CMCP が補うもの |
+| --- | --- |
+| 翌日、昨日の下書きの一部分だけを修正したい。 | 曖昧な要約から作り直すのではなく、対応する原文と版を探します。 |
+| 長い間隔を空けて対話を再開する。 | 元の対話時刻と経過時間を渡し、その間に何があったかを勝手に推測しません。 |
+| 作業を中断する、または後で確認する対象を明示的に Pin にする。 | Buffer と Pin を分け、独立した操作を用意します。自動送信は初期状態では OFF です。 |
+
+これは用途の説明であり、実際に記録したモデル出力ではありません。許可された原文と正常なホスト接続が必要で、モデルの解釈には誤りがあり得ます。
+
+**まずは文書化された Codex 接続か単独 Playground から始めてください。** ホストに依存しない Core であることは、すべてのエージェントで接続済みという意味ではありません。[インストール](#start-here) · [コマンド](docs/commands.md) · [ホストの制限](docs/installation-and-hosts.md)。
 
 ![時間を踏まえた継続の説明図。実際のモデル検証結果ではありません](docs/assets/timeline.ja.png)
 
@@ -41,31 +53,56 @@ CMCP は許可されたテキストの原文、役割、時刻を保存し、時
 
 一覧は Buffer の期限切れとは独立しています。普通の会話は Buffer に入らなくても後で探せます。今回必要な情報だけをモデルへ渡し、Assistant の提案をユーザーの決定へ格上げしたり、不明な出来事の時刻を補ったりしません。
 
-## ローカル npm 候補のインストール
+<a id="start-here"></a>
+## インストールと設定
 
-予定のパッケージ名は `@redwakame-skill/cmcp-time` で、**npm registry にはまだ公開されていません**。付属の `.tgz` を一般ユーザーが書き込める永続的な prefix にインストールし、`cmcp-time setup --workspace <既存ディレクトリ>` を実行します。プログラムと永続データは別の場所に保存します。Windows の入口は `<prefix>/cmcp-time.cmd`、POSIX は `<prefix>/bin/cmcp-time` です。具体的な手順は英語の [npm インストール・更新ガイド](docs/npm-installation.md)を参照してください。`npx` キャッシュに依存する永続的な Hook／Skill 接続は非対応です。インストールだけでは Host 接続、History の読取、課金の許可、自動通知の有効化は行いません。
+**公式 npm パッケージ：**[`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time)。**コマンド：**`cmcp-time`。**ソース：**`redwakame/CMCP-TIME`。
 
-## 入手と設定
+npm の `0.1.0-rc.2` は公開済みです。GitHub のタグ、npm のバージョン、移動可能な dist-tag は別の識別子です。候補版の配布先には `@next`、その公開基準を再現する場合には `@0.1.0-rc.2` を使います。`latest` は安定性の認証ではありません。rc.2 の公開確認時には `next` と `latest` の両方が rc.2 を指していました。
+
+**この文書は `0.1.0-rc.3` に付属し**、`context --help` と文書の更新を説明します。準備時の 2026-09-22（Asia/Taipei）の事前確認では、公開・検証済みの基準版 rc.2 が `next` と `latest` の両方に設定されていました。公開状況は別途確認してください。rc.3 のヘルプを使う前に、registry、現在の `@next`、インストール済みの `--version` を確認してください。[リリースノート](RELEASE-NOTES.md)を参照してください。
+
+### インストール後にウィザードを起動
+
+Windows PowerShell の例です。インストール先とデータ用ワークスペースを分けて保持する場所から実行し、新規または用途を確認済みのディレクトリを選んでください。管理者権限やシステム PATH の変更は不要です。
+
+```powershell
+$cmcpPrefix = Join-Path $PWD 'cmcp-install'
+$cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
+New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
+npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@next --ignore-scripts --no-audit --no-fund
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
+```
+
+インストールはパッケージの取得、`setup` は対話式ウィザードの起動です。保存範囲、タイムゾーン、言語、任意機能を確認します。**インストールだけでは、私的な対話へのアクセス、課金を伴うモデル呼び出し、自動通知は許可されません。**
+
+公開時の検証では registry から匿名でインストールしました。上記の永続 global-prefix 配置は、同じ内容を使った先行 Windows 候補版の検証に基づきます。全 OS の検証ではありません。[npm ガイド](docs/npm-installation.md)も参照してください。詳細文書は英語です。
+
+**Codex：**host モードを選び、プロジェクト内に生成された Skill／Hook 接続を確認します。ホストのモデルを使うため、別の DeepSeek キーは不要です。**Playground：**configured-provider モードには、明示的なプロバイダー、保護された認証情報、有限の呼び出し予算が必要です。同梱の認証経路は Windows DPAPI／PowerShell 7 に依存します。DeepSeek は実装済みの参照経路であり、Core の必須条件ではありません。
+
+### 履歴を消さずに更新・停止する
+
+インストール先とワークスペースを分けてください。同じ prefix に承認済みの新版を入れた後、`cmcp-time update --workspace <ワークスペース>` で管理対象の接続パスを更新します。`update` 自体は npm の新版をダウンロードしません。`disable` は管理対象 Hook を停止し、`uninstall` は管理対象の接続を解除します。どちらも独立した History ワークスペースを削除する操作ではありません。永続 Hook を一時的な `npx` キャッシュに接続しないでください。[コマンド](docs/commands.md)と[設定](docs/configuration.md)を参照してください。
+
+### ソースコードから使う場合
 
 ```sh
 git clone https://github.com/redwakame/CMCP-TIME.git
 cd CMCP-TIME
 ```
 
-`gh repo clone redwakame/CMCP-TIME`、SSH の `git clone git@github.com:redwakame/CMCP-TIME.git`、GitHub の **Code → Download ZIP** でも入手できます。公開済みのタグや添付ファイルがあれば固定版の識別に使えます。GitHub のソース公開は npm 公開を意味しません。`npm install cmcp` が本プロジェクトを取得するとは仮定しないでください。
+`gh repo clone redwakame/CMCP-TIME`、SSH の `git clone git@github.com:redwakame/CMCP-TIME.git`、**Code → Download ZIP** も使えます。固定版には[公開タグ](https://github.com/redwakame/CMCP-TIME/releases)を選びます。`main` は後日の文書変更を含む場合があります。`npm install cmcp` は本パッケージの完全な名前ではありません。
 
-Node.js は別途必要です。宣言上の最低バージョンは Node 18 です。Windows の候補版設定検証は **Node 24.18.0、PowerShell 7.6.6、Codex CLI 0.154.0** で行われており、全バージョン・全 OS の保証ではありません。
+ソースのルートから実行します。
 
 ```sh
 node scripts/cmcp-setup.mjs --help
 node scripts/cmcp-setup.mjs --root local-data/my-cmcp --host-workspace local-data/my-cmcp-host
 ```
 
-これは保存範囲、タイムゾーン、言語、機能を確認する**設定・接続ウィザード**です。Node やエージェントのインストール、アカウントへのログイン、課金の許可、自動通知への同意は代行しません。npm の実行時依存パッケージはありません。
-
-**Codex で使う場合：**host モードを選び、生成されたプロジェクト Hook を確認します。ホスト自身のモデルを使用し、DeepSeek のキーは不要です。[クイックスタート](docs/quick-start.md)と[ホストの境界](docs/installation-and-hosts.md)を参照してください。詳細技術文書は英語です。
-
-**単独 Playground：**明示的なプロバイダー設定、保護された認証情報、有限の呼出許可が必要です。現在同梱される configured 認証経路は **Windows DPAPI／PowerShell 7** に依存します。DeepSeek は実装済みの参照経路であり、Core の製品定義そのものではありません。[設定](docs/configuration.md)を参照してください。
+Node.js は別途必要です。宣言上の最低版は Node 18、npm インストール検証は Windows、Node 24.18.0、npm 11.16.0、PowerShell 7.6.6 で実施されています。既存の Codex 接続証拠は CLI 0.154.0 に対応します。全バージョンの保証ではありません。ウィザードは Node やエージェントをインストールしません。本候補版は npm の実行時依存や埋め込みモデルのダウンロードを必要としません。
 
 ## 操作とスイッチ
 
@@ -93,6 +130,10 @@ node scripts/cmcp-setup.mjs --root local-data/my-cmcp --host-workspace local-dat
 確認済み基準には有界な原文取得、各ターンの時間カード、個別制御、ローカル Buffer／Pin 送信、Codex Hook と手動圧縮の経路があります。パッケージ段階では非管理者 Windows token で実ウィザードと helper も確認されています。合成テストは新しい実モデル検証ではありません。
 
 **未保証：**全ホスト、全 OS、自動圧縮の全面的な信頼性、無制限の容量、完全な理解、クラウド同期、モバイル通知、History の完全な削除管理。Claude Code、OpenClaw、Hermes、DeepSeek Harness、Grok Bot は今後の接続対象であり、すべて検証済みとは表示しません。四言語の文書も四言語の動作認証を意味しません。
+
+## 三つのリポジトリの関係
+
+**現在の開発主線は CMCP-TIME です。** [OpenClaw Continuity](https://github.com/redwakame/openclaw-continuity) は以前の OpenClaw 専用スキル、[cmcp](https://github.com/redwakame/cmcp) は以前のポリシー契約とレビュー資料を保持しています。それぞれのコード、ライセンス、検証証拠は別のものです。CMCP-TIME を旧スキルのそのまま置き換えられる版とはしておらず、自動的なデータ移行も意味しません。
 
 ## 作者と参加方法
 

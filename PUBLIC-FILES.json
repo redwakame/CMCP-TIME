@@ -1,9 +1,9 @@
 {
   "kind": "cmcp-time-public-source-allowlist",
-  "version": "0.1.0-rc.2",
-  "publicationRevision": "npm-candidate-20260920.1",
+  "version": "0.1.0-rc.3",
+  "publicationRevision": "release-sync-20260922.1",
   "hashAlgorithm": "SHA-256",
-  "selfHash": "Archive SHA-256 covers this index; the index does not hash itself.",
+  "selfHash": "Git commit and archive digest cover this index; the index does not hash itself.",
   "sourceOnlyFiles": [
     {
       "path": ".gitignore",
@@ -13,7 +13,7 @@
     {
       "path": "package-lock.json",
       "bytes": 372,
-      "sha256": "4bd059892834a8c24c0c9215f704b6bf6a1f28e1e59269c9ff8fcadb29b2d3b2"
+      "sha256": "5b2bf551d1a8c7c16e4af710628142ea10768f97ec4d783b555b6b5d592dc4ff"
     }
   ],
   "files": [
@@ -35,12 +35,12 @@
     {
       "path": ".codex-plugin/plugin.json",
       "bytes": 1076,
-      "sha256": "01eab6dd135168341f9586c624a4f38906a418761fd7809b1cbe47aaf57c6748"
+      "sha256": "afaf14a439d337500fcc60cb4f2daca0ef2ba83ef67d2b952f9d23a2942e59fd"
     },
     {
       "path": "CITATION.cff",
       "bytes": 658,
-      "sha256": "b48c1eba5743f04f81b0dd2fa477b7fc3e8be042d00a340456bd9dde4bfdef28"
+      "sha256": "850a30aa56a6d890dca1bac990ccf2d856eb036d167a28ed70cfaa19cccf228c"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -69,8 +69,8 @@
     },
     {
       "path": "NPM-CANDIDATE.json",
-      "bytes": 649,
-      "sha256": "8162df6801a3e0b6f1a8a53268f79496ad28e0ba401a094e7bf3a079e2dc464e"
+      "bytes": 917,
+      "sha256": "dcad7eacf7844814cf1dca55259d79e784740c4e110e89e74a51befb565a7b9e"
     },
     {
       "path": "PUBLICATION-VERIFICATION.json",
@@ -79,28 +79,28 @@
     },
     {
       "path": "README.es.md",
-      "bytes": 9127,
-      "sha256": "4efc0f9d082f2efeefd581f3f27bbb5d418c9984918853204fd33e0bb473798a"
+      "bytes": 12626,
+      "sha256": "0723a624cfdcde6fe66844db7a6cd30a3cff78a95e0c946b6b15fc34ba9ddd8e"
     },
     {
       "path": "README.ja.md",
-      "bytes": 9940,
-      "sha256": "770239f3bead4c26c4fb9fed7a24bf28251d49c272f6f4f2bfb90c459c01ed85"
+      "bytes": 13964,
+      "sha256": "bf6395eb9b93c404a0f96b3130ad3d7513e8885a22b9c96dc4b690df8ed1d830"
     },
     {
       "path": "README.md",
-      "bytes": 9212,
-      "sha256": "6b5442c3fc2a41328a4400f6938e1c7bb8031a7004332a89bb52ec3e711c65c5"
+      "bytes": 12675,
+      "sha256": "d3d4f5f7a77611708eaa30071cef75b6b22c05cb7292f07c5b68cd74c60aac16"
     },
     {
       "path": "README.zh-TW.md",
-      "bytes": 7861,
-      "sha256": "be9ee29da1ee01e71e0fa0d519bca8cb38aba0a683eb6c5f7e33524610968877"
+      "bytes": 10948,
+      "sha256": "3101d4d056b2f4422dd7c99aec1b7c1eeb26c932fdea7a4b3071c8aa25ab9cf9"
     },
     {
       "path": "RELEASE-NOTES.md",
-      "bytes": 4685,
-      "sha256": "1cf8f01d1ed3264b785ba496ed9af6ca9089763d65ca0dc237c363fd2525e505"
+      "bytes": 6802,
+      "sha256": "e06cd447e790bd4b2201cb69c1827a4859b8fae42f35245557c4466a6aa1d097"
     },
     {
       "path": "SECURITY.md",
@@ -204,8 +204,8 @@
     },
     {
       "path": "docs/commands.md",
-      "bytes": 18454,
-      "sha256": "a1ea503e9a46725e14fb0f4760208800dfabb5ad7b999da66481c4e486b4fe7d"
+      "bytes": 19547,
+      "sha256": "4d96399700eb77f699eaa6c1be86fd7e5bf8221104c7103f064bca294eb3a03f"
     },
     {
       "path": "docs/configuration.md",
@@ -219,8 +219,8 @@
     },
     {
       "path": "docs/installation-and-hosts.md",
-      "bytes": 8295,
-      "sha256": "45e1b52582efcdc415779b3ee164ae90c3247b66b48ab5dbeb29de92fbe17673"
+      "bytes": 8634,
+      "sha256": "2bc6b73445eb769107991a420578a56ce829d019b0d5324632fc61311fd78a7a"
     },
     {
       "path": "docs/license-provenance-v0.1.md",
@@ -229,13 +229,13 @@
     },
     {
       "path": "docs/npm-installation.md",
-      "bytes": 9754,
-      "sha256": "77824a7b14cbc3d58487d04fcb8bf00ec5157514bcb2d27bde3e319027e70860"
+      "bytes": 12111,
+      "sha256": "14a509aa089581c7a860dc96f4d42a3f9c192cb01339ede44102b38d984a1ff3"
     },
     {
       "path": "docs/operations.zh-TW.md",
-      "bytes": 16624,
-      "sha256": "8d57e04266cd27ecb7c71ff5159c8bf58a352f74a85bab30e872a926138ed9d3"
+      "bytes": 17603,
+      "sha256": "75e45ff74df7a199109348d508b962af67b2469681f921f6299763cfeee5bd08"
     },
     {
       "path": "docs/privacy.md",
@@ -244,8 +244,8 @@
     },
     {
       "path": "docs/quick-start.md",
-      "bytes": 7284,
-      "sha256": "a36d816760fc8ab4b84c30a10b3ac89636b08660234470730dc242c7bbe54331"
+      "bytes": 7736,
+      "sha256": "4eb38867f88d740b55e468a4950cea4a0554db4aad1494cd532724842844f550"
     },
     {
       "path": "docs/read-operations-v0.1.md",
@@ -280,7 +280,7 @@
     {
       "path": "package.json",
       "bytes": 8840,
-      "sha256": "ebc0f856175cb5d5349867bc5fd82b562e7b7215ced4d4564c466003653b8950"
+      "sha256": "d69508bf92422b12998edcc77a6865cad31831663f91546310cdef2596608ca4"
     },
     {
       "path": "scripts/check-cmcp-bundle.mjs",
@@ -299,8 +299,8 @@
     },
     {
       "path": "scripts/cmcp-host-context-cli.mjs",
-      "bytes": 15443,
-      "sha256": "4a7922e85e5db860523b91c6b552c63fcbfbe684a1ef59cbd43cbd1d7efd6b44"
+      "bytes": 19726,
+      "sha256": "8997948f79d8837e39ff541a3eebeb0b2576e9b0d4208bcc4f5d9ac5ec2a24a8"
     },
     {
       "path": "scripts/cmcp-host-operation.mjs",
@@ -344,8 +344,8 @@
     },
     {
       "path": "scripts/run-cmcp-cli-boundary-smoke.mjs",
-      "bytes": 6456,
-      "sha256": "4a58d8e9cd1d1a0c44b054e15f1ddcc120f0428b910339637d18e2e3a84230f0"
+      "bytes": 8822,
+      "sha256": "37a06b8433bb995c3bfa04fdfc7446a46ab95995de15c87bb266db9d422b4140"
     },
     {
       "path": "scripts/run-cmcp-npm-setup-smoke.mjs",
