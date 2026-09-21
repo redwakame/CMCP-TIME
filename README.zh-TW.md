@@ -139,4 +139,6 @@ Node.js 需另行準備。套件宣告最低 Node 18；npm 安裝驗收使用 Wi
 
 歡迎提出可重現問題、使用回饋、獨立驗證與合作。請勿把私人聊天、金鑰或完整資料目錄貼到公開 Issue。詳見[貢獻方式](CONTRIBUTING.md)、[安全說明](SECURITY.md)、[隱私與資料](docs/privacy.md)及[後續方向](docs/roadmap.md)。
 
+如果你對 CMCP-TIME 有興趣，歡迎來信交流想法與使用心得。若這個專案對你有幫助，也歡迎在 GitHub 給顆星支持。我會持續優化與更新，並歡迎商業合作洽談。聯絡信箱：[adarobot666@gmail.com](mailto:adarobot666@gmail.com)／[redwakame616@gmail.com](mailto:redwakame616@gmail.com)。
+
 原作者與維護者為 **redwakame**。目前專案發布採 [Apache-2.0](LICENSE)，保留 [NOTICE](NOTICE) 與[上游授權沿革](docs/license-provenance-v0.1.md)。舊版本已授出的權利不撤銷；內部相容識別仍為 `cmcp`，對外名稱為 **CMCP-TIME**。[CITATION.cff](CITATION.cff) 提供方便引用的資訊，不新增每次使用都必須宣傳作者的條款。

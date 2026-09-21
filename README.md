@@ -141,6 +141,8 @@ The reviewed baseline includes bounded recall, per-turn time cards, separate con
 
 Ideas, reproducible issues, independent evaluation and collaboration are welcome. Keep private conversations and credentials out of public reports. Read [CONTRIBUTING](CONTRIBUTING.md), [SECURITY](SECURITY.md) and the [roadmap](docs/roadmap.md).
 
+Interested in CMCP-TIME? I’d love to exchange ideas and hear how you’re using it. If you find the project useful, please consider giving it a star on GitHub. I’ll continue improving and updating it, and I also welcome commercial collaboration. Get in touch at [adarobot666@gmail.com](mailto:adarobot666@gmail.com) or [redwakame616@gmail.com](mailto:redwakame616@gmail.com).
+
 ## Author and license
 
 Created and maintained by **redwakame**. Current project-authored distribution: [Apache-2.0](LICENSE), subject to the retained [NOTICE](NOTICE) and [upstream provenance](docs/license-provenance-v0.1.md). Earlier permissions are not revoked. The internal compatibility identifier remains `cmcp`; the public name is **CMCP-TIME**.

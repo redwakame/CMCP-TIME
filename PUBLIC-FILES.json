@@ -1,7 +1,7 @@
 {
   "kind": "cmcp-time-public-source-allowlist",
   "version": "0.1.0-rc.3",
-  "publicationRevision": "release-sync-20260922.1",
+  "publicationRevision": "release-sync-20260922.2-contact",
   "hashAlgorithm": "SHA-256",
   "selfHash": "Git commit and archive digest cover this index; the index does not hash itself.",
   "sourceOnlyFiles": [
@@ -79,23 +79,23 @@
     },
     {
       "path": "README.es.md",
-      "bytes": 12626,
-      "sha256": "0723a624cfdcde6fe66844db7a6cd30a3cff78a95e0c946b6b15fc34ba9ddd8e"
+      "bytes": 13023,
+      "sha256": "c1ce1d32f4915ad302cf4e58ad00a1aee00756f2d1b7efc36bfc972015c1c38c"
     },
     {
       "path": "README.ja.md",
-      "bytes": 13964,
-      "sha256": "bf6395eb9b93c404a0f96b3130ad3d7513e8885a22b9c96dc4b690df8ed1d830"
+      "bytes": 14414,
+      "sha256": "c4cb3d9d66d78dc3267e4b63784f7bc2452715a9f542ef2521dd6687f0e6489a"
     },
     {
       "path": "README.md",
-      "bytes": 12675,
-      "sha256": "d3d4f5f7a77611708eaa30071cef75b6b22c05cb7292f07c5b68cd74c60aac16"
+      "bytes": 13056,
+      "sha256": "a9aac16971861e4c8826259e8f59e42208317bbc48138ed5e658a70a83b02bda"
     },
     {
       "path": "README.zh-TW.md",
-      "bytes": 10948,
-      "sha256": "3101d4d056b2f4422dd7c99aec1b7c1eeb26c932fdea7a4b3071c8aa25ab9cf9"
+      "bytes": 11287,
+      "sha256": "bdd7d95ec115b281ce545728743eb52924846423d0566c978bc72cf2eb420216"
     },
     {
       "path": "RELEASE-NOTES.md",
