@@ -6,7 +6,7 @@
 
 **Una skill de continuidad temporal para agentes de IA.** CMCP ayuda a un agente existente a retomar una conversación con las fuentes, las fechas y el estado adecuados, sin volver a introducir todo el historial en cada solicitud al modelo.
 
-**Versión candidata `0.1.0-rc.1` · Apache-2.0 · Autor original: [redwakame](https://github.com/redwakame)**
+**Candidato npm local `0.1.0-rc.2` · Apache-2.0 · Autor original: [redwakame](https://github.com/redwakame)**
 
 ![Ejemplo ilustrativo de continuidad temporal; no es una prueba grabada](docs/assets/timeline.es.png)
 
@@ -40,6 +40,10 @@ Esta versión no necesita una base de datos vectorial ni descargar un modelo de 
 **History** conserva el texto autorizado; el **catálogo temporal y de fuentes** lo localiza. **Buffer** representa continuidad reciente elegible. Los **Pins** son objetivos fijados explícitamente. No son cuatro copias de la misma conversación.
 
 El catálogo no caduca con las entradas de Buffer. Una charla cotidiana puede quedar fuera de Buffer y seguir siendo consultable. Solo se aporta al modelo lo necesario ahora. Las propuestas del asistente no se convierten en decisiones del usuario, y las fechas desconocidas siguen siendo desconocidas.
+
+## Instalar el candidato npm local
+
+El nombre propuesto es `@redwakame-skill/cmcp-time`; **todavía no está publicado en npm**. Instala el `.tgz` suministrado en un prefijo persistente con permisos de usuario y ejecuta `cmcp-time setup --workspace <directorio-existente>`. Los archivos del programa y los datos persistentes están separados. En Windows usa `<prefix>/cmcp-time.cmd`; en POSIX, `<prefix>/bin/cmcp-time`. Consulta la [guía de instalación y actualización](docs/npm-installation.md), en inglés, para los comandos completos. No se admite una conexión persistente de Hook/Skill basada en la caché de `npx`. Instalar no conecta un Host, lee History, concede llamadas de pago ni activa avisos automáticos.
 
 ## Obtener el código e iniciar la configuración
 

@@ -1,6 +1,48 @@
 # CMCP-TIME 完整操作導覽
 
-CMCP 是日常簡稱。這份候選是原始碼與現有技能的可使用整理，不是已發布套件、雲端服務或全部 Host 整合完成宣告。產品回答預設英文；使用者／Host 明確語言設定優先。來源原文保留原語言，本文採臺灣繁體中文。
+CMCP 是日常簡稱。這份 `0.1.0-rc.2` 是可由本機 `.tgz` 安裝的候選，建議 npm 名稱為 `@redwakame-skill/cmcp-time`，實際帳號／scope 與名稱仍待確認；目前尚未發布至 npm registry。它不是雲端服務或全部 Host 整合完成宣告。產品回答預設英文；使用者／Host 明確語言設定優先。來源原文保留原語言，本文採臺灣繁體中文。
+
+## npm 候選：程式與資料分開
+
+先自行準備 Node.js 與 npm。以下 PowerShell 範例使用當前資料夾內隨附的實際 tarball，另建兩個持久且一般使用者可寫入的位置；若名稱已有其他用途，請改用自己的目錄。命令不修改全域 npm 設定或系統 PATH。
+
+```powershell
+$cmcpPrefix = Join-Path $PWD 'cmcp-install'
+$cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
+$cmcpTarball = (Resolve-Path './redwakame-skill-cmcp-time-0.1.0-rc.2.tgz').Path
+New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
+npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpTarball" --ignore-scripts --no-audit --no-fund
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') --help
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
+```
+
+`cmcp-install` 放程式、契約、schema 與技能範本；`cmcp-workspace` 才是持久資料的授權根目錄。安裝後的資料操作必須指定已存在的 `--workspace`；`--root` 預設為該工作區內的 `local-data/cmcp`，Host 接線初始預設在 `local-data/cmcp-host`。可明確改成工作區內其他位置；不能藉絕對路徑或 symlink 跳出授權範圍。不要把 History 存到 npm 套件的 `node_modules` 內。
+
+需要自動化明確選項時，將自己審閱過的設定 JSON 放在工作區內，傳入 `setup --answers choices.json`；`--host-workspace host` 則選工作區內的 Host 子目錄。範例只是格式，不代替本人同意保存來源。程式資產依實際安裝位置解析，不是把所有根目錄一律改成終端機 cwd。
+
+安裝只解開程式，不自動掛載 Host、讀取 History、授予模型額度或啟用主動推送。設定精靈仍逐項取得明確選擇。Host 模式使用 Host 自己的模型；configured Playground 仍需受保護憑證和另外授權的有限 grant。status、help 與設定查看零模型，重開與換 Session 不補額度。
+
+```powershell
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace" --status
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') playground --workspace "$cmcpWorkspace" --session 'My conversation'
+```
+
+`status` 看 Runtime，`setup --status` 看安裝設定；Playground 內的 `/read`、`/read-all`、Buffer／Pin 等指令沿用下文。缺少設定時不會因路徑拼錯而自動建立另一份資料；先執行 setup。正常結束使用 `/exit`，下次仍指定同一工作區與資料 root。
+
+更新程式與更新接線是兩個步驟：先正常關閉 writers／Host，將審閱過的新 `.tgz` 安裝至同一 prefix，再執行 `update`，沿原設定重新核對選擇。`update` 不會自動下載 npm 新版本。只重裝套件不刪工作區原文，不刷新 User／TTL、清除 grant 或重新取得推送資格。
+
+```powershell
+npm.cmd install --global --prefix "$cmcpPrefix" ./reviewed-replacement.tgz --ignore-scripts --no-audit --no-fund
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') update --workspace "$cmcpWorkspace"
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') disable --workspace "$cmcpWorkspace"
+& (Join-Path $cmcpPrefix 'cmcp-time.cmd') uninstall --workspace "$cmcpWorkspace"
+```
+
+以上管理命令依目的選用，不是每次更新都要全部執行。`disable` 只停受管理的自動 Hook／binding，手動 Skill 仍保留；`uninstall` 再移除未被另行修改的受管理 Skill，兩者均保留 History、設定、grant、回執及設定前像，也不卸載 npm 程式。若要移除程式，先完成接線移除，再明確執行 `npm.cmd uninstall --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time --ignore-scripts --no-audit --no-fund`；不要順便刪除 `cmcp-workspace`。變更 scope 或 Host 位置不是隱含資料遷移，已有外部修改會明確回報衝突。
+
+POSIX 的執行檔位於 `<prefix>/bin/cmcp-time`，Windows 位於 `<prefix>/cmcp-time.cmd`；使用完整路徑無須更動系統 PATH。本版不支援以 `npx` 快取作永久 Hook／Skill 安裝位置，該路徑的掛載會拒絕。來源方式亦可使用 `node bin/cmcp-time.mjs`，與 npm 共用實作。完整選項及平台限制見 [npm 安裝指南](npm-installation.md)與[命令索引](commands.md)。
 
 ## 取得原始碼與設定是兩件事
 

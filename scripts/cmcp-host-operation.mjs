@@ -7,25 +7,27 @@ import {spawn,spawnSync} from 'node:child_process';
 import {loopHash} from '../src/cmcp-guard/cmcp-local-loop-journal.js';
 import {cancelCmcpRuntimeWork,recoverCmcpRuntimeWork} from '../src/cmcp-guard/cmcp-runtime-session.js';
 import {finishCmcpOwnedHostHelper} from './cmcp-native-host-process.mjs';
+import {resolveCmcpWorkspaceRoot,cmcpWorkspacePath} from '../src/cmcp-guard/cmcp-project-paths.js';
 
-const repo=fileURLToPath(new URL('../',import.meta.url)),helper=fileURLToPath(new URL('../.agents/skills/cmcp-context/scripts/recall.mjs',import.meta.url));
-const within=value=>{if(typeof value!=='string'||!value)throw Error('operation_repo_path_required');const target=path.resolve(repo,value),relative=path.relative(repo,target);
-  if(!relative||relative.startsWith('..')||path.isAbsolute(relative))throw Error('operation_path_outside_repo');return target;};
+const helper=fileURLToPath(new URL('../.agents/skills/cmcp-context/scripts/recall.mjs',import.meta.url));
+const pathWithin=(repo,value)=>{if(typeof value!=='string'||!value)throw Error('operation_repo_path_required');const target=path.resolve(repo,value),relative=path.relative(repo,target);
+  if(!relative||relative.startsWith('..')||path.isAbsolute(relative))throw Error('operation_path_outside_repo');return cmcpWorkspacePath(repo,target);};
 const uuid=value=>typeof value==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(value);
 
 /** 短命令的固定傳參；不讀 History／Event，也不直接呼叫模型。 */
 export async function prepareCmcpHostOperation(argv){
-  const {values:a}=parseArgs({args:argv,options:{request:{type:'string'},'local-read':{type:'string'},refs:{type:'string'},
+  const {values:a}=parseArgs({args:argv,options:{workspace:{type:'string'},request:{type:'string'},'local-read':{type:'string'},refs:{type:'string'},
     'continue-ref':{type:'string'},'range-start':{type:'string'},'range-end':{type:'string'}}});
+  const repo=resolveCmcpWorkspaceRoot(a.workspace),within=value=>pathWithin(repo,value);
   const requestFile=within(a.request),raw=await fs.readFile(requestFile,'utf8'),request=JSON.parse(raw);
   const allowed=new Set(['kind','version','stage','config','workId','candidateWorkId','lifecycleFile','deadlineAt','traceRoot','question','sourceId']);
   if(request.kind!=='cmcp_host_operation'||request.version!==1||!['candidates','read','continuation'].includes(request.stage)
     ||Object.keys(request).some(key=>!allowed.has(key))||!uuid(request.workId))throw Error('invalid_host_operation');
   const deadline=Date.parse(request.deadlineAt),remaining=deadline-Date.now();
   if(!Number.isFinite(deadline)||remaining<=0||remaining>300000)throw Error('invalid_host_operation_deadline');
-  const configFile=within(request.config),lifecycleFile=within(request.lifecycleFile),traceRoot=within(request.traceRoot),args=[helper,'--config',configFile];
+  const configFile=within(request.config),lifecycleFile=within(request.lifecycleFile),traceRoot=within(request.traceRoot),args=[helper,'--workspace',repo,'--config',configFile];
   if(request.stage==='candidates'){
-    if(typeof request.question!=='string'||!request.question.trim()||Object.keys(a).some(key=>key!=='request')||request.candidateWorkId!==undefined)throw Error('invalid_candidate_operation');
+    if(typeof request.question!=='string'||!request.question.trim()||Object.keys(a).some(key=>!['request','workspace'].includes(key))||request.candidateWorkId!==undefined)throw Error('invalid_candidate_operation');
     args.push('--local-candidates','--text',request.question);
     if(request.sourceId!==undefined){if(typeof request.sourceId!=='string'||!request.sourceId.trim())throw Error('invalid_candidate_source_id');args.push('--source-id',request.sourceId);}
   }else{
@@ -45,6 +47,7 @@ export async function prepareCmcpHostOperation(argv){
 /** 只控制由本 wrapper 建立的 Node helper；tool 在 wrapper 啟動前失敗仍不在此觀測範圍。 */
 export async function runCmcpHostOperation(argv=process.argv.slice(2)){
   const operation=await prepareCmcpHostOperation(argv),{request,traceRoot,lifecycleFile}=operation;
+  const repo=operation.cwd,within=value=>pathWithin(repo,value);
   await fs.mkdir(traceRoot);const write=(name,value)=>fs.writeFile(path.join(traceRoot,name),typeof value==='string'?value:JSON.stringify(value,null,2),{flag:'wx'});
   await write('before-spawn.json',{kind:'cmcp_owned_helper_spawn',at:new Date().toISOString(),wrapperPid:process.pid,wrapperCwd:process.cwd(),
     requestFile:operation.requestFile,requestHash:operation.requestHash,cwd:operation.cwd,executable:operation.executable,argv:operation.args,

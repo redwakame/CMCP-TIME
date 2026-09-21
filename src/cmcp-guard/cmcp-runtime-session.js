@@ -163,7 +163,7 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
       if(readOnly||closed)throw Error('runtime_not_writable');
       if(config.providerMode==='host')throw Error('host_model_request_requires_host_bridge');
       const budget=await assertExpectedBudget();if(!budget.canCall.deepseek)throw Error(budget.reason??'runtime_budget_exhausted');
-      if(!adapter){let key;try{key=await readCredential(config.credentialRef);adapter=createCmcpBoundedProviderAdapter({deepseekKey:key,ledgerRoot,runtimeAuthorization:authorization,fetchImpl,wireFormat:config.deepseekTransport??'responses',stream:config.deepseekStream??false,answerHistory:answerHistoryEnabled});}
+      if(!adapter){let key;try{key=await readCredential(config.credentialRef,'deepseek',{workspace:repoRoot});adapter=createCmcpBoundedProviderAdapter({deepseekKey:key,ledgerRoot,runtimeAuthorization:authorization,fetchImpl,wireFormat:config.deepseekTransport??'responses',stream:config.deepseekStream??false,answerHistory:answerHistoryEnabled});}
         finally{key=undefined;}}
       const valid=async()=>{await assertExpectedBudget();return await canContinue()&&await (options.canAttempt??(async()=>true))();};
       // Request observation is distinct from the saved User instant and the

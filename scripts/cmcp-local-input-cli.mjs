@@ -4,8 +4,8 @@ import {createCmcpBoundedProviderAdapter,boundedProviderProtocolHash} from '../s
 import {readCmcpProtectedCredential} from '../src/cmcp-guard/cmcp-protected-credential.js';
 import {loopHash} from '../src/cmcp-guard/cmcp-local-loop-journal.js';
 import {createCmcpRuntimeSession,authorizeCmcpRuntime,cancelCmcpRuntimeWork,recoverCmcpRuntimeWork} from '../src/cmcp-guard/cmcp-runtime-session.js';
-import {cmcpProjectRoot} from '../src/cmcp-guard/cmcp-project-paths.js';
-const {values:args}=parseArgs({options:{config:{type:'string'},manifest:{type:'string'},status:{type:'boolean'},disabled:{type:'boolean'},clean:{type:'boolean'},
+import {resolveCmcpWorkspaceRoot,cmcpWorkspacePath} from '../src/cmcp-guard/cmcp-project-paths.js';
+const {values:args}=parseArgs({options:{workspace:{type:'string'},config:{type:'string'},manifest:{type:'string'},status:{type:'boolean'},disabled:{type:'boolean'},clean:{type:'boolean'},
  text:{type:'string'},event:{type:'string'},recall:{type:'boolean'},now:{type:'string'},check:{type:'boolean'},
  proactive:{type:'boolean'},'no-proactive':{type:'boolean'},
  'buffer-list':{type:'boolean'},'buffer-clear':{type:'boolean'},'buffer-hours':{type:'string'},scope:{type:'string'},
@@ -18,7 +18,7 @@ const {values:args}=parseArgs({options:{config:{type:'string'},manifest:{type:'s
  'revoke-reading':{type:'string'},'reading-limits':{type:'string'},'project-page':{type:'boolean'},
  'discussion-file':{type:'string'},'discussion-list':{type:'boolean'},'discussion-query':{type:'string'},'calendar-range':{type:'string'},
  'continue-ref':{type:'string'},'range-start':{type:'string'},'range-end':{type:'string'}}});
-const repo=path.resolve(cmcpProjectRoot),within=file=>{const target=path.resolve(repo,file),rel=path.relative(repo,target);if(!rel||rel.startsWith('..')||path.isAbsolute(rel))throw Error('repo_local_path_required');return target;};
+const repo=resolveCmcpWorkspaceRoot(args.workspace),within=file=>{const target=path.resolve(repo,file),rel=path.relative(repo,target);if(!rel||rel.startsWith('..')||path.isAbsolute(rel))throw Error('repo_local_path_required');return cmcpWorkspacePath(repo,target);};
 const config=JSON.parse(await fs.readFile(within(args.config),'utf8'));
 const write=value=>new Promise((resolve,reject)=>process.stdout.write(JSON.stringify(value)+'\n',error=>error?reject(error):resolve()));
 if(config.kind==='cmcp_runtime_config'){
@@ -144,7 +144,7 @@ try{
    const manifest=JSON.parse(await fs.readFile(within(args.manifest),'utf8'));
    if(manifest.profile!=='incremental-catalog-v1'||manifest.configHash!==loopHash(config)||manifest.protocolHash!==boundedProviderProtocolHash(manifest.profile))throw Error('frozen_input_configuration_mismatch');
    for(const [file,hash] of Object.entries(manifest.files))if(loopHash(await fs.readFile(within(file),'utf8'))!==hash)throw Error('frozen_file_mismatch');
-   secretB=await readCmcpProtectedCredential(path.join(repo,'.cmcp/deepseek-credential.json'));
+   secretB=await readCmcpProtectedCredential(path.join(repo,'.cmcp/deepseek-credential.json'),'deepseek',{workspace:repo});
    adapter=createCmcpBoundedProviderAdapter({deepseekKey:secretB,ledgerRoot:within(manifest.ledgerRoot),manifest});secretB=undefined;
   }
   return adapter.request(...values);

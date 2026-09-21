@@ -6,7 +6,7 @@
 
 **為既有 AI 智能體補上時間接續能力的技能。** CMCP 協助模型帶著正確的來源、原時間與當前狀態接續討論，不必每輪重新塞入整段歷史。
 
-**候選版本 `0.1.0-rc.1` · Apache-2.0 · 原作者：[redwakame](https://github.com/redwakame)**
+**本機 npm 候選版本 `0.1.0-rc.2` · Apache-2.0 · 原作者：[redwakame](https://github.com/redwakame)**
 
 ![時間接續情境示意，非模型實測截圖](docs/assets/timeline.zh-TW.png)
 
@@ -40,6 +40,10 @@ CMCP 保留獲授權的對話原文、角色與時間，透過時間／來源清
 **History** 保存獲授權的原文；**時間／來源清冊**負責定位；**Buffer** 管理近期合格的接續內容；**Pin** 保存使用者明確釘選的目標。不是把同一份對話複製成四套記憶。
 
 清冊獨立於會到期的 Buffer 候選，但可從接續流程調用。普通聊天沒有進 Buffer，仍可在之後回查。模型只收到本輪必要資料；使用者決定、Assistant 提案與未知事件時間不能互相冒充。
+
+## 安裝本機 npm 候選
+
+建議套件名為 `@redwakame-skill/cmcp-time`，**尚未發布至 npm registry**。使用隨附 `.tgz` 安裝到持久、一般使用者可寫入的 prefix，再執行 `cmcp-time setup --workspace <已存在工作區>`；程式資產與持久資料分開。Windows 入口是 `<prefix>/cmcp-time.cmd`，POSIX 是 `<prefix>/bin/cmcp-time`。完整命令與更新／停用方式見 [npm 安裝指南](docs/npm-installation.md)及[繁中操作指南](docs/operations.zh-TW.md)。本版不支援依賴 `npx` 快取的持久 Hook／Skill 接線；安裝本身不掛載 Host、不讀 History、不授予付費額度或開啟主動推送。
 
 ## 取得與開始使用
 

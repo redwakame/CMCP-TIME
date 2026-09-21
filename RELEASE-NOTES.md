@@ -1,4 +1,21 @@
-# CMCP-TIME 0.1.0-rc.1
+# CMCP-TIME 0.1.0-rc.2 — local npm candidate
+
+This candidate prepares proposed package `@redwakame-skill/cmcp-time` for a later, separately authorized public npm RC using `next`. It is **not yet registry-published**. The public `0.1.0-rc.1` Git commit/tag and assets remain unchanged; the internal compatibility identifier remains `cmcp`.
+
+## Installation-related changes
+
+- Add the thin `cmcp-time` command for help/version, setup/update/disable/uninstall, Runtime status, Playground and Host context. Source and npm entries call the same implementation; this is not a new Runtime or stable SDK for all internal modules.
+- Separate installed program assets from an explicit persistent authorization workspace, its data root and managed Host workspace. Keep source, scope, revision and path checks in effect. Reject npx-cache-based persistent attachment.
+- Refresh managed Hook/Skill paths through explicit setup/update. npm installation does not attach a Host, read History, authorize paid use or enable proactive delivery. Reinstalling code and updating managed attachment are separate steps; disable/uninstall preserve data.
+- Add the [npm installation/update guide](docs/npm-installation.md) and synchronize the four introductions and command documents. Existing product descriptions, diagrams, license and upstream provenance are retained.
+
+The candidate's accompanying report distinguishes actual tarball-install checks, no-model fixtures and remaining registry/account or platform requirements. No new product API or Host model run is implied. A successful local `.tgz` installation does not prove registry publishing permission. No npm publish/staged publish, Git push, tag change or automatic release workflow is part of this preparation.
+
+## Retained rc.1 release notes
+
+The following describes the earlier source candidate and its evidence, not fresh rc.2 model verification.
+
+## CMCP-TIME 0.1.0-rc.1
 
 ## Publication preparation
 

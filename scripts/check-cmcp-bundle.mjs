@@ -7,12 +7,15 @@ import {createHash} from 'node:crypto';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const read=file=>JSON.parse(fs.readFileSync(path.join(root,file),'utf8'));
 const pkg=read('package.json'),plugin=read('.codex-plugin/plugin.json');
-assert.equal(pkg.name,'cmcp');assert.equal(plugin.name,'cmcp');
+assert.equal(pkg.name,'@redwakame-skill/cmcp-time');assert.equal(plugin.name,'cmcp');
+assert.deepEqual(pkg.bin,{'cmcp-time':'./bin/cmcp-time.mjs'});
+assert.equal(pkg.publishConfig.access,'public');assert.equal(pkg.publishConfig.tag,'next');
+for(const name of ['preinstall','install','postinstall','prepare','prepublish','prepublishOnly'])assert.equal(Object.hasOwn(pkg.scripts,name),false,'no automatic install/publish side effects');
 assert.equal(plugin.interface.displayName,'CMCP-TIME');assert.equal(plugin.version,pkg.version);
 assert.equal(plugin.skills,'./.agents/skills');
 assert.equal(Object.hasOwn(plugin,'hooks'),false);
 assert.equal(pkg.license,'Apache-2.0');assert.equal(plugin.license,'Apache-2.0');
-const required=['.agents/skills/cmcp-context/SKILL.md','.agents/skills/cmcp-context/scripts/recall.mjs',
+const required=['bin/cmcp-time.mjs','docs/npm-installation.md','.agents/skills/cmcp-context/SKILL.md','.agents/skills/cmcp-context/scripts/recall.mjs',
  'scripts/cmcp-playground.mjs','scripts/cmcp-query-resume-command.mjs','scripts/cmcp-setup.mjs',
  'scripts/cmcp-codex-hook.mjs','scripts/cmcp-host-context-cli.mjs','scripts/cmcp-host-operation.mjs',
  'scripts/cmcp-native-host-process.mjs','scripts/cmcp-protected-credential.ps1',

@@ -5,7 +5,8 @@ import {parseArgs} from 'node:util';
 import {randomUUID} from 'node:crypto';
 import {handleCmcpCodexHook} from '../src/cmcp-guard/cmcp-codex-hooks.js';
 import {playgroundPath} from '../src/cmcp-guard/cmcp-playground.js';
-const projectRoot=fileURLToPath(new URL('../',import.meta.url));
+import {resolveCmcpWorkspaceRoot} from '../src/cmcp-guard/cmcp-project-paths.js';
+const packageRoot=fileURLToPath(new URL('../',import.meta.url));
 let receiptRoot,event;
 async function receipt(stage,extra={}){
  if(!receiptRoot)return;
@@ -16,9 +17,12 @@ async function receipt(stage,extra={}){
   inputShape:event&&typeof event==='object'?Object.fromEntries(Object.entries(event).map(([key,value])=>[key,value===null?'null':typeof value])):null,...extra},null,2),{flag:'wx'});
 }
 try{
- const {values:a}=parseArgs({options:{binding:{type:'string'}}});
+ const {values:a}=parseArgs({options:{binding:{type:'string'},workspace:{type:'string'}}});
+ const projectRoot=resolveCmcpWorkspaceRoot(a.workspace);
  const file=await playgroundPath(projectRoot,a.binding),binding=JSON.parse(await fs.readFile(file,'utf8'));
  if(path.resolve(binding.projectRoot)!==path.resolve(projectRoot))throw Error('hook_binding_project_mismatch');
+ if(binding.packageRoot!==undefined){if(await fs.realpath(binding.packageRoot)!==await fs.realpath(packageRoot))throw Error('hook_binding_package_mismatch');}
+ else if(await fs.realpath(projectRoot)!==await fs.realpath(packageRoot))throw Error('legacy_hook_binding_requires_same_root');
  const configFile=await playgroundPath(projectRoot,binding.runtimeConfig),config=JSON.parse(await fs.readFile(configFile,'utf8'));
  receiptRoot=await playgroundPath(projectRoot,path.join(config.receiptRoot,'host-hooks'));
  let input='';for await(const chunk of process.stdin){input+=chunk;if(Buffer.byteLength(input)>131072)throw Error('hook_input_over_budget');}

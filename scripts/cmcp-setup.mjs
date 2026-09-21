@@ -4,8 +4,10 @@ import {fileURLToPath} from 'node:url';
 import {parseArgs} from 'node:util';
 import {createInterface} from 'node:readline/promises';
 import {configureCmcpInstallation,inspectCmcpInstallation,inspectCmcpSetupEnvironment} from '../src/cmcp-guard/cmcp-setup.js';
+import {resolveCmcpWorkspaceRoot} from '../src/cmcp-guard/cmcp-project-paths.js';
+import {playgroundPath} from '../src/cmcp-guard/cmcp-playground.js';
 
-const projectRoot=fileURLToPath(new URL('../',import.meta.url));
+const packageRoot=fileURLToPath(new URL('../',import.meta.url));
 const help=`CMCP setup (project-local, no model calls or installation of dependencies)
 node scripts/cmcp-setup.mjs                 Interactive setup
 node scripts/cmcp-setup.mjs --root <dir> --status
@@ -13,18 +15,21 @@ node scripts/cmcp-setup.mjs --root <dir> --update
 node scripts/cmcp-setup.mjs --root <dir> --disable
 node scripts/cmcp-setup.mjs --root <dir> --uninstall
 --answers <project-local JSON> supplies the same explicit choices for automation.
+--workspace <dir> selects the existing writable authorization root (required for npm installs).
 --host-workspace <dir> chooses a project-local Codex workspace.
+Program assets remain in the installed package. Persistent npx hook attachment is unsupported.
 Configuration and History are retained on disable/uninstall. No paid grant is created.
 Codex hook trust is reviewed by Codex; do not bypass trust or run as administrator.`;
 export async function runCmcpSetupCli(argv=process.argv.slice(2),{ask,emit=value=>console.log(typeof value==='string'?value:JSON.stringify(value,null,2))}={}){
- const {values:a}=parseArgs({args:argv,options:{root:{type:'string'},'host-workspace':{type:'string'},answers:{type:'string'},status:{type:'boolean'},update:{type:'boolean'},disable:{type:'boolean'},uninstall:{type:'boolean'},help:{type:'boolean'}}});
+ const {values:a}=parseArgs({args:argv,options:{workspace:{type:'string'},root:{type:'string'},'host-workspace':{type:'string'},answers:{type:'string'},status:{type:'boolean'},update:{type:'boolean'},disable:{type:'boolean'},uninstall:{type:'boolean'},help:{type:'boolean'}}});
  if(a.help){emit(help);return;}
+ const projectRoot=resolveCmcpWorkspaceRoot(a.workspace);
  const root=a.root??'local-data/cmcp',hostWorkspace=a['host-workspace']??((a.update||a.disable||a.uninstall)?undefined:'local-data/cmcp-host');
  if([a.status,a.update,a.disable,a.uninstall].filter(Boolean).length>1)throw Error('choose_one_setup_action');
  if(a.status){emit(await inspectCmcpInstallation({projectRoot,root}));return;}
  let choices,reader;
  try{
-  if(a.answers){const file=path.resolve(projectRoot,a.answers),rel=path.relative(projectRoot,file);if(!rel||rel.startsWith('..')||path.isAbsolute(rel))throw Error('answers_must_be_project_local');choices=JSON.parse(await fs.readFile(file,'utf8'));}
+  if(a.answers){const file=await playgroundPath(projectRoot,a.answers);choices=JSON.parse(await fs.readFile(file,'utf8'));}
   else if(!a.disable&&!a.uninstall){
    const previous=a.update?(await inspectCmcpInstallation({projectRoot,root})).choices:null;
    emit(inspectCmcpSetupEnvironment());
@@ -60,8 +65,8 @@ export async function runCmcpSetupCli(argv=process.argv.slice(2),{ask,emit=value
    choices={timezone,language,scopeId,skillName:previous?.skillName,owner,people,saveUser,saveAssistant,enabled,clean,attachCodex,providerMode,
     allowPaidCalls,paidConsent:allowPaidCalls,proactive,proactiveConsent:proactive,bufferHours,featureControls,authorizedBy:'Interactive explicit setup choices',events:previous?.events??[]};
   }
-  const result=await configureCmcpInstallation({projectRoot,root,hostWorkspace,choices,action:a.update?'update':a.disable?'disable':a.uninstall?'uninstall':'setup'});
-  emit(result);emit(`Chat/status: node scripts/cmcp-playground.mjs --root ${JSON.stringify(path.relative(projectRoot,result.root))} --status`);
+  const result=await configureCmcpInstallation({projectRoot,packageRoot,root,hostWorkspace,choices,action:a.update?'update':a.disable?'disable':a.uninstall?'uninstall':'setup'});
+  emit(result);emit(`Chat/status: node ${JSON.stringify(path.join(packageRoot,'scripts/cmcp-playground.mjs'))} --workspace ${JSON.stringify(projectRoot)} --root ${JSON.stringify(path.relative(projectRoot,result.root))} --status`);
   emit(`Codex: codex --enable hooks --cd ${JSON.stringify(result.hostWorkspace)}; review this project's hook trust in /hooks. No DeepSeek key or administrator mode is required for host mode.`);
  }finally{reader?.close();}
 }

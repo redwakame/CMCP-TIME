@@ -5,9 +5,7 @@ import {createCmcpBoundedProviderAdapter,boundedProviderProtocolHash} from '../s
 import {readCmcpProtectedCredential} from '../src/cmcp-guard/cmcp-protected-credential.js';
 import {loopHash} from '../src/cmcp-guard/cmcp-local-loop-journal.js';
 import {createCmcpRuntimeSession} from '../src/cmcp-guard/cmcp-runtime-session.js';
-const repo=fileURLToPath(new URL('../',import.meta.url));
-const within=value=>{if(typeof value!=='string')throw Error('explicit_repo_path_required');const full=path.resolve(repo,value),rel=path.relative(repo,full);
-  if(!rel||rel.startsWith('..')||path.isAbsolute(rel))throw Error('repo_local_path_required');return full;};
+import {resolveCmcpWorkspaceRoot,cmcpWorkspacePath} from '../src/cmcp-guard/cmcp-project-paths.js';
 const json=file=>fs.readFile(file,'utf8').then(JSON.parse);
 /** Presentation metadata only. Stored reading receipts and their version/hash checks are unchanged. */
 export function projectCmcpHostReadingUnits(host){
@@ -32,7 +30,7 @@ export function retainCmcpHostReadingReceipt(output){
   kept.queryBodyRetention='not_saved_ephemeral_operation';return kept;
 }
 export async function runCmcpHostContextCli(argv=process.argv.slice(2)){
-  const {values:a}=parseArgs({args:argv,options:{config:{type:'string'},manifest:{type:'string'},text:{type:'string'},now:{type:'string'},
+  const {values:a}=parseArgs({args:argv,options:{workspace:{type:'string'},config:{type:'string'},manifest:{type:'string'},text:{type:'string'},now:{type:'string'},
     status:{type:'boolean'},check:{type:'boolean'},disabled:{type:'boolean'},clean:{type:'boolean'},
     'resume-source':{type:'string'},'work-id':{type:'string'},'deadline-at':{type:'string'},'lifecycle-file':{type:'string'},
     'local-candidates':{type:'boolean'},'local-read':{type:'string'},refs:{type:'string'},'source-id':{type:'string'},
@@ -40,6 +38,9 @@ export async function runCmcpHostContextCli(argv=process.argv.slice(2)){
     'read-scope':{type:'boolean'},'navigation-ticket':{type:'string'},'scope-json':{type:'string'},'query-text':{type:'string'},'read-outline':{type:'string'},
     'revoke-reading':{type:'string'},'reading-limits':{type:'string'},'project-page':{type:'boolean'},
     'continue-ref':{type:'string'},'range-start':{type:'string'},'range-end':{type:'string'}}});
+  const repo=resolveCmcpWorkspaceRoot(a.workspace);
+  const within=value=>{if(typeof value!=='string')throw Error('explicit_repo_path_required');const full=path.resolve(repo,value),rel=path.relative(repo,full);
+    if(!rel||rel.startsWith('..')||path.isAbsolute(rel))throw Error('repo_local_path_required');return cmcpWorkspacePath(repo,full);};
   let runtime,adapter,key,lock,lockFile,receiptRoot,lifecycleFile,workId=a['work-id']??randomUUID(),outputWritten=false;
   const controller=new AbortController();
   const cancel=()=>{controller.abort();runtime?.cancelWork?.({workId,reason:'user_cancelled'}).catch(()=>{});};
@@ -114,7 +115,7 @@ export async function runCmcpHostContextCli(argv=process.argv.slice(2)){
       if(!adapter){const manifest=await json(within(a.manifest));
         if(!['host-context-v1','host-integration-v1'].includes(manifest.profile)||manifest.configHash!==loopHash(config)||manifest.protocolHash!==boundedProviderProtocolHash(manifest.profile))throw Error('frozen_host_configuration_mismatch');
         for(const [file,hash] of Object.entries(manifest.files))if(loopHash(await fs.readFile(within(file),'utf8'))!==hash)throw Error('frozen_file_mismatch');
-        key=await readCmcpProtectedCredential(within('.cmcp/deepseek-credential.json'));
+        key=await readCmcpProtectedCredential(within('.cmcp/deepseek-credential.json'),'deepseek',{workspace:repo});
         adapter=createCmcpBoundedProviderAdapter({deepseekKey:key,ledgerRoot:within(manifest.ledgerRoot),manifest});key=undefined;
       }return adapter.request(...args);
     },dispose(){adapter?.dispose();}};

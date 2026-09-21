@@ -6,7 +6,7 @@
 
 **A time-aware continuity skill for AI agents.** CMCP helps an existing agent resume an earlier discussion using the right source, original time and current state, without putting the entire conversation history back into every prompt.
 
-**Release candidate `0.1.0-rc.1` · Apache-2.0 · Original author: [redwakame](https://github.com/redwakame)**
+**Local npm candidate `0.1.0-rc.2` · Apache-2.0 · Original author: [redwakame](https://github.com/redwakame)**
 
 ![Illustrative time-aware continuation, not a recorded model result](docs/assets/timeline.en.png)
 
@@ -54,6 +54,10 @@ GitHub CLI: `gh repo clone redwakame/CMCP-TIME`
 SSH: `git clone git@github.com:redwakame/CMCP-TIME.git`
 
 Or use GitHub **Code → Download ZIP** and extract it into a writable directory. Release tags/assets identify published snapshots when available. This source release does **not** imply an npm-registry publication; do not assume `npm install cmcp` obtains this project.
+
+## Install the local npm candidate
+
+The proposed package is `@redwakame-skill/cmcp-time`; **it is not yet published to npm**. Install the supplied `.tgz` into a persistent user-writable prefix, then run `cmcp-time setup --workspace <existing-workspace>`. Program assets and saved data are separate. On Windows the command is `<prefix>/cmcp-time.cmd`; on POSIX it is `<prefix>/bin/cmcp-time`. Follow the [complete npm installation and update guide](docs/npm-installation.md) for exact commands. Persistent `npx` Hook/Skill installation is not supported. Installation itself does not attach a Host, access History, authorize paid calls or enable proactive delivery.
 
 ## Start with the setup wizard
 

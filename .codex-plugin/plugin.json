@@ -1,6 +1,6 @@
 {
   "name": "cmcp",
-  "version": "0.1.0-rc.1",
+  "version": "0.1.0-rc.2",
   "description": "Skill-first, host-neutral temporal continuity and memory-governance Runtime with guarded source retrieval and a local reference channel.",
   "license": "Apache-2.0",
   "skills": "./.agents/skills",

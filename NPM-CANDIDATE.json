@@ -1,0 +1,13 @@
+{
+  "kind": "cmcp-time-npm-candidate",
+  "version": "0.1.0-rc.2",
+  "proposedPackage": "@redwakame-skill/cmcp-time",
+  "registryPublished": false,
+  "proposedTag": "next",
+  "baselineCommit": "1fbbeae2db5812fc637c1a26de2c2bea5b4f4a7f",
+  "installation": "persistent user-writable npm prefix with explicit authorized workspace",
+  "npxPersistentBindingsSupported": false,
+  "automaticLifecycleScripts": false,
+  "productModelCalls": 0,
+  "verification": "Current candidate installation results are supplied with the candidate artifacts; VERIFICATION.json and PUBLICATION-VERIFICATION.json are unchanged rc.1 historical evidence, not rc.2 results."
+}

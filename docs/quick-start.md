@@ -1,6 +1,18 @@
 # Quick start
 
-These commands run from the extracted **candidate root**. `local-data/my-cmcp` and `local-data/my-cmcp-host` below are example locations for a new installation, not shipped user data.
+The source examples below run from the extracted **candidate root**. `local-data/my-cmcp` and `local-data/my-cmcp-host` are example locations for a new installation, not shipped user data. The `0.1.0-rc.2` npm candidate is not registry-published: first follow [the local tarball installation guide](npm-installation.md), then use the installed `cmcp-time` command with `--workspace <existing-workspace>`. Do not run from inside `node_modules` to store personal data.
+
+## Installed command shortcut
+
+After persistent tarball installation, substitute the actual prefix executable for `cmcp-time` (`<prefix>/cmcp-time.cmd` on Windows or `<prefix>/bin/cmcp-time` on POSIX):
+
+```text
+cmcp-time setup --workspace <existing-workspace>
+cmcp-time status --workspace <existing-workspace>
+cmcp-time playground --workspace <existing-workspace> --session "First conversation"
+```
+
+Setup asks for the same explicit choices described below. Data defaults to `local-data/cmcp` within that workspace; program assets stay in the installed package. Source users can run the same dispatcher as `node bin/cmcp-time.mjs`. No npx-cache-based persistent attachment is provided. Setup, status and help do not authorize or invoke a model. Configured chat still needs a finite grant; Host mode uses its own model access.
 
 ## Obtain this source candidate
 
@@ -87,6 +99,8 @@ Reopen the same command and root to retain saved data, reading bookmarks and rem
 Those settings persist; `/session-set <key> <value>` is temporary. Clear only clears this scope's Buffer, not History, event completion or independent Pins. New purpose-driven reads can reactivate eligible sources but do not automatically reopen follow-up.
 
 ## 5. Update, disable or remove managed attachment
+
+Installed equivalent: `cmcp-time update|disable|uninstall --workspace <workspace> --root <existing-root>`, selecting one command, not the literal bar-separated text. Install a reviewed replacement tarball into the same prefix **before** `update`; this command refreshes bindings/settings and does not perform an npm upgrade. See [update and detach details](npm-installation.md#update-installed-code-then-refresh-managed-attachment).
 
 ```powershell
 node scripts/cmcp-setup.mjs --root local-data/my-cmcp --status

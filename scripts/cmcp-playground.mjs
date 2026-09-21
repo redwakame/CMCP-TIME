@@ -2,13 +2,14 @@ import {parseArgs} from 'node:util';
 import {createInterface} from 'node:readline';
 import {randomUUID} from 'node:crypto';
 import {loadCmcpPlayground,createCmcpPlayground} from '../src/cmcp-guard/cmcp-playground.js';
-import {cmcpProjectRoot} from '../src/cmcp-guard/cmcp-project-paths.js';
+import {resolveCmcpWorkspaceRoot} from '../src/cmcp-guard/cmcp-project-paths.js';
 import {createCmcpRuntimeSession,authorizeCmcpRuntime} from '../src/cmcp-guard/cmcp-runtime-session.js';
 import {parseCmcpQueryResumeCommand} from './cmcp-query-resume-command.mjs';
 
-const {values:args}=parseArgs({options:{root:{type:'string'},session:{type:'string'},status:{type:'boolean'},init:{type:'boolean'},json:{type:'boolean'},
+const {values:args}=parseArgs({options:{workspace:{type:'string'},root:{type:'string'},session:{type:'string'},status:{type:'boolean'},init:{type:'boolean'},json:{type:'boolean'},
  authorize:{type:'string'},posts:{type:'string'},'authorized-by':{type:'string'},help:{type:'boolean'}}});
-const help=`CMCP local playground (DeepSeek; shared data and finite authorization across Sessions)
+const help=`CMCP local playground (Host or configured provider; shared data and finite authorization across Sessions)
+--workspace <directory>  Explicit persistent authorization root; required for npm installations
 Enter text to chat in the current topic; general conversation is the default.
 /topics                 List authorized topics
 /topic 2                Select a topic number; /topic general returns to general chat
@@ -70,7 +71,11 @@ const stop=()=>{ending=true;controller?.abort();reader?.close();process.stdin.de
 process.on('SIGINT',stop);process.on('SIGTERM',stop);
 try{
  if(args.help){display({kind:'help'});}else{
-  if(args.authorize&&(!/^[1-9]\d*$/.test(args.posts??'')||!args['authorized-by']))throw Error('explicit_positive_grant_and_authorizer_required');
+  const actions=[args.status===true,args.init===true,args.authorize!==undefined];
+  if(actions.filter(Boolean).length>1)throw Error('conflicting_playground_actions');
+  if(args.session!==undefined&&actions.some(Boolean))throw Error('session_requires_interactive_playground');
+  const cmcpProjectRoot=resolveCmcpWorkspaceRoot(args.workspace);
+  if(args.authorize!==undefined&&(!args.authorize.trim()||!/^[1-9]\d*$/.test(args.posts??'')||!args['authorized-by']))throw Error('explicit_positive_grant_and_authorizer_required');
   if(!args.authorize&&(args.posts||args['authorized-by']))throw Error('grant_requires_authorization_id');
   const settings=await loadCmcpPlayground({repoRoot:cmcpProjectRoot,root:args.root,initialize:!args.status});
   if(args.authorize){display(await authorizeCmcpRuntime({config:settings.config,repoRoot:cmcpProjectRoot,authorizationId:args.authorize,

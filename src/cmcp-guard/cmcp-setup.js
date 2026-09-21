@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
-import {pathToFileURL} from 'node:url';
+import {pathToFileURL,fileURLToPath} from 'node:url';
 import {defaultPlaygroundConfig,playgroundReadingLimits,playgroundPath} from './cmcp-playground.js';
 import {normalizeCmcpRuntimeConfig,createCmcpRuntimeSession} from './cmcp-runtime-session.js';
 import {CMCP_FEATURE_CONTROL_DEFAULTS,normalizeCmcpFeatureControlPatch} from './cmcp-feature-controls.js';
@@ -13,6 +13,7 @@ const exists=async file=>fs.access(file).then(()=>true,()=>false);
 const bool=(value,name)=>{if(typeof value!=='boolean')throw Error('explicit_setup_choice_required:'+name);return value;};
 const str=(value,name)=>{if(typeof value!=='string'||!value.trim()||value.length>256||/[\x00-\x1f]/u.test(value))throw Error('invalid_setup_'+name);return value.trim();};
 const within=async(root,value)=>playgroundPath(root,value);
+const installedPackageRoot=fileURLToPath(new URL('../../',import.meta.url));
 
 /** Inspection never authenticates, installs, opens a model thread or reads credentials. */
 export function inspectCmcpSetupEnvironment({nodeVersion=process.versions.node,probe=spawnSync}={}){
@@ -73,15 +74,16 @@ function removeManagedHooks(document,commands){
 }
 
 /** One project-local setup transaction. Raw History and grant ledgers are never copied/reset/deleted. */
-export async function configureCmcpInstallation({projectRoot,root,hostWorkspace,choices,action='setup',inspect=inspectCmcpSetupEnvironment}){
+export async function configureCmcpInstallation({projectRoot,packageRoot=installedPackageRoot,root,hostWorkspace,choices,action='setup',inspect=inspectCmcpSetupEnvironment}){
   if(!['setup','update','disable','uninstall'].includes(action))throw Error('invalid_setup_action');
-  projectRoot=await fs.realpath(projectRoot);root=await within(projectRoot,root);
+  projectRoot=await fs.realpath(projectRoot);packageRoot=await fs.realpath(packageRoot);root=await within(projectRoot,root);
   const manifestFile=path.join(root,'installation.json'),previous=await exists(manifestFile)?JSON.parse(await fs.readFile(manifestFile,'utf8')):null;
   if(previous&&(previous.kind!=='cmcp_installation'||previous.version!==1||previous.projectRoot!==projectRoot))throw Error('installation_identity_mismatch');
   if(!previous&&action!=='setup')throw Error('installation_not_found');
   if(previous&&action==='setup')throw Error('installation_exists_use_update');
   const selected=choices?normalizeCmcpSetupChoices(choices):previous?.choices;
   if(!selected)throw Error('explicit_setup_choices_required');
+  if(['setup','update'].includes(action)&&selected.attachCodex&&packageRoot.split(path.sep).some(part=>part.toLowerCase()==='_npx'))throw Error('persistent_install_required_npx_hook_attachment_unsupported');
   hostWorkspace=await within(projectRoot,hostWorkspace??previous?.hostWorkspace);
   if(previous&&(previous.hostWorkspace!==hostWorkspace||previous.choices.scopeId!==selected.scopeId))throw Error('installation_scope_or_workspace_change_requires_new_root');
   if(previous&&(previous.choices.skillName??'cmcp-context')!==(selected.skillName??'cmcp-context'))throw Error('installation_skill_name_change_requires_new_root');
@@ -108,9 +110,9 @@ export async function configureCmcpInstallation({projectRoot,root,hostWorkspace,
   if(!oldHooks||typeof oldHooks!=='object'||Array.isArray(oldHooks)||oldHooks.hooks&&typeof oldHooks.hooks!=='object')throw Error('invalid_existing_hooks');
   const hooks=removeManagedHooks(oldHooks,previous?.managedCommands??[]);
   const installing=['setup','update'].includes(action)&&selected.attachCodex;
-  const script=path.join(projectRoot,'scripts','cmcp-codex-hook.mjs');
-  if(/["\r\n]/u.test(script+bindingFile))throw Error('unsupported_hook_command_path');
-  const command=`node "${script}" --binding "${bindingFile}"`;
+  const script=path.join(packageRoot,'scripts','cmcp-codex-hook.mjs');
+  if(/["\r\n]/u.test(script+bindingFile+projectRoot))throw Error('unsupported_hook_command_path');
+  const command=`node "${script}" --workspace "${projectRoot}" --binding "${bindingFile}"`;
   if(installing){
     for(const [event,groups]of Object.entries(hookEntries(command)))(hooks.hooks[event]??=[]).push(...groups);
     for(const file of ownedSkillFiles){if(await exists(file)){
@@ -139,13 +141,13 @@ export async function configureCmcpInstallation({projectRoot,root,hostWorkspace,
       await session.configureControls({updateId:'setup-'+randomUUID(),patch:selected.featureControls,persist:true});
     }finally{await session.close();}
     if(!await exists(profileFile))await write(profileFile,json({kind:'cmcp_playground_ui',version:1,topics:[{key:null,label:'General conversation'},...selected.events.map(e=>({key:e.key,label:e.label??e.key}))],readingLimits:playgroundReadingLimits}));
-    const binding={kind:'cmcp_codex_binding',version:1,projectRoot,runtimeConfig:configFile,hostWorkspace,enabled:installing,
+    const binding={kind:'cmcp_codex_binding',version:1,projectRoot,packageRoot,runtimeConfig:configFile,hostWorkspace,enabled:installing,
       authorization:{scopeId:selected.scopeId,authorizedBy:selected.authorizedBy},maxInputBytes:65536};
     await write(bindingFile,json(binding));
     if(installing){
-      const skill=await fs.readFile(path.join(projectRoot,'.agents/skills/cmcp-context/SKILL.md'),'utf8');
-      await write(ownedSkillFiles[0],skill.replace(/^name: cmcp-context$/m,'name: '+(selected.skillName??'cmcp-context')).replace('../../../docs/read-operations-v0.1.md',path.join(projectRoot,'docs/read-operations-v0.1.md').replaceAll('\\','/'))+`\nInstalled Runtime configuration: \`${configFile}\`.\nInstalled helper: \`${ownedSkillFiles[1]}\`.\n`);
-      await write(ownedSkillFiles[1],`import ${JSON.stringify(pathToFileURL(path.join(projectRoot,'.agents/skills/cmcp-context/scripts/recall.mjs')).href)};\n`);
+      const skill=await fs.readFile(path.join(packageRoot,'.agents/skills/cmcp-context/SKILL.md'),'utf8');
+      await write(ownedSkillFiles[0],skill.replace(/^name: cmcp-context$/m,'name: '+(selected.skillName??'cmcp-context')).replace('../../../docs/read-operations-v0.1.md',path.join(packageRoot,'docs/read-operations-v0.1.md').replaceAll('\\','/'))+`\nInstalled Runtime configuration: \`${configFile}\`.\nInstalled helper: \`${ownedSkillFiles[1]}\`.\nThe installed helper binds its authorized workspace internally; do not add or override --workspace.\n`);
+      await write(ownedSkillFiles[1],`import {runCmcpHostContextCli} from ${JSON.stringify(pathToFileURL(path.join(packageRoot,'scripts/cmcp-host-context-cli.mjs')).href)};\nimport {runCmcpHostOperation} from ${JSON.stringify(pathToFileURL(path.join(packageRoot,'scripts/cmcp-host-operation.mjs')).href)};\ntry {\n  const args=process.argv.slice(2);\n  if(args.some(arg=>arg==='--workspace'||arg.startsWith('--workspace=')))throw Error('managed_workspace_override_forbidden');\n  const bound=[...args,'--workspace',${JSON.stringify(projectRoot)}];\n  if(args.some(arg=>arg==='--request'||arg.startsWith('--request=')))await runCmcpHostOperation(bound);\n  else await runCmcpHostContextCli(bound);\n}catch(error){console.error(error.message);process.exitCode=1;}\n`);
     }
     previous&&(previous.runtimeId=config.runtimeId);
   }else{
@@ -162,7 +164,7 @@ export async function configureCmcpInstallation({projectRoot,root,hostWorkspace,
   if(installing||previous?.managedCommands?.length)await write(hookFile,json(hooks));
   const config=JSON.parse(await fs.readFile(configFile,'utf8'));
   const managedFiles=installing?await Promise.all(ownedSkillFiles.map(async file=>({file,hash:digest(await fs.readFile(file))}))):previous?.managedFiles??[];
-  const result={kind:'cmcp_installation',version:1,projectRoot,root,hostWorkspace,runtimeId:config.runtimeId,choices:selected,
+  const result={kind:'cmcp_installation',version:1,projectRoot,packageRoot,root,hostWorkspace,runtimeId:config.runtimeId,choices:selected,
     state:installing?'enabled':action==='uninstall'?'uninstalled':'disabled',managedCommands:installing?[command]:[],managedFiles,
     environment,updatedAt:new Date().toISOString(),configFile,profileFile,bindingFile,backup,
     grantCreated:false,paidAuthorization:'separate_finite_runtime_grant_required',dataPreserved:true,modelCalls:0};

@@ -2,7 +2,7 @@
 
 ## What is installed
 
-The source archive is a source acquisition method. `node scripts/cmcp-setup.mjs` is a **configuration and managed-attachment wizard**, not a Node/Host downloader, npm package installation or service installer. No network port or global background service is started by setup.
+The source archive is a source acquisition method. The local npm candidate additionally provides a thin `cmcp-time` executable; install its reviewed `.tgz` into a persistent user-writable prefix. Registry publication is not implied. `cmcp-time setup` and `node scripts/cmcp-setup.mjs` invoke the same **configuration and managed-attachment wizard**, not a Node/Host downloader or service installer. Installing the npm package does not run that wizard or attach a Host. No network port or global background service is started by setup. See [npm installation and updates](npm-installation.md).
 
 The wizard validates Node's declared >=18 floor and probes the existing Codex CLI version without authenticating or creating a model thread. If Codex attachment is selected but its executable is unavailable, setup stops. Select a genuinely available route rather than claiming a synthetic probe is the real CLI.
 
@@ -10,17 +10,21 @@ No administrator mode, approval bypass, ownership change or global firewall sett
 
 ## Managed files and reversibility
 
+For an npm installation, the program/contract/schema/Skill assets stay in the installed package; the caller selects an existing persistent `--workspace` as the data authorization root. Relative data, answers and Host locations resolve inside that workspace. This separation does not weaken source scope, revision or path guards. npm reinstalling the same prefix replaces program files, not workspace History. Persistent attachment from an `_npx` cache is rejected; do not bind a Host to an npm cache path.
+
 Setup owns only its declared project-local files:
 
 - Installation root: config, profile, Host binding and `installation.json`.
 - Host workspace: managed entries in `.codex/hooks.json`, plus `.agents/skills/<managed-skill-name>/SKILL.md` and its helper loader.
 - `setup-history/<operation>/`: before-images and a changes manifest for managed changes.
 
-Unrelated hook definitions are preserved. Existing unowned or modified Skill content triggers a conflict; it is not overwritten by assuming ownership. Data and Host workspaces must be within the selected project and cannot redirect through symlinks. Changing an installation's bound scope, event scope, Skill name or Host workspace is not an in-place data migration.
+Unrelated hook definitions are preserved. Existing unowned or modified Skill content triggers a conflict; it is not overwritten by assuming ownership. Data and Host locations must be within the selected authorization workspace and cannot redirect through symlinks. The npm assets themselves are separate. Changing an installation's bound scope, event scope, Skill name or Host workspace is not an in-place data migration.
 
-`--update` preserves installation identity and data, reapplies explicit choices, and refreshes managed attachment from this version. It does not fetch another version of CMCP or Codex. Before a future source update, close its writers and retain your data/configuration; the archive is not an automated migration tool.
+`cmcp-time update` (or direct setup `--update`) preserves installation identity and data, reapplies explicit choices, and refreshes managed attachment from this version. It does not fetch another version of CMCP or Codex. For an npm upgrade, close active writers, install the reviewed replacement tarball into the same prefix, then run this update action against the same workspace/root. Before a source update, likewise close writers and retain your data/configuration. Neither path is an automated scope/data migration tool.
 
 `--disable` deactivates the managed Codex binding/hooks. It does **not** turn every Runtime feature OFF or remove the manually callable Skill. `--uninstall` also removes unchanged managed Skill files. Both preserve History, event state, receipts, grants, config and setup history. New source consent or Runtime OFF must use its separate setting. See [commands](commands.md).
+
+The installed `disable` and `uninstall` commands map to these same actions. They do not remove the npm package. If program removal is wanted, first detach the managed integration, then explicitly uninstall the npm package from its prefix. Do not delete the separate workspace; uninstalling software is not consent to erase History or credentials.
 
 ## Codex lifecycle and Skill
 

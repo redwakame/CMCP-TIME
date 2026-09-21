@@ -1,6 +1,24 @@
 # Command reference
 
-Run shell commands from the extracted CMCP-TIME root. Text in `<angle brackets>` is a caller-supplied value, not a literal path. Interactive commands below belong to **CMCP Playground**, not to Codex's own command parser. The list is checked against the candidate parsers; `cmcp-local-input-cli.mjs` and `cmcp-host-context-cli.mjs` do **not** implement `--help`.
+Direct `node scripts/...` examples run from the extracted CMCP-TIME source root. Installed users should use `cmcp-time` below with an explicit authorized workspace. Text in `<angle brackets>` is a caller-supplied value, not a literal path. Interactive commands below belong to **CMCP Playground**, not to Codex's own command parser. The list is checked against the candidate parsers; `cmcp-local-input-cli.mjs` and `cmcp-host-context-cli.mjs` do **not** implement `--help`.
+
+## Installed command
+
+`cmcp-time <command> [options]` is a thin dispatcher to the same implementation. Windows prefix installation provides `<prefix>/cmcp-time.cmd`; POSIX provides `<prefix>/bin/cmcp-time`. From source, use `node bin/cmcp-time.mjs`. See [local tarball installation](npm-installation.md); registry publication remains separate.
+
+| Command | Actual route |
+|---|---|
+| `help`, `--help`, `-h` | Top-level command index; zero model calls |
+| `version`, `--version`, `-v` | Installed package name and version |
+| `setup` | Existing explicit setup wizard; supports `--help`, `--answers` and setup inspection |
+| `update` | Existing setup update; refresh managed attachment/settings, not npm software download |
+| `disable` | Disable managed automatic Host hooks/binding; retain manual Skill and data |
+| `uninstall` | Detach unchanged managed Hook/Skill content; retain data and npm program files |
+| `status` | Existing Playground Runtime inspection; zero API |
+| `playground` | Existing interactive conversation and control interface |
+| `context` | Existing advanced Host context helper; no additional final-answer model |
+
+Data commands require `--workspace <existing-directory>` for npm installations. `setup`, `playground` and `status` default to `--root local-data/cmcp` inside that workspace. Setup creates configuration only after explicit choices; installed Playground/status require it to exist. The `context` route takes `--config` and the existing helper options, not `--root`. Unknown commands and options fail explicitly. This dispatcher does not make all internal functions a stable public SDK.
 
 ## Setup CLI
 
@@ -9,6 +27,7 @@ Run shell commands from the extracted CMCP-TIME root. Text in `<angle brackets>`
 | Option | Meaning |
 |---|---|
 | No action flag | Interactive first setup; an existing installation requires `--update` |
+| `--workspace <directory>` | Existing authorized workspace, required when installed through npm; assets remain in the package |
 | `--root <directory>` | Project-local installation/data root; default `local-data/cmcp` |
 | `--host-workspace <directory>` | Project-local Codex attachment workspace; initial default `local-data/cmcp-host` |
 | `--answers <json-file>` | Explicit setup choices in a project-local file; contains no credential |
@@ -26,6 +45,7 @@ Choose at most one status/update/disable/uninstall action. Changed scope, event 
 
 | Option | Meaning |
 |---|---|
+| `--workspace <directory>` | Existing authorized workspace, required for npm; paths stay within it |
 | `--root <directory>` | Existing project-local root, or initialize a new one; default is `local-data/deepseek-playground` |
 | `--session <label>` | Continue an existing label/ID or create that label, retaining the same data and quota |
 | `--status` | Zero-model Runtime inspection; does not initialize missing files or refresh activity |
@@ -34,7 +54,7 @@ Choose at most one status/update/disable/uninstall action. Changed scope, event 
 | `--authorize <new-id> --posts <positive-integer> --authorized-by <reason>` | Add a separately explicit finite configured-provider grant; never infer this from setup or restart |
 | `--help` | Print the interactive command list |
 
-Use the root produced by setup rather than unintentionally initializing the default demonstration scope. The direct `--init` path is a reference Playground profile; use setup for explicit personal-data choices.
+These are the direct script's options. The `cmcp-time playground` wrapper instead defaults to `local-data/cmcp` and requires the setup configuration to exist. Use the root produced by setup rather than unintentionally initializing the direct script's default demonstration scope. The direct `--init` path is a reference Playground profile; use setup for explicit personal-data choices.
 
 ## Playground commands
 
@@ -135,10 +155,11 @@ Both routes obey the master switch, DND, current source/target authorization, ca
 
 ## Host Skill/helper
 
-The installed Skill runs `scripts/recall.mjs` in its own directory; the source helper is `.agents/skills/cmcp-context/scripts/recall.mjs`. `--config` points to a generated project-local Runtime config. Do not open Store or credential files directly from a Host. Follow returned tickets and aliases, not guessed IDs.
+The installed Skill runs `scripts/recall.mjs` in its own directory; the source helper is `.agents/skills/cmcp-context/scripts/recall.mjs`. Managed attachment supplies the persistent package location and authorized workspace. The thin installed entry is `cmcp-time context --workspace <workspace> --config <config> ...`; `--config` points to a generated workspace-local Runtime config. Do not open Store or credential files directly from a Host. Follow returned tickets and aliases, not guessed IDs.
 
 | Helper options | Purpose |
 |---|---|
+| `--workspace <directory>` | Existing authorization root; distinct from installed helper assets |
 | `--status` / `--check` | Zero-API Runtime inspection |
 | `--local-candidates --text <question> [--source-id <hook-source-ID>]` | Bounded local locating clues; does not establish full reading |
 | `--local-read <ticket> --refs <c1,c2>` | Exact selected-source reading, no selection/answer API |
