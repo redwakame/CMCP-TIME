@@ -1,0 +1,7 @@
+name: cmcp-continuity
+version: 1.0.0
+description: 正式 CMCP 專案的 Hermes 生命週期與唯讀來源工具。
+manifest_version: 2
+api_version: 1
+author: CMCP-TIME
+license: MIT

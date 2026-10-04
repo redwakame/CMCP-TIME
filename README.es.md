@@ -1,144 +1,92 @@
 # CMCP-TIME
 
-### Conserva las palabras originales. Entiende el tiempo transcurrido.
+**Conserva las palabras originales. Comprende el tiempo entre ellas.**
 
 [English](README.md) · [繁體中文](README.zh-TW.md) · [Español](README.es.md) · [日本語](README.ja.md)
 
-**Una skill de continuidad temporal para agentes de IA.** CMCP ayuda a un agente existente a retomar una conversación con las fuentes, las fechas y el estado adecuados, sin volver a introducir todo el historial en cada solicitud al modelo.
+**Una skill de continuidad temporal para agentes de IA:** retoma una conversación mediante palabras, imágenes, roles y tiempos originales, manteniendo tu host y modelo habituales.
 
-**Versiones preliminares · Apache-2.0 · Autor original: [redwakame](https://github.com/redwakame)**
+**0.1.0 · Apache-2.0 · Autor original: [redwakame](https://github.com/redwakame)**
 
-## Tres situaciones cotidianas
+## Recupera el original correcto
 
-| Tu situación | Qué aporta CMCP |
-| --- | --- |
-| Vuelves mañana para cambiar una parte de un borrador. | Localiza el original y su versión, en lugar de reconstruirlo a partir de un resumen impreciso. |
-| Retomas la conversación después de una pausa larga. | Proporciona las fechas originales y el tiempo transcurrido, sin inventar lo sucedido durante la pausa. |
-| Dejas un trabajo pendiente o fijas explícitamente un seguimiento. | Gestiona Buffer y Pin por separado, con controles independientes y envío automático desactivado por defecto. |
+Ayer redactaste un plan; hoy cambias un detalle. En una conversación nueva, CMCP ayuda a recuperar ambas versiones y distinguir una decisión del User de una propuesta del Assistant. Cada imagen revisada conserva su archivo original y su relación con la fuente, no solo una descripción.
 
-Son ejemplos de uso, no respuestas grabadas de un modelo. Siguen siendo necesarias las fuentes autorizadas y una integración funcional; la interpretación del modelo puede ser incorrecta.
+![Ejemplo de original, revisión y lectura formal entre conversaciones](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/continuity-source-flow.png)
 
-**Empieza con la integración documentada de Codex o con Playground.** Un núcleo independiente del anfitrión no significa que todos los agentes ya tengan un adaptador funcional. [Instalación](#start-here) · [Comandos](docs/commands.md) · [Límites de los hosts](docs/installation-and-hosts.md).
+Σ representa el concepto de resumen derivado; el diagrama no anuncia una función nueva de resumen.
 
-![Ejemplo ilustrativo de continuidad temporal; no es una prueba grabada](docs/assets/timeline.es.png)
+El diagrama explica un uso; no reproduce una respuesta medida. CMCP aporta fuentes, sin sustituir el razonamiento del host ni reescribir su respuesta final. El modelo aún puede interpretar mal una fuente correcta.
 
-## Por qué existe
+## Instala 0.1.0
 
-Una propuesta de ayer no es una decisión de hoy. Un borrador ya entregado no debería volver a tratarse como una tarea pendiente de empezar. Que una conversación salga del contexto activo del modelo no es motivo para perder sus palabras originales.
+Paquete: [`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0). Fuente fija: [v0.1.0](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0); `main` puede contener cambios posteriores. Usa la versión exacta: `latest` y `next` son canales modificables, no identidades de versión.
 
-CMCP conserva las fuentes de texto autorizadas, sus roles y sus marcas de tiempo. Un catálogo de fuentes y tiempos permite localizarlas. Antes de responder, entrega al modelo únicamente el contexto pertinente y acotado; cuando importa la redacción exacta, vuelve a la fuente original.
-
-**No sustituye los conocimientos, el razonamiento, la personalidad ni las políticas de seguridad del modelo anfitrión.** Tampoco reescribe sus respuestas para simular un estilo. El modelo todavía puede equivocarse: el objetivo es fundamentar mejor la continuidad, no prometer una memoria perfecta.
-
-## Qué ofrece esta versión
-
-| Necesidad | Función | Límite importante |
-|---|---|---|
-| Retomar una conversación tras una pausa | Tarjetas temporales por turno y captura autorizada | Requiere los controles habilitados y una conexión operativa |
-| Comprobar qué se dijo y cuándo | Catálogo, candidatos locales y lectura exacta | La fecha del mensaje no prueba cuándo ocurrió el hecho |
-| Ver lo esencial | **READ**: esquema respaldado por fuentes, fechas y cobertura | El resumen no reemplaza el original |
-| Ver el contexto completo de la selección | **READ-ALL**: colección autorizada y congelada, paginada | No equivale a todo el historial de una cuenta |
-| Comprobar o contar mensajes del historial | Verificación por lotes con cobertura y reanudación | Menciones, planes y relatos del usuario no son equivalentes |
-| Mantener asuntos recientes pendientes | **Buffer**: 12 horas por defecto, ajustable entre 6 y 48 | Caducar o vaciarlo no borra History ni los Pins independientes |
-| Fijar un seguimiento concreto | **Pin**: objetivo explícito y hora opcional | Sin hora no se programa un aviso; enviar no significa completar |
-| Controlar la intervención | Guardado, recuperación, tiempo, Buffer, Pin, Clean, OFF y DND | Los avisos automáticos están **desactivados por defecto** |
-
-Esta versión no necesita una base de datos vectorial ni descargar un modelo de embeddings. Ya combina localización local e interpretación semántica asistida por el modelo; eso no garantiza una recuperación semántica exhaustiva.
-
-## Componentes con responsabilidades distintas
-
-![Historial, catálogo temporal, contexto acotado y avisos opcionales](docs/assets/architecture.es.png)
-
-**History** conserva el texto autorizado; el **catálogo temporal y de fuentes** lo localiza. **Buffer** representa continuidad reciente elegible. Los **Pins** son objetivos fijados explícitamente. No son cuatro copias de la misma conversación.
-
-El catálogo no caduca con las entradas de Buffer. Una charla cotidiana puede quedar fuera de Buffer y seguir siendo consultable. Solo se aporta al modelo lo necesario ahora. Las propuestas del asistente no se convierten en decisiones del usuario, y las fechas desconocidas siguen siendo desconocidas.
-
-<a id="start-here"></a>
-## Instalación y configuración
-
-**Paquete oficial de npm:** [`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time). **Comando:** `cmcp-time`. **Repositorio:** `redwakame/CMCP-TIME`.
-
-**`0.1.0-rc.3` está publicada en npm y sigue siendo una versión candidata preliminar.** Usa `@redwakame-skill/cmcp-time@next` para el canal de candidatos o `@redwakame-skill/cmcp-time@0.1.0-rc.3` para fijar esta versión. Su código fuente en GitHub corresponde a [v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0-rc.3); `main` puede incluir actualizaciones posteriores de documentación. Esta versión incluye `cmcp-time context --help`.
-
-Comprobación del registry a las **2026-09-22 06:01:41 +08:00 (Asia/Taipei)**: `next = 0.1.0-rc.3`, `latest = 0.1.0-rc.2`. Según esta comprobación, instalar sin versión ni etiqueta selecciona el candidato anterior rc.2; `latest` no certifica estabilidad. Las etiquetas pueden cambiar: usa la versión exacta para fijar la instalación y `cmcp-time --version` para consultarla. Las [notas de versión](RELEASE-NOTES.md) conservan el registro histórico de preparación.
-
-### Instala y después abre el asistente
-
-Ejemplo para Windows PowerShell, desde un directorio donde quieras conservar la instalación y el espacio de trabajo por separado. Elige ubicaciones nuevas o cuyo uso ya hayas confirmado. No requiere administrador ni modificar el PATH del sistema.
+Prepara Node.js **22.16.0 o superior** y npm. Elige dos directorios persistentes: programa y datos autorizados del espacio de trabajo. Ejemplo PowerShell sin permisos de administrador ni cambios globales de PATH:
 
 ```powershell
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@next --ignore-scripts --no-audit --no-fund
+npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
 ```
 
-La instalación descarga el paquete; `setup` abre el asistente interactivo para revisar guardado, alcance, zona horaria, idioma y funciones opcionales. **Instalar no autoriza el acceso a conversaciones privadas, las llamadas de pago ni los mensajes proactivos.**
+El asistente configura el modo local y la conexión administrada de Codex. Harness Desktop oficial y MCP/Hermes opcionales tienen pasos propios en la [guía de uso](docs/release-readiness.es.md). Instalar no conecta un host, importa chats privados, autoriza modelos de pago ni activa avisos. No enlaces integraciones persistentes a la caché temporal de `npx`.
 
-La comprobación de publicación incluyó una instalación anónima desde el registry. El diseño global-prefix persistente anterior se verificó en las pruebas previas del candidato Windows con el mismo contenido, no en una matriz multiplataforma completa. Consulta la [guía npm](docs/npm-installation.md), en inglés.
+[POSIX, paquete local y actualizaciones](docs/npm-installation.md) · [Inicio rápido](docs/quick-start.md)
 
-**Codex:** selecciona host y revisa la integración Skill/Hook generada en el proyecto. Utiliza el modelo del anfitrión, sin una clave adicional de DeepSeek. **Playground:** el modo configured-provider necesita proveedor explícito, credencial protegida y presupuesto finito. La ruta de credenciales suministrada depende de Windows DPAPI y PowerShell 7; DeepSeek es la referencia implementada, no una obligación del núcleo.
+## Elige una ruta con evidencia
 
-### Actualizar o detener sin borrar el historial
+![Un almacén autorizado de originales y conexiones opcionales de hosts y MCP](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/host-interoperability.png)
 
-Mantén separados el prefijo de instalación y el espacio de trabajo. Tras instalar una versión aprobada en el mismo prefijo, ejecuta `cmcp-time update --workspace <tu-espacio>` para actualizar las rutas de integración. `update` no descarga versiones npm. `disable` detiene los hooks gestionados y `uninstall` retira la integración gestionada; ninguno elimina el espacio de History. No vincules hooks permanentes a la caché temporal de `npx`. Consulta [comandos](docs/commands.md) y [configuración](docs/configuration.md).
+Dos rutas secuenciales demostradas por separado: Codex ↔ Harness y Hermes ↔ Harness. No es una prueba concurrente de tres hosts; MCP discontinuo es opcional y comparte Core.
 
-### Obtener el código fuente
+| Ruta | Alcance demostrado | Límite |
+|---|---|---|
+| DeepSeek Harness Desktop oficial 0.2.0-rc.2 | Texto nativo, imágenes originales, recuperación en otra conversación, controles y Pins internos explícitos | GUI nativa y SDK aislado se verifican por separado; sin promesa de servicio 24/7 ni avisos móviles |
+| Codex | Skill/hooks, traspaso de texto mediante app-server oficial y compactación nativa acotada | Proyecto y cuenta explícitos; no captura automáticamente cualquier chat de la App |
+| Hermes v2026.9.24 / 0.21.5 | Ciclo oficial sin UI, herramientas nativas y traspaso de texto con Harness SDK | Dependencias externas Python/Git Bash; ruta DeepSeek probada; no certifica TUI ni GUI Desktop |
+| MCP stdio / Streamable HTTP | Clientes reales, lectura formal, handles de medios, ámbito/revocación y servicio local persistente | Transporte opcional; pruebas locales no certifican nube, TLS remoto ni aprobación de plataformas |
 
-```sh
-git clone https://github.com/redwakame/CMCP-TIME.git
-cd CMCP-TIME
-```
+OpenClaw, dots, Grok Bot y Muse tienen requisitos distintos: consulta la [matriz](docs/interop-capabilities.zh-TW.md). El último incremento de interoperabilidad se probó en Windows Node 24.18.0; pruebas anteriores en Linux/Node 22.16.0 no certifican cada nuevo adaptador u OS. Traducir la documentación tampoco certifica el comportamiento en cuatro idiomas.
 
-También puedes usar `gh repo clone redwakame/CMCP-TIME`, SSH `git clone git@github.com:redwakame/CMCP-TIME.git` o **Code → Download ZIP**. Elige los [tags de publicación](https://github.com/redwakame/CMCP-TIME/releases) para fijar una versión; `main` puede incluir documentación posterior. `npm install cmcp` no es el nombre completo de este paquete.
+## Utiliza, inspecciona y detén
 
-Desde la raíz del código fuente:
+![Entrada mínima, detalle bajo demanda y controles separados de permiso y guardado](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/controls-modes.png)
 
-```sh
-node scripts/cmcp-setup.mjs --help
-node scripts/cmcp-setup.mjs --root local-data/my-cmcp --host-workspace local-data/my-cmcp-host
-```
+Esquemas conceptuales, no capturas GUI reales: 1 minimizado, 2 una fila, 3 oculto.
 
-Instala Node.js por separado. El mínimo declarado es Node 18; las pruebas npm utilizaron Windows, Node 24.18.0, npm 11.16.0 y PowerShell 7.6.6. La evidencia existente de Codex corresponde a CLI 0.154.0. No son garantías para todas las versiones. El asistente no instala Node ni agentes. Este candidato no requiere dependencias npm de ejecución ni descargar un modelo de embeddings.
+| Necesidad | Entrada |
+|---|---|
+| Controles nativos Desktop | `/cmcp help`; `/cmcp on` incorpora esta conversación; `/cmcp off` la retira |
+| UI mínima, una fila u oculta | `/cmcp ui minimized`, `/cmcp ui row`, `/cmcp ui hidden`; ocultar no desactiva CMCP |
+| Fuentes, tiempo e imágenes | Catálogo → lectura formal → vista autorizada del medio; **READ-ALL** abarca el conjunto autorizado seleccionado completo, no top-k |
+| Traspaso sin UI | `cmcp-time project init`, después `project open --config <entry.json>`; habilita explícitamente el host elegido |
+| Seguimiento explícito | Selecciona fuente formal, objetivo y hora opcional en Pin; sin hora no hay recordatorio automático |
+| Datos y ciclo de vida | `data help`, `desktop help`, `mcp help`, `hermes help`; copia/restauración y desconexión reversible |
 
-## Controles utilizables
+History, Buffer y Pin tienen responsabilidades diferentes. Buffer dura 12 horas por defecto, configurable de 6 a 48; caducar o Clear no borra History ni Pins independientes. Los avisos empiezan OFF. Se aplican DND, autorización vigente, cancelación y deduplicación; entregar no significa completar ni leer. Incorporar una conversación no elimina OFF/Clean compartidos ni cambia el guardado.
 
-Estos comandos pertenecen a **CMCP Playground**, no al intérprete nativo de todos los agentes:
+**Guardado no significa recuperable.** El estado separa originales guardados, registro pendiente/fallido, acceso formal y estado de evaluación entre hosts. Los metadatos de almacenamiento no evalúan por sí solos la transferencia al receptor; consulta por separado la lectura formal y los recibos del host. Consultar o cambiar la UI no renueva tiempos/TTL, crea permisos ni envía avisos. Originales ausentes, versiones obsoletas o fuentes revocadas se rechazan.
 
-```text
-/controls
-/read ¿Qué hablamos ayer sobre el plan de entrega?
-/read-all Muestra el contexto completo de esa discusión.
-/next
-/set bufferRetentionHours 24
-/proactive off
-/pins
-/clean on
-```
+Antes de actualizar, consulta [copia, restauración y actualización](docs/release-readiness.es.md). Programa, History, historial nativo del host y credenciales tienen responsabilidades separadas. Desconectar conserva originales; no borra el historial nativo ni constituye una política completa de eliminación. 0.1.0 no entrega vectores, audio/vídeo, sincronización en la nube ni writers concurrentes multiusuario.
 
-Para fijar un objetivo, usa un número real devuelto por `/topics` con `/pin`, o una fuente registrada con `/pin-source`. `/pin-time`, `/pin-complete` y `/pin-cancel` cambian su hora o estado. Los parámetros se documentan en la [referencia de comandos](docs/commands.md); no hay que inventar identificadores.
+## Documentación y proyecto
 
-Los avisos necesitan un Runtime y un canal activos. Buffer y Pin comparten el interruptor principal, el horario de no molestar, las comprobaciones de fuentes y la deduplicación. Una salida de consola no es una notificación móvil, una confirmación de lectura ni un servicio permanente.
+[Guía de uso](docs/release-readiness.es.md) · [MCP/Hermes y autohospedaje](docs/interop.es.md) · [Comandos](docs/commands.md) · [Configuración](docs/configuration.md) · [Privacidad](docs/privacy.md) · [Evidencia y límites](docs/verification.md) · [Hoja de ruta](docs/roadmap.md)
 
-## Verificación y límites
-
-Es una **versión candidata de ingeniería utilizable**, no una garantía universal de producción. Las pruebas del programa, la integridad de las fuentes, la semántica del modelo y la integración del anfitrión se describen por separado en [verificación](docs/verification.md).
-
-La base revisada incluye recuperación acotada, tarjetas temporales, controles separados, avisos locales Buffer/Pin y una ruta probada de hooks y compactación manual de Codex. El empaquetado también tuvo verificaciones reales del asistente y helper en Windows sin token de administrador. Las pruebas sintéticas no son nuevas pruebas con modelos reales.
-
-**No se afirma** compatibilidad completa con todos los hosts, sistemas operativos o versiones; compactación automática totalmente fiable; capacidad ilimitada; interpretación perfecta; sincronización en la nube; avisos móviles; ni gestión integral de borrado de History. Claude Code, OpenClaw, Hermes, DeepSeek Harness y Grok Bot siguen siendo destinos de adaptación, no una lista de integraciones verificadas. La traducción de documentos no certifica el comportamiento del producto en cada idioma.
-
-## Qué repositorio consultar
-
-**CMCP-TIME es la línea actual de desarrollo.** [OpenClaw Continuity](https://github.com/redwakame/openclaw-continuity) conserva la skill anterior específica de OpenClaw; [cmcp](https://github.com/redwakame/cmcp) conserva el contrato de políticas y el material de revisión anteriores. Su código, licencias y evidencia siguen separados. No se anuncia CMCP-TIME como sustitución directa de la skill anterior ni se implica una migración automática de datos.
+**CMCP-TIME es la línea actual.** [OpenClaw Continuity](https://github.com/redwakame/openclaw-continuity) y [cmcp](https://github.com/redwakame/cmcp) conservan trabajos anteriores, con sus propias licencias y evidencia; no implican sustitución directa ni migración automática.
 
 ## Autoría y colaboración
+
 
 Las ideas, incidencias reproducibles, evaluaciones independientes y propuestas de colaboración son bienvenidas. No publiques conversaciones privadas ni credenciales. Consulta [CONTRIBUTING](CONTRIBUTING.md), [SECURITY](SECURITY.md), [privacidad](docs/privacy.md) y [hoja de ruta](docs/roadmap.md).
 
 ¿Te interesa CMCP-TIME? Me encantará intercambiar ideas y conocer tu experiencia. Si el proyecto te resulta útil, puedes apoyarlo con una estrella en GitHub. Seguiré mejorándolo y actualizándolo; también son bienvenidas las propuestas de colaboración comercial. Escríbeme a [adarobot666@gmail.com](mailto:adarobot666@gmail.com) o [redwakame616@gmail.com](mailto:redwakame616@gmail.com).
 
 Autor original y mantenedor: **redwakame**. Distribución actual bajo [Apache-2.0](LICENSE), con [NOTICE](NOTICE) y [procedencia de licencias](docs/license-provenance-v0.1.md). No se revocan permisos anteriores ni se añade una obligación publicitaria por cada uso. El identificador interno sigue siendo `cmcp`; el nombre público es **CMCP-TIME**. [CITATION.cff](CITATION.cff) facilita su cita.
+
+[0.1.0](docs/release-0.1.0.md) · [Pruebas reproducibles](docs/testing.md)

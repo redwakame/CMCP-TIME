@@ -15,11 +15,82 @@ import {createCmcpAssistantTiming,observeCmcpAssistantTime} from './cmcp-assista
 import {projectCmcpRuntimeTime} from './project-cmcp-local-time.js';
 import {readCmcpBufferBoundary,assertCmcpBufferGeneration,withCmcpBufferPublication,cmcpBufferExpiry,projectCmcpBufferState} from './cmcp-buffer-lifecycle.js';
 import {buildLoopRequest,decodeLoopResponse,LOOP_SCHEMAS,validateLoopSchema} from './cmcp-local-loop-protocol.js';
+import {validateCmcpAnswerHistoryNeed} from './cmcp-answer-material-need.js';
 import {projectCmcpDialogueCatalogContext} from './cmcp-dialogue-source-binding.js';
 import {resolveCmcpReadingQuery,assertCmcpEphemeralQueryText} from './cmcp-reading-query-authorization.js';
 
 const copy=value=>structuredClone(value),bytes=value=>Buffer.byteLength(JSON.stringify(value));
 const positive=n=>Number.isSafeInteger(n)&&n>0;
+function checkedGeneralAnswerLookup(lookup,limits){
+  if(!lookup||!lookup.context||typeof lookup.context!=='object'||Array.isArray(lookup.context)
+    ||lookup.context.kind!=='answer_history'||!['read','needs_source'].includes(lookup.context.status)
+    ||!Array.isArray(lookup.sourceRefs)||new Set(lookup.sourceRefs).size!==lookup.sourceRefs.length
+    ||typeof lookup.verify!=='function'||!lookup.receipt||typeof lookup.receipt!=='object'
+    ||!Number.isSafeInteger(lookup.receipt.modelCalls)||lookup.receipt.modelCalls<0)throw Error('invalid_general_answer_lookup');
+  const evidence=lookup.context.context?.evidence??[];
+  if(!Array.isArray(evidence)
+    ||evidence.some(row=>typeof row?.sourceRef!=='string'||!row.sourceRef)
+    ||(lookup.context.status==='read')!==Boolean(evidence.length)
+    ||lookup.sourceRefs.length!==evidence.length
+    ||lookup.sourceRefs.some(ref=>!evidence.some(row=>row.sourceRef===ref)))throw Error('invalid_general_answer_evidence_binding');
+  const projectionBytes=bytes(lookup.context);
+  if(projectionBytes>limits.maxProjectionBytes)throw Error('general_answer_lookup_projection_budget');
+  return projectionBytes;
+}
+/** Refit an already verified formal lookup against the exact compiled provider
+ * body. Reprojection is pure and may only narrow the answer view; it never
+ * changes the formal read or starts another model request. */
+export function fitCmcpGeneralAnswerWire({lookup,question,runtimeTime,limits,preflightRequest}){
+  let current=lookup,projectionBytes=checkedGeneralAnswerLookup(current,limits),reprojections=0;
+  const originalRefs=new Set(current.sourceRefs),reproject=current.reproject;
+  const answerInput=()=>({question,context:copy(current.context),allowedSourceRefs:copy(current.sourceRefs),runtimeTime:copy(runtimeTime)});
+  if(typeof preflightRequest!=='function')return {lookup:current,answerInput:answerInput(),projectionBytes,wirePreflight:null};
+  const measure=()=>{
+    const result=preflightRequest('recall_answer',answerInput());
+    if(!Number.isSafeInteger(result?.requestBytes)||result.requestBytes<0
+      ||!positive(result.requestByteLimit))throw Error('invalid_general_answer_wire_preflight');
+    return result;
+  };
+  let wire=measure(),cap=current.receipt.projection?.maxProjectionBytes??limits.maxProjectionBytes;
+  if(!positive(cap)||cap>limits.maxProjectionBytes)throw Error('invalid_general_answer_projection_limit');
+  if(wire.requestBytes>wire.requestByteLimit){
+    if(typeof reproject!=='function')throw Error('general_answer_wire_budget');
+    let step=Math.max(1,wire.requestBytes-wire.requestByteLimit);
+    for(let i=0;i<24&&wire.requestBytes>wire.requestByteLimit;i++){
+      cap=Math.min(cap-step,projectionBytes-1);
+      if(cap<1)break;
+      const candidate=reproject(cap),candidateBytes=checkedGeneralAnswerLookup(candidate,limits);
+      if(candidateBytes>cap||candidate.sourceRefs.some(ref=>!originalRefs.has(ref))
+        ||candidate.verify!==lookup.verify||candidate.receipt.modelCalls!==lookup.receipt.modelCalls
+        ||candidate.receipt.requestId!==lookup.receipt.requestId)throw Error('invalid_general_answer_reprojection');
+      if(originalRefs.size&&!candidate.sourceRefs.length)break;
+      const previousBytes=projectionBytes;
+      current=candidate;projectionBytes=candidateBytes;reprojections++;
+      wire=measure();
+      step=projectionBytes===previousBytes?Math.max(step*2,wire.requestBytes-wire.requestByteLimit):
+        Math.max(1,wire.requestBytes-wire.requestByteLimit);
+    }
+    if(wire.requestBytes>wire.requestByteLimit)throw Error('general_answer_wire_budget');
+  }
+  const wirePreflight={requestBytes:wire.requestBytes,requestByteLimit:wire.requestByteLimit,
+    requestByteLimitBasis:wire.requestByteLimitBasis??null,reprojections};
+  return {lookup:{...current,receipt:{...current.receipt,wirePreflight}},answerInput:answerInput(),projectionBytes,wirePreflight};
+}
+// A discarded model answer must not be retained through transport.outputText
+// (or a future transport body field). Keep only the bounded accounting facts.
+function transportWithoutBody(transport){
+  if(!transport||typeof transport!=='object')return null;
+  const count=value=>Number.isSafeInteger(value)&&value>=0?value:null;
+  const usage=transport.usage&&typeof transport.usage==='object'?transport.usage:null;
+  return {
+    status:['completed','failed','incomplete'].includes(transport.status)?transport.status:'unknown',
+    http:Number.isSafeInteger(transport.http)&&transport.http>=100&&transport.http<=599?transport.http:null,
+    responseSha256:typeof transport.responseSha256==='string'&&/^[a-f0-9]{64}$/i.test(transport.responseSha256)
+      ?transport.responseSha256:null,
+    usage:usage?{input_tokens:count(usage.input_tokens),output_tokens:count(usage.output_tokens),total_tokens:count(usage.total_tokens),
+      cached_tokens:count(usage.input_tokens_details?.cached_tokens),reasoning_tokens:count(usage.output_tokens_details?.reasoning_tokens)}:null
+  };
+}
 const sourceHint=source=>{const points=[...source.content.body],text=points.slice(0,80).join('');return {
   kind:source.content.kind,text,purpose:'source_locator_not_complete_evidence',
   location:{unit:'unicode_code_points',start:0,end:[...text].length},complete:points.length<=80};};
@@ -37,7 +108,14 @@ export function createCmcpReactivationStores({root,scopeId,providerNamespace='cm
 export function createCmcpTemporalSourceCatalog({stores,maxEntries,maxSegments=1}){
   if(!positive(maxEntries))throw Error('catalog_limit_required');
   const journal=createCmcpSourceIndexSegments({root:path.join(stores.root,'source-index'),name:'cmcp-temporal-source-index-v1',maxEntries,maxSegments});
-  async function list(){const entries=new Map();for(const row of await journal.read())entries.set(row.record.value.id,row.record.value);return [...entries.values()];}
+  async function list(){
+    const entries=new Map();
+    for(const row of await journal.read()){
+      const entry=row.record.value;
+      if(entry?.pointer?.scopeId===stores.scopeId)entries.set(entry.id,entry);
+    }
+    return [...entries.values()];
+  }
   async function batchValid(batch){if(batch&&(!batch.active||!await batch.valid()))throw Error('catalog_batch_cancelled');}
   async function publish(kind,entry,batch){await batchValid(batch);await journal.append(kind,entry);batch?.entries.set(entry.id,copy(entry));}
   async function sourceFor(pointer){
@@ -110,7 +188,8 @@ export function createCmcpTemporalSourceCatalog({stores,maxEntries,maxSegments=1
       if(typeof run!=='function'||typeof valid!=='function')throw Error('invalid_catalog_batch');
       if(!await valid())throw Error('catalog_batch_cancelled');
       const batch={active:true,valid,entries:new Map((await list()).map(entry=>[entry.id,entry])),events:new Map()};
-      const scoped=Object.freeze({list:async()=>{await batchValid(batch);return [...batch.entries.values()].map(copy);},
+      const scoped=Object.freeze({list:async()=>{await batchValid(batch);return [...batch.entries.values()]
+        .filter(entry=>entry?.pointer?.scopeId===stores.scopeId).map(copy);},
         registerSource:input=>registerSource(input,batch),annotate:input=>annotate(input,batch)});
       try{return await run(scoped);}finally{batch.active=false;batch.entries.clear();batch.events.clear();}
     },
@@ -267,13 +346,14 @@ export async function readCmcpHistoryReactivationStatus({stores,maxEntries,timeC
 }
 
 /** One writer; only a new explicit User question can activate selected references. */
-export function createCmcpHistoryReactivation({stores,allowedSourceIds,limits,adapter,sessionId=randomUUID(),canContinue=async()=>true,clock=()=>new Date().toISOString(),ttlMs,bufferTtlMs=ttlMs,bufferBoundary,continuingClock=false}){
+export function createCmcpHistoryReactivation({stores,allowedSourceIds,limits,adapter,sessionId=randomUUID(),canContinue=async()=>true,clock=()=>new Date().toISOString(),ttlMs,bufferTtlMs=ttlMs,bufferBoundary,continuingClock=false,onGeneralAnswerNeed=null}){
   if(!Array.isArray(allowedSourceIds)||new Set(allowedSourceIds).size!==allowedSourceIds.length
     ||allowedSourceIds.some(id=>typeof id!=='string')||!limits||!['maxEntries','maxCatalogBytes','maxSources','maxSourceBytes','maxProjectionBytes'].every(key=>positive(limits[key]))
     ||allowedSourceIds.length>limits.maxEntries||limits.maxEntries>12||limits.maxSources>2||typeof adapter?.request!=='function')throw Error('explicit_reactivation_grant_required');
   if(ttlMs!==undefined&&(!Number.isSafeInteger(ttlMs)||ttlMs<=0))throw Error('invalid_buffer_ttl');
   if(bufferTtlMs!==undefined&&(!Number.isSafeInteger(bufferTtlMs)||bufferTtlMs<=0))throw Error('invalid_buffer_ttl');
   if(typeof continuingClock!=='boolean'||typeof clock!=='function')throw Error('invalid_reactivation_clock');
+  if(onGeneralAnswerNeed!==null&&typeof onGeneralAnswerNeed!=='function')throw Error('invalid_general_answer_need_callback');
   if(bufferBoundary!==undefined&&(!Number.isSafeInteger(bufferBoundary?.generation)||bufferBoundary.generation<0
     ||typeof bufferBoundary.valid!=='function'))throw Error('invalid_buffer_boundary');
   const grant=new Set(allowedSourceIds),catalog=createCmcpTemporalSourceCatalog({stores,maxEntries:limits.maxEntries});
@@ -284,17 +364,23 @@ export function createCmcpHistoryReactivation({stores,allowedSourceIds,limits,ad
     enabled=value.enabled;clean=value.clean;generation++;
   }
   return Object.freeze({setControls:controls,
-    async submit({text,timeContext,contextOnly=false,savedQueryPointer=null,queryBinding=null,saveAssistant=true,activateBuffer=true}){
-      if(typeof text!=='string'||!text.trim()||Buffer.byteLength(text)>4096||busy||typeof contextOnly!=='boolean')throw Error('invalid_or_busy_reactivation');
+    async submit({text,timeContext,contextOnly=false,savedQueryPointer=null,queryBinding=null,saveAssistant=true,activateBuffer=true,probeHistoricalNeed=false}){
+      if(typeof text!=='string'||!text.trim()||Buffer.byteLength(text)>4096||busy||typeof contextOnly!=='boolean'
+        ||typeof probeHistoricalNeed!=='boolean'||probeHistoricalNeed&&(contextOnly||!onGeneralAnswerNeed))throw Error('invalid_or_busy_reactivation');
       busy=true;const captured=generation;
       // Normal callers capture synchronously before the first await. Standalone callers
       // capture the durable boundary here, before any source read or model invocation.
       let capturedBufferGeneration=bufferBoundary?.generation;
-      let operationTemporal,activationExpiry=null;
+      let operationTemporal,activationExpiry=null,historyScopeRequired=!probeHistoricalNeed;
       const unexpired=()=>!activationExpiry||(continuingClock
         ?resolveCmcpTimeContext({now:clock(),timezone:operationTemporal.timezone}):operationTemporal).nowEpochMs<parseCmcpInstant(activationExpiry);
       const valid=async()=>{
-        if(captured!==generation||!enabled||clean||!await canContinue()||bufferBoundary&&!await bufferBoundary.valid())return false;
+        if(captured!==generation||!enabled||clean||!await canContinue())return false;
+        // A normal answer that needs only the current input is independent of
+        // Buffer Clear. Once the model requests historical material, every
+        // subsequent read, answer and receipt remains bound to that generation.
+        if(!historyScopeRequired)return true;
+        if(bufferBoundary&&!await bufferBoundary.valid())return false;
         return (await readCmcpBufferBoundary({root:stores.root,scopeId:stores.scopeId})).generation===capturedBufferGeneration&&unexpired();
       };
       let progress;
@@ -349,6 +435,72 @@ export function createCmcpHistoryReactivation({stores,allowedSourceIds,limits,ad
           return {status:'unaugmented',answer:reply.value.text,queryPointer:query.pointer,answerPointer:answer.pointer,assistantTiming,modelContext:'',selected:[],sourceBytes:0,proactiveEligible:false};
         }
         progress={queryPointer:query.pointer,...(queryBinding?{queryAuthorization:copy(queryBinding.queryAuthorization)}:{}),selection:'not_run',retrieval:'not_run',answer:'not_run',selected:[],readRanges:[],sourceBytes:0,projectionBytes:0};
+        if(probeHistoricalNeed){
+          if(!await valid())throw Error('reactivation_cancelled');
+          const probeInput={question:text,probeHistoricalNeed:true,runtimeTime:projectCmcpRuntimeTime(temporal)};
+          const probeRequest=buildLoopRequest('recall_answer',probeInput);
+          await journal.append('general_answer_need_started',{queryPointer:query.pointer,queryHash:loopHash(query),at:temporal.now,
+            responseSchema:'recall_answer_history_need_v1'});
+          const probe=await adapter.request('recall_answer',probeInput,{canAttempt:valid});
+          if(!await valid())throw Error('reactivation_cancelled');
+          const provisionalHistoricalText=['prior_content_reference','recorded_fact_lookup'].includes(probe.value?.historyNeed?.basis)
+            &&typeof probe.value?.text==='string'&&probe.value.text.length>0;
+          const rawRetained=!queryBinding&&(saveAssistant||probe.value?.text==='')&&!provisionalHistoricalText;
+          await journal.append('general_answer_need_raw',{queryPointer:query.pointer,raw:rawRetained?copy(probe.value):null,
+            transport:rawRetained?probe.transport??null:transportWithoutBody(probe.transport),
+            ...(rawRetained?{}:{bodyRetention:provisionalHistoricalText?'discarded_provisional_historical_text':'not_saved_by_current_controls'}),
+            ...(provisionalHistoricalText?{discardedProvisionalText:{bytes:Buffer.byteLength(probe.value.text),hash:loopHash(probe.value.text)}}:{})});
+          if(!validateLoopSchema(probe.value,probeRequest.schema))throw Error('invalid_general_answer_need_schema');
+          const need=copy(probe.value.historyNeed),historical=['prior_content_reference','recorded_fact_lookup'].includes(need.basis),
+            unclear=need.basis==='unclear_reference';
+          validateCmcpAnswerHistoryNeed({status:historical?'needs_source':unclear?'needs_clarification':'none',need},text);
+          if(probe.value.sourceRefs.length||!historical&&!probe.value.text)throw Error('invalid_general_answer_need_disposition');
+          progress.selection=need.basis;
+          if(!historical){
+            if(!await valid())throw Error('reactivation_cancelled');
+            const assistantTiming=createCmcpAssistantTiming(temporal,clock),answer=await saveSource('assistant',probe.value.text,assistantTiming.responseReceivedAt);
+            assistantTiming.sourceSaveAcknowledgedAt=observeCmcpAssistantTime(clock,temporal.timezone);
+            if(!await valid())throw Error('reactivation_cancelled');
+            await journal.append('assistant_timing',{queryPointer:query.pointer,answerPointer:answer.pointer,assistantTiming:copy(assistantTiming)});
+            progress.answer='current_input_only';
+            return await finish({status:unclear?'needs_clarification':'answered',answer:probe.value.text,queryPointer:query.pointer,
+              answerPointer:answer.pointer,assistantTiming,modelContext:'',selected:[],sourceBytes:0,projectionBytes:0,
+              generalAnswerNeed:{basis:need.basis},modelCalls:1,proactiveEligible:false});
+          }
+          historyScopeRequired=true;
+          if(!await valid())throw Error('reactivation_cancelled');
+          const initialLookup=await onGeneralAnswerNeed({query:copy(query),text,temporal:copy(temporal),valid,need:copy(need)});
+          if(!await valid())throw Error('reactivation_cancelled');
+          // The formal aggregate has its own frozen source/read and projection
+          // budgets. Keep every quotation in that bounded projection tied to an
+          // allowed alias; the ordinary top-k selection cap does not apply here.
+          const {lookup,answerInput,projectionBytes}=fitCmcpGeneralAnswerWire({lookup:initialLookup,question:text,
+            runtimeTime:projectCmcpRuntimeTime(temporal),limits,preflightRequest:adapter.preflightRequest?.bind(adapter)});
+          if(await lookup.verify()!==true||!await valid())throw Error('general_answer_lookup_cancelled_or_source_changed');
+          progress.retrieval='formal_lookup';progress.projectionBytes=projectionBytes;
+          await journal.append('general_answer_lookup',{queryPointer:query.pointer,needBasis:need.basis,receipt:copy(lookup.receipt),
+            projectedSourceRefs:copy(lookup.sourceRefs),projectionBytes});
+          const answerRequest=buildLoopRequest('recall_answer',answerInput);
+          const second=await adapter.request('recall_answer',answerInput,{canAttempt:async()=>await valid()&&await lookup.verify()===true});
+          const assistantTiming=createCmcpAssistantTiming(temporal,clock);
+          if(!await valid()||await lookup.verify()!==true)throw Error('general_answer_lookup_cancelled_or_source_changed');
+          await journal.append('general_answer_result_raw',{queryPointer:query.pointer,raw:!queryBinding&&saveAssistant?copy(second.value):null,
+            transport:!queryBinding&&saveAssistant?second.transport??null:transportWithoutBody(second.transport),
+            ...(!queryBinding&&saveAssistant?{}:{bodyRetention:'not_saved_by_current_controls'})});
+          if(!validateLoopSchema(second.value,answerRequest.schema)
+            ||second.value.sourceRefs.some(ref=>!lookup.sourceRefs.includes(ref))
+            ||second.value.evidenceStatus==='sufficient'&&!second.value.sourceRefs.length)throw Error('invalid_general_answer_source_refs');
+          if(!await valid()||await lookup.verify()!==true)throw Error('general_answer_lookup_cancelled_or_source_changed');
+          const answer=await saveSource('assistant',second.value.text,assistantTiming.responseReceivedAt);
+          assistantTiming.sourceSaveAcknowledgedAt=observeCmcpAssistantTime(clock,temporal.timezone);
+          if(!await valid()||await lookup.verify()!==true)throw Error('general_answer_lookup_cancelled_or_source_changed');
+          await journal.append('assistant_timing',{queryPointer:query.pointer,answerPointer:answer.pointer,assistantTiming:copy(assistantTiming)});
+          progress.answer=second.value.evidenceStatus;
+          return await finish({status:second.value.evidenceStatus==='sufficient'?'answered':'source_insufficient',answer:second.value.text,
+            answerSourceRefs:copy(second.value.sourceRefs),queryPointer:query.pointer,answerPointer:answer.pointer,assistantTiming,
+            modelContext:queryBinding?'':JSON.stringify(lookup.context),selected:[],sourceBytes:lookup.receipt?.sourceBytes??null,
+            projectionBytes,generalAnswerNeed:{basis:need.basis},lookupReceipt:copy(lookup.receipt),modelCalls:2+lookup.receipt.modelCalls,proactiveEligible:false});
+        }
         const available=(await catalog.list()).filter(entry=>grant.has(entry.id));
         if(available.length!==grant.size)throw Error('authorized_catalog_entry_missing');
         const aliases=new Map(available.map((entry,index)=>['c'+(index+1),entry]));

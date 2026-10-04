@@ -1,7 +1,28 @@
-# Documentation illustrations
+# 文件圖解
 
-These SVG sources and PNG renderings are conceptual diagrams authored for the CMCP-TIME introductions. They are not screenshots, recorded model answers, benchmarks or claims that all host integrations have been completed. No user data, photographs, external image URLs, scripts or embedded font files are included. PNGs carry the diagram pixels for consistent multilingual rendering. Text alternatives are provided in each introduction and in the SVG titles.
+本目錄圖解為 CMCP-TIME 撰製的概念示意，依本專案 [Apache-2.0 授權](../../LICENSE) 散布。它們不是實際介面截圖、模型原答、效能比較或全部宿主已驗證的證明。新圖沿用既有深藍、薄荷綠配色，以可維護 SVG 繪製並提供 PNG 顯示副本；未引用外部照片、商標圖檔、字型檔或使用者資料。
 
-English, Traditional Chinese, Spanish and Japanese versions present the same two concepts: original time and unresolved state across a 23-hour gap; and the distinct responsibilities of History, the time/source catalog, bounded model context, Buffer, Pin and common controls.
+## 正式版首頁共用圖
 
-The prose examples explain intended behavior under valid authorization and an available integration. They do not promise that every model response will use the supplied context perfectly.
+四語文字說明放在各語 README，圖內只保留共用技術名稱、數字及符號。SVG 的 title／desc 提供文字替代，PNG 是同一 SVG 的點陣顯示副本。
+
+| 圖檔（SVG 與同名 PNG） | 意義與讀法 | 尺寸 |
+| --- | --- | --- |
+| `continuity-source-flow` | S₁ 的 User／Assistant 原文以原時間 t₀、版本 v1 保存在 History；在 S₂ 於 t₁ 取得需要的原文，來源仍保留 t₀。History、Buffer 與衍生摘要 Σ 的責任分開；Σ 不是新增自動摘要功能的宣告。 | 1080 × 740 |
+| `controls-modes` | 1 是最小化入口，2 是一般單列，3 是隱藏控制列；詳細操作仍由 `/cmcp` 等正式入口開啟。三幅為布局示意，隱藏介面不等於停用 CMCP，也不改變授權或保存。 | 1080 × 740 |
+| `host-interoperability` | 具名宿主的限定證據是 Codex ↔ Harness 與 Hermes ↔ Harness 兩組順序交接，不是三宿主同時並行。共用 CMCP 核心與正式 History；Skill／CLI 本機入口可獨立使用，虛線 MCP 是選配 stdio／HTTP 傳輸。 | 1080 × 790 |
+
+圖中的連線只說明責任與資料路徑。授權、版本、來源覆蓋、宿主能力及未驗限制，以操作文件與能力矩陣為準；不保證每次模型回答皆正確，也不表示已在公網或雲端部署。
+
+## 保留的既有圖解
+
+`timeline.{en,zh-TW,es,ja}` 與 `architecture.{en,zh-TW,es,ja}` 共八張圖及其 SVG 原稿保留，避免破壞既有引用。它們分別呈現跨 23 小時的未定事項，以及 History、時間／來源清冊、必要脈絡、Buffer、Pin 與共用控制的分工。
+
+既有圖的長文字在窄版較難閱讀，因此新版四語首頁採上述三張共用圖。繁中舊時間圖中的「不重做已交付內容」是情境描述，不能視為模型零重複或完整工作完成保證。所有舊圖均為概念圖，不是新版最小介面或宿主整合的實測畫面。
+
+## 維護與隱私
+
+- 修改 SVG 後重新產生同名 PNG，並核對亮／暗背景及窄版顯示。
+- 只使用系統無襯線字型；不附字型檔，不嵌入外部資源、腳本、使用者資料或追蹤網址。
+- SVG 內部的色彩／箭頭定義與無障礙文字屬圖形本身，不承載隱藏操作指令。
+- PNG 不附 EXIF、文字註解或 ICC 資料；只有必要的像素與格式資訊。

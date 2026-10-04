@@ -1,12 +1,10 @@
-# npm installation and updates
+# npm installation, workspace and updates
 
-The official npm package is [`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time), with command `cmcp-time`. **`0.1.0-rc.3` is published and remains a prerelease candidate.** Use `@redwakame-skill/cmcp-time@next` for the candidate channel, or `@redwakame-skill/cmcp-time@0.1.0-rc.3` to pin this version. Its GitHub source is [v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0-rc.3); `main` may contain later documentation updates.
-
-Registry check at **2026-09-22 06:01:41 +08:00 (Asia/Taipei)**: `next = 0.1.0-rc.3`, `latest = 0.1.0-rc.2`. Installing without a version or tag therefore selects the older rc.2 candidate at that observation; `latest` is not a stability guarantee. Tags can change. Use an exact version for a fixed installation and `cmcp-time --version` to inspect it. The internal compatibility identifier remains `cmcp`.
+Install the fixed release `@redwakame-skill/cmcp-time@0.1.0`; source tag [v0.1.0](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0). Use `cmcp-time --version` to read the installed version. Mutable npm `latest` and `next` tags are channels; they do not identify an immutable artifact. [Version notes](release-0.1.0.md) distinguish the release from historical candidate records.
 
 ## Requirements and directories
 
-Install Node.js and npm separately. The package declares Node >=18; consult the candidate verification record for the versions actually tested. A Host such as Codex must also be installed separately if you choose its integration. CMCP has no npm runtime dependencies and no install-time Host attachment, History access, paid authorization or proactive activation.
+Install Node.js >=22.16.0 and npm separately. The latest interoperability increment was tested on Windows Node 24.18.0; earlier Linux/Node 22.16.0 evidence is a separate layer, not proof of every new adapter. Install the selected host separately. npm installs the locked MCP dependencies; source checkouts use `npm ci`. Local mode does not require a running service. Installing does not attach a host, import History, grant model access or enable proactive messages.
 
 Choose two persistent, user-writable directories:
 
@@ -22,13 +20,13 @@ The installed package requires an explicit `--workspace` for data operations. Cr
 
 ## Install from npm
 
-The following PowerShell example downloads the published candidate into a persistent prefix. Choose different persistent directory names if these already serve another purpose. It does not require administrator rights or change the system PATH or global npm configuration. Replace `@next` with `@0.1.0-rc.3` to pin this release.
+The following PowerShell example installs 0.1.0 into a persistent prefix. Choose different persistent directory names if these already serve another purpose. It does not require administrator rights or change the system PATH or global npm configuration. The example pins the exact version rather than a mutable channel.
 
 ```powershell
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@next --ignore-scripts --no-audit --no-fund
+npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --help
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
@@ -40,27 +38,27 @@ On a POSIX shell, the prefix binary is `bin/cmcp-time`:
 cmcp_prefix="$PWD/cmcp-install"
 cmcp_workspace="$PWD/cmcp-workspace"
 mkdir -p "$cmcp_prefix" "$cmcp_workspace"
-npm install --global --prefix "$cmcp_prefix" @redwakame-skill/cmcp-time@next --ignore-scripts --no-audit --no-fund
+npm install --global --prefix "$cmcp_prefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
 "$cmcp_prefix/bin/cmcp-time" --version
 "$cmcp_prefix/bin/cmcp-time" --help
 "$cmcp_prefix/bin/cmcp-time" setup --workspace "$cmcp_workspace"
 ```
 
-The npm step downloads and installs code; `setup` starts the interactive configuration wizard. Publication checks include anonymous registry installation, with the persistent global-prefix layout checked in the preceding Windows candidate. The POSIX example describes npm's layout, not a new operating-system verification. The configured DeepSeek credential path still requires Windows DPAPI and PowerShell 7. Host mode uses the Host's own authorized model access and does not require DeepSeek.
+The npm step downloads and installs code; `setup` starts the interactive configuration wizard. The POSIX example describes npm's executable layout; it does not by itself establish a new operating-system verification. See [evidence boundaries](verification.md). The configured DeepSeek credential path still requires Windows DPAPI and PowerShell 7. Host mode uses the Host's own authorized model access and does not require DeepSeek.
 
 ### Install a reviewed local tarball instead
 
-To install a local candidate independently of registry availability, use the actual supplied `.tgz` and its matching verification record. Reuse the separate prefix/workspace choices above and replace the npm package argument with that file:
+To install a reviewed local artifact independently of registry availability, use the actual supplied `.tgz` and its matching verification record. Reuse the separate prefix/workspace choices above and replace the npm package argument with that file:
 
 ```powershell
-$cmcpTarball = (Resolve-Path './reviewed-candidate.tgz').Path
-npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpTarball" --ignore-scripts --no-audit --no-fund
+$cmcpTarball = (Resolve-Path './reviewed-package.tgz').Path
+npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpTarball" --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 ```
 
-`reviewed-candidate.tgz` is a placeholder for an actual reviewed artifact, not a shipped filename. A successful local tarball installation is separate from registry publication.
+`reviewed-package.tgz` is a placeholder for an actual reviewed artifact, not a shipped filename. A successful local tarball installation is separate from registry publication.
 
-Do not use `npm link` as evidence of installation from a package. This candidate is intended for a persistent prefix installation. `npx`/`npm exec` cache-based persistent Host attachment is not supported: setup rejects attachment from an `_npx` cache location. An executable that can print help from a cache is not a durable installation.
+Do not use `npm link` as evidence of installation from a package. This release is intended for a persistent prefix installation. `npx`/`npm exec` cache-based persistent Host attachment is not supported: setup rejects attachment from an `_npx` cache location. An executable that can print help from a cache is not a durable installation.
 
 ## Configure and operate
 
@@ -79,22 +77,22 @@ Run the first command for a new installation; if it already exists, use `update`
 
 For automated explicit choices, put the answers file inside the selected workspace and pass `setup --answers choices.json`. Review the supplied [Host choices example](../examples/setup-host.json) and adapt consent and scope deliberately; a synthetic example is not consent to save real conversations. To choose a different Host location, pass `--host-workspace host` on the first setup; it resolves inside the selected workspace. Do not change that bound Host location when updating the same installation root. The resulting managed Skill/helper and Hook commands refer to the persistent installed assets and the authorized workspace.
 
-The advanced `context` command forwards the existing Host helper options, including `--config`. It obtains Runtime context; it does not run a separate final-answer model. The published rc.3 includes `cmcp-time context --help`, which prints usage before opening configuration or Runtime and needs no workspace, credentials or grant. The older rc.2 helper does not provide this help option. Prefer the installed Skill for Host use and the [command reference](commands.md#host-skillhelper) for precise options. Never read the Store or credential files directly to bypass that helper.
+The advanced `context` command forwards the existing Host helper options, including `--config`. It obtains Runtime context; it does not run a separate final-answer model. `cmcp-time context --help` prints usage before opening configuration or Runtime and needs no workspace, credentials or grant. Prefer the installed Skill for Host use and the [command reference](commands.md#host-skillhelper) for precise options. Never read the Store or credential files directly to bypass that helper.
 
 Configured Playground use still requires separately configured credentials and a finite explicit grant. See [configuration](configuration.md). A package install, update, status or restart does not authorize provider calls, refresh User time/TTL, reopen stopped targets or reset budget. No model calls are needed to check setup or paths.
 
 ## Update installed code, then refresh managed attachment
 
-Close CMCP writers and the Host processes using its hooks before replacing program files. Retain the workspace and its data. Install the reviewed published version or replacement tarball into the **same prefix**, then invoke the installed `update` command. For the published candidate channel:
+Close CMCP writers and the Host processes using its hooks before replacing program files. Retain the workspace and its data. Install the reviewed published version or replacement tarball into the **same prefix**, then invoke the installed `update` command. For a deliberately selected version:
 
 ```powershell
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@next --ignore-scripts --no-audit --no-fund
+npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') update --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
 ```
 
-Use an exact reviewed version instead of `@next` to keep the update reproducible, or substitute the reviewed tarball path for an unpublished candidate. `update` refreshes managed Hook/Skill bindings and explicit settings from the installed version; it does **not** download or upgrade the npm package. Reinstallation is the npm step. The setup receipt preserves installation identity and before-images. Changing the scope, event scope or Host workspace is not an automatic data migration. Unknown or modified managed files produce a conflict instead of being overwritten. Review renewed Host trust if generated Hook commands change.
+Replace `0.1.0` only with the specific reviewed version you intend to install, or use a reviewed local tarball. Reinstalling the same version is not a newer update. `update` refreshes managed Hook/Skill bindings and explicit settings from the installed version; it does **not** download or upgrade the npm package. Reinstallation is the npm step. The setup receipt preserves installation identity and before-images. Changing the scope, event scope or Host workspace is not an automatic data migration. Unknown or modified managed files produce a conflict instead of being overwritten. Review renewed Host trust if generated Hook commands change.
 
 The normal workflow does not modify stored source timestamps, extend existing Buffer expiry, replenish grants or restore previously delivered notifications. No automatic updater, service or background schedule is installed.
 
@@ -110,14 +108,14 @@ The normal workflow does not modify stored source timestamps, extend existing Bu
 To remove program files too, detach first, then explicitly run:
 
 ```powershell
-npm.cmd uninstall --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time --ignore-scripts --no-audit --no-fund
+npm.cmd uninstall --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time --no-audit --no-fund
 ```
 
 This removes the npm package, not the separate workspace. Do not delete the workspace as an installation cleanup step. If a managed file was changed independently, resolve the reported conflict before removal. Neither command revokes a remote API credential.
 
 ## Source installation uses the same implementation
 
-From this candidate's source root:
+From the 0.1.0 source root:
 
 ```sh
 node bin/cmcp-time.mjs --help
@@ -130,4 +128,6 @@ Replace the example path with an actual existing directory. The older direct `sc
 
 ## Version and publication evidence
 
-The published [npm rc.3 page](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0-rc.3) and [GitHub v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.0-rc.3) identify this prerelease. GitHub `main` documentation updates do not alter the README already packed into npm rc.3; the default npm package page may still display `latest` (rc.2 at the check above). GitHub tags/assets, exact npm versions and mutable npm dist-tags identify different things. The package is `@redwakame-skill/cmcp-time`; `npm install cmcp` does not identify this project. [Release notes](../RELEASE-NOTES.md) retain historical preparation statements from before publication.
+The [npm version page](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0) and [GitHub v0.1.0](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.0) identify the fixed release. README changes on `main` do not rewrite already published npm packages. Exact versions, tag commits, release assets and mutable dist-tags are separate identities. The package is `@redwakame-skill/cmcp-time`; `npm install cmcp` is another name. Historical release preparation records remain historical; see [0.1.0 notes](release-0.1.0.md).
+
+For native Desktop lifecycle, images, Pins, shared projects, backups and optional services, follow the [four-language operating guide](release-readiness.en.md). `setup` handles the existing local/Codex route; it does not silently deploy a Desktop plugin or install Hermes.

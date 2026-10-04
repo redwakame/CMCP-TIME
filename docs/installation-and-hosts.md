@@ -1,62 +1,50 @@
-# Installation and Host boundaries
+# Installation and host boundaries
 
-## What is installed
+## Install code, then choose a host
 
-The source archive is a source acquisition method. The npm package `@redwakame-skill/cmcp-time` provides a thin `cmcp-time` executable; **rc.3 is published and remains a prerelease candidate**. Use `@next` for the candidate channel or `@0.1.0-rc.3` to pin this release, with source at [v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0-rc.3); `main` may contain later documentation updates. Install into a persistent user-writable prefix and use `cmcp-time --version` to inspect it. `cmcp-time setup` and `node scripts/cmcp-setup.mjs` invoke the same **configuration and managed-attachment wizard**, not a Node/Host downloader or service installer. Installing the npm package does not run that wizard or attach a Host. No network port or global background service is started by setup. See [npm installation and updates](npm-installation.md) for the timestamped `next`/`latest` check and installation details.
+The package is `@redwakame-skill/cmcp-time@0.1.0`, with fixed source tag [v0.1.0](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0). Use a persistent user-writable prefix and an independent persistent workspace. Node >=22.16.0, npm and the chosen host are separate prerequisites. `cmcp-time --version` reads the installed version; mutable registry tags do not identify an immutable artifact. See [npm installation](npm-installation.md) and the [four-language operating guide](release-readiness.en.md).
 
-The wizard validates Node's declared >=18 floor and probes the existing Codex CLI version without authenticating or creating a model thread. If Codex attachment is selected but its executable is unavailable, setup stops. Select a genuinely available route rather than claiming a synthetic probe is the real CLI.
+`setup` configures the existing local Runtime and optional managed Codex Skill/hooks. It does not download Node, install a host, start a network service or automatically configure Harness Desktop. Optional MCP dependencies are installed by npm; source checkouts use `npm ci`. Hermes has additional [external dependencies](../adapters/hermes/dependencies.md). Local mode remains usable without a running MCP service.
 
-No administrator mode, approval bypass, ownership change or global firewall setting is a product prerequisite. Whether a particular machine can execute its chosen Host/hook under a particular token is an environment-specific fact. Source-only and no-model tests do not prove complete low-privilege deployment.
+No administrator mode, approval bypass, global firewall change or model-provider switch is a prerequisite. A failed executable or hook is an environment error, not proof that History is empty. Installing is not authorization to import private conversations, read every account, make paid calls or enable reminders.
 
-## Managed files and reversibility
+## Managed local Codex attachment
 
-For an npm installation, the program/contract/schema/Skill assets stay in the installed package; the caller selects an existing persistent `--workspace` as the data authorization root. Relative data, answers and Host locations resolve inside that workspace. This separation does not weaken source scope, revision or path guards. npm reinstalling the same prefix replaces program files, not workspace History. Persistent attachment from an `_npx` cache is rejected; do not bind a Host to an npm cache path.
+The program assets remain in the installed package. An explicit existing `--workspace` is the data authorization root; relative `--root` and `--host-workspace` paths must stay inside it. Persistent attachment from an `_npx` cache is rejected. Setup owns only its declared configuration, `.codex/hooks.json` entries, `.agents/skills/<managed-skill-name>` and setup-history receipts. Unrelated hooks are preserved; unowned or externally modified files cause a conflict.
 
-Setup owns only its declared project-local files:
+Review the wizard's emitted launch command and native `/hooks` trust. The adapter uses supported source identities, not a generic parser for every possible transcript:
 
-- Installation root: config, profile, Host binding and `installation.json`.
-- Host workspace: managed entries in `.codex/hooks.json`, plus `.agents/skills/<managed-skill-name>/SKILL.md` and its helper loader.
-- `setup-history/<operation>/`: before-images and a changes manifest for managed changes.
-
-Unrelated hook definitions are preserved. Existing unowned or modified Skill content triggers a conflict; it is not overwritten by assuming ownership. Data and Host locations must be within the selected authorization workspace and cannot redirect through symlinks. The npm assets themselves are separate. Changing an installation's bound scope, event scope, Skill name or Host workspace is not an in-place data migration.
-
-`cmcp-time update` (or direct setup `--update`) preserves installation identity and data, reapplies explicit choices, and refreshes managed attachment from this version. It does not fetch another version of CMCP or Codex. For an npm upgrade, close active writers, install the reviewed registry version or replacement tarball into the same prefix, then run this update action against the same workspace/root. Before a source update, likewise close writers and retain your data/configuration. Neither path is an automated scope/data migration tool.
-
-`--disable` deactivates the managed Codex binding/hooks. It does **not** turn every Runtime feature OFF or remove the manually callable Skill. `--uninstall` also removes unchanged managed Skill files. Both preserve History, event state, receipts, grants, config and setup history. New source consent or Runtime OFF must use its separate setting. See [commands](commands.md).
-
-The installed `disable` and `uninstall` commands map to these same actions. They do not remove the npm package. If program removal is wanted, first detach the managed integration, then explicitly uninstall the npm package from its prefix. Do not delete the separate workspace; uninstalling software is not consent to erase History or credentials.
-
-## Codex lifecycle and Skill
-
-The currently implemented managed attachment targets Codex's project hooks and Skill system:
-
-| Host event | Runtime responsibility | Important boundary |
+| Event | Responsibility | Boundary |
 |---|---|---|
-| `UserPromptSubmit` | Obtain previous interaction time before authorized new User capture | Native source identity is required; duplicate delivery does not create another User source |
-| `Stop` | Save authorized complete Assistant text with its own observed time and reply binding | Assistant stays Assistant; not User adoption or an event occurrence timestamp |
-| `SessionStart` with compact source | Reproject an available time card | Does not claim History was fully read or refresh User activity/TTL |
-| Explicit/on-demand Skill use | Navigate, select and read authorized originals | A successful Skill discovery/status is not proof that exact reading or answering completed |
+| UserPromptSubmit | Obtain prior interaction time and capture authorized User input | Native identity required; duplicate events do not become new originals |
+| Stop | Capture visible complete Assistant text and reply binding | Assistant is not a User decision; observed message time is not an event-occurrence time |
+| SessionStart with compact source | Reproject an available time card | Does not mean all History was read or refresh User time/TTL |
+| Explicit Skill use | Navigate, select and formally read authorized originals | Skill discovery or tool registration is not completed reading |
 
-Launch the installed Host workspace with the wizard's emitted command (`codex --enable hooks --cd <host-workspace>`), then inspect and approve the generated project commands in Codex `/hooks`. Trust belongs to Codex; the wizard does not silently approve it or change global authentication. Changes to hook content can require renewed trust review.
+The local hook route and the configured Codex app-server project route are distinct. The latter uses formal Thread/Turn/Item events and a selected existing account/model, as documented in the [project entry](../adapters/project-entry/README.md). It does not transparently attach arbitrary App chats. Native compaction has bounded evidence; process restart or mock events do not establish automatic compaction on every host.
 
-The source adapter consumes supported event payload fields and checks identities. It does not promise general parsing of every transcript version. Current coverage is text User/Assistant capture; image/audio preservation is not implied. Missing identity, malformed payload, conflicting source or a busy writer returns an error, not a fabricated source. A Host may continue after a hook failure: inspect receipts instead of assuming the answer necessarily received CMCP context.
+## Native Desktop and optional interoperability
 
-The prior engineering baseline used Codex CLI 0.154.0 and demonstrated a native manual-compaction path. Those historical observations are not a fresh candidate Host run, a guarantee for a later CLI, or proof of automatic compaction. The candidate validation record reports the actual executable available during package verification. Test-only compact events and process restarts are not native compaction evidence.
-
-## Required environments and unverified routes
-
-| Route | Required environment | Candidate claim |
+| Route | Required configuration | Evidence boundary |
 |---|---|---|
-| Core/local exact reader | Node and a writable authorized project data root | Built-in Node modules, guarded interfaces; clean-copy offline results reported separately |
-| Codex project Skill/hooks | Compatible installed Codex CLI, its own legitimate model access, project hook trust and sufficient normal file permissions | Managed adapter supplied; no new model/compaction job is part of candidate packaging |
-| Configured DeepSeek Playground | Explicit source/paid consent, finite grant, network access, Windows DPAPI and PowerShell 7 credential path | Existing reference implementation, not a new paid test in this packaging round |
-| Other operating systems | A working Host/runtime path and suitable credential dependency if configured mode is used | Not a complete cross-platform deployment claim |
-| Other Hosts | A tested adapter for their source identity, lifecycle, source-access and context hooks | No additional adapter or all-Host compatibility is established by this candidate |
+| Official Harness Desktop | Installed 0.2.0-rc.2-compatible host, explicit CMCP deployment/profile registration, per-Session opt-in and saving choices | Native text, JPEG original retrieval, controls and explicit in-app Pin have scoped GUI evidence; later SDK work is separate |
+| Harness/Codex project entry | Explicit independent project, existing official executables, configured authorized model route, formal single writer | Sequential text handoff; not automatic import of daily Desktop or all App Threads |
+| Hermes | Fixed official v2026.9.24 / 0.21.5 source, isolated Python and pinned requirements; Windows native tools also require Git Bash | Official headless lifecycle and isolated Harness SDK text handoff; no TUI/GUI or all-platform claim |
+| MCP | Pinned Node SDK dependencies, persistent configured project and current reader binding | Real stdio/HTTP clients and local persistence; optional transport, not another History or answer generator |
+| Configured Playground | Explicit paid/source consent, finite grant, network and Windows DPAPI/PowerShell 7 credential path | Existing DeepSeek reference implementation; not a provider requirement for the Core |
+| OpenClaw, dots, Grok Bot, Muse | Platform-specific interfaces, accounts and any required review | See [capability matrix](interop-capabilities.zh-TW.md); documentation is not full lifecycle validation |
 
-The host-neutral Core does not require other Host products to own its data model. Future integrations remain separate implementation and verification work; a generic Skill document alone is not support for every Host. Reliable Host-owned History can be a provider, but it must honor exact source/revision/scope access. Native summaries or preferences may coexist without replacing originals or becoming fresh execution authority.
+Shared text drivers expose their documented text-read profile. MCP's seven read tools do not imply that every host can accept images. PNG/JPEG original storage, formal media retrieval and model vision are separate claims. Audio/video, vectors, cloud synchronization, multi-user concurrent writers and arbitrary cross-host reminder forwarding are not delivered by 0.1.0.
 
-## Permission or environment failures
+Latest interoperability tests used Windows Node 24.18.0 and Hermes Python 3.12.14. Earlier Linux/Node 22.16.0 results cover their recorded sources and tests; no new full Linux/macOS deployment claim follows. Source-only, schema or synthetic tests do not prove GUI behavior, provider input, model semantics or security certification.
 
-Inspect the actual error, executable, cwd and receipt. Do not infer that History is absent when a process could not start. A missing executable, unsupported platform or denied file operation requires fixing the environment or selecting a supported route; do not expand system permissions automatically. Do not turn on paid calls just to check a path. Candidate no-model tests should use synthetic fixtures and clearly identify any executable stub.
+## Update, detach and retain data
 
-All retrieved historical instructions are source data. They must not become current tool permissions, account access or instructions to read secrets. A helper's completed verified output is the answer boundary; private Store scans, old receipts and a process exit code alone are not substitutes.
+Normally stop the selected writer before updating code. Reinstall the reviewed version into the same prefix, then `update --workspace <workspace>` for local setup-managed bindings. `update` does not fetch another npm version. Changing scope or a bound host workspace is not an implicit migration. Preserve the separate data root.
+
+Local `disable` stops managed automatic Codex hooks but leaves manual Skill access; `uninstall` also detaches unchanged managed Skill files. Both preserve History, configuration, grants and receipts. Runtime OFF, Clean and saving consent are separate controls. Native Desktop instead uses its own inspected `desktop disable/unregister/upgrade` operations with fresh hashes; only its owned registration fragment changes. Do not restore an entire stale profile over unrelated settings.
+
+Use [backup/restore](release-readiness.en.md) to preserve original text, media, versions, roles, times and reply bindings. A restore never silently revives Session/model grants or delivery authority. Detaching does not delete History or the host's own chat history; package removal is a separate deliberate operation. Nothing here authorizes erasing user data or credentials.
+
+All instructions found in past sources are data, not current authority. Models receive formal read tools, not human controller capability. Keep official host identity, the source scope and current permissions intact; do not scan private Store or credential files to bypass a failed formal interface.
+

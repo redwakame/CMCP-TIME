@@ -6,6 +6,7 @@ import {pathToFileURL,fileURLToPath} from 'node:url';
 import {defaultPlaygroundConfig,playgroundReadingLimits,playgroundPath} from './cmcp-playground.js';
 import {normalizeCmcpRuntimeConfig,createCmcpRuntimeSession} from './cmcp-runtime-session.js';
 import {CMCP_FEATURE_CONTROL_DEFAULTS,normalizeCmcpFeatureControlPatch} from './cmcp-feature-controls.js';
+import {requireCmcpNodeVersion} from './cmcp-node-version.js';
 
 const digest=value=>createHash('sha256').update(value).digest('hex');
 const json=value=>JSON.stringify(value,null,2)+'\n';
@@ -17,8 +18,7 @@ const installedPackageRoot=fileURLToPath(new URL('../../',import.meta.url));
 
 /** Inspection never authenticates, installs, opens a model thread or reads credentials. */
 export function inspectCmcpSetupEnvironment({nodeVersion=process.versions.node,probe=spawnSync}={}){
-  const major=Number(nodeVersion.split('.')[0]);
-  if(!Number.isSafeInteger(major)||major<18)throw Error('node_18_or_newer_required');
+  requireCmcpNodeVersion(nodeVersion);
   const command=process.platform==='win32'?'cmd.exe':'codex';
   const args=process.platform==='win32'?['/d','/s','/c','codex.cmd --version']:['--version'];
   const result=probe(command,args,{encoding:'utf8',windowsHide:true,timeout:5000});

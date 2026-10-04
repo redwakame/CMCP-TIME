@@ -25,3 +25,7 @@ are not part of the public software distribution and are not relicensed by this
 notice. Separately licensed third-party material retains its own terms.
 This notice is informational, adds no mandatory advertising or per-use credit
 requirement, and claims no endorsement by Apache, OpenAI or any Host/provider.
+
+本機互通增量的第三方相依
+
+MCP 使用官方 @modelcontextprotocol/sdk 1.32.0；結構驗證使用 zod 4.6.5；JWT 使用 jose 6.2.12。三者套件宣告 MIT 授權，完整直接與傳遞相依及 integrity 見散布的 npm-shrinkwrap.json 與來源 package-lock.json；由 npm 安裝各自授權檔，不將整份第三方安裝複製進產品 tgz。Hermes 為另行安裝的官方宿主，固定版本與重建方式見 adapters/hermes/README.md；CMCP 薄接線不代表官方背書。

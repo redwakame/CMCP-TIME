@@ -25,6 +25,7 @@ function deserialize(data, pointer) {
 }
 
 function failureCode(error) {
+  if(error?.code==='HISTORY_PUBLICATION_CANCELLED')return 'history_publication_cancelled';
   if (["EACCES", "EPERM"].includes(error?.code)) return "permission_denied";
   if (error?.code === "HISTORY_INVALID_DATA") return "stored_data_invalid";
   return "storage_unavailable";
@@ -110,7 +111,7 @@ export function createCmcpLocalHistoryProvider({ providerNamespace, backend }) {
         return Object.freeze({ status, pointer });
       }
     },
-    async writeEvidence(input) {
+    async writeEvidence(input, publicationOptions) {
       // Validate/copy before the first await: later caller mutation cannot change a write.
       const evidence = createCmcpSourceEvidence(input), pointer = evidence.pointer;
       const result = (status, details = {}) => Object.freeze({ status, pointer, ...details });
@@ -120,7 +121,7 @@ export function createCmcpLocalHistoryProvider({ providerNamespace, backend }) {
       try {
         const existing = await load(pointer);
         if (existing !== null) return result(compare(existing));
-        const publication = await create(digest(cmcpSourcePointerKey(pointer)), serialize(evidence));
+        const publication = await create(digest(cmcpSourcePointerKey(pointer)), serialize(evidence), publicationOptions);
         if (!publication || !["created", "exists"].includes(publication.status)
           || typeof publication.temporaryFileRetained !== "boolean") throw invalidData();
         // A backend acknowledgement alone is insufficient: re-read and bind the publication.

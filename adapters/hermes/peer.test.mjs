@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {createMcpProject} from '../mcp/config.mjs';
+import {configureHermes} from './config.mjs';
+import {configureHarnessPeer,runHarnessPeer} from './peer.mjs';
+const out=path.resolve(process.env.CMCP_TEST_OUTPUT_ROOT??'hermes-peer-test-results');
+await fs.mkdir(out,{recursive:true});
+const root=await fs.mkdtemp(path.join(out,'peer-'));
+const project=await createMcpProject({root:path.join(root,'project'),projectId:'peer-synthetic',hosts:['hermes','harness'],port:18977,timezone:'UTC'});
+const config=path.join(root,'hermes.json'),peer=path.join(root,'peer.json');
+await configureHermes({output:config,serviceConfig:project.configFile,python:process.execPath,home:path.join(project.projectRoot,'hermes-home'),credentialFile:path.join(root,'not-a-real-credential')});
+await configureHarnessPeer({hermesConfig:config,executable:process.execPath,cli:path.join(root,'synthetic-cli.js'),output:peer});
+test('peer 使用同一正式 broker、作用域及清楚隔離的 SDK profile',async()=>{
+  let observed;const response=await runHarnessPeer({configFile:peer,text:'合成原始問題',sessionId:'explicit-session',driver:async value=>(observed=value,{successful:true})});
+  assert.equal(response.successful,true);assert.equal(observed.shared.projectId,'peer-synthetic');assert.equal(observed.shared.scopeId,'peer-synthetic');assert.equal(observed.sessionId,'explicit-session');assert.equal(observed.text,'合成原始問題');assert.equal(observed.config.hosts.harness.route.model,'deepseek-flash');assert.ok(observed.config.sdkHome.startsWith(project.projectRoot));
+});
+test('已取消的 peer 不啟動宿主',async()=>{let called=false;const abort=new AbortController();abort.abort();await assert.rejects(runHarnessPeer({configFile:peer,text:'合成',signal:abort.signal,driver:async()=>{called=true;}}),/hermes_cancelled/);assert.equal(called,false);});
+test('peer 設定不接受相對來源路徑或多餘欄位',async()=>{const changed=path.join(root,'bad.json'),value=JSON.parse(await fs.readFile(peer,'utf8'));await fs.writeFile(changed,JSON.stringify({...value,hermesConfig:'relative.json'}));await assert.rejects(runHarnessPeer({configFile:changed,text:'合成'}),/absolute_path/);});

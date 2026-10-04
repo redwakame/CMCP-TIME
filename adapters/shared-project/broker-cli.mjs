@@ -1,0 +1,14 @@
+import fs from 'node:fs/promises';
+import readline from 'node:readline';
+import {startSharedProjectServer} from './server.mjs';
+const configFile=process.argv[2];if(!configFile||process.argv.length!==3)throw Error('用法：node broker-cli.mjs <共享專案設定>');
+const config=JSON.parse(await fs.readFile(configFile,'utf8'));
+const server=await startSharedProjectServer({config});
+const lines=readline.createInterface({input:process.stdin});let stopping=null,timer;
+const stop=()=>stopping??=(async()=>{clearTimeout(timer);await server.close();lines.close();process.stdin.pause();console.log(JSON.stringify({event:'closed',at:new Date().toISOString(),modelCalls:0}));})();
+timer=setTimeout(()=>{stop().catch(()=>{process.exitCode=1;});},Math.max(1,Date.parse(server.deadlineAt)-Date.now()));
+lines.on('line',line=>{if(line.trim()==='stop')stop().catch(()=>{process.exitCode=1;});else console.log(JSON.stringify({error:'只接受 stop；其他操作請用 control-cli'}));});
+process.on('SIGINT',()=>{stop().catch(()=>{process.exitCode=1;});});
+process.on('SIGTERM',()=>{stop().catch(()=>{process.exitCode=1;});});
+process.stdin.on('end',()=>{stop().catch(()=>{process.exitCode=1;});});
+console.log(JSON.stringify({event:'ready',projectId:config.projectId,scope:'目前設定中的明確授權專案',pipe:server.pipe,pid:process.pid,deadlineAt:server.deadlineAt,stop:'輸入 stop 或 Ctrl+C；只關閉本程序，保留原文',modelCalls:0}));

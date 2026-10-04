@@ -16,7 +16,8 @@ const CHAT_PURPOSES=new Set(['recall_select','recall_answer','answer']);
 export function validAnswerHistoryProjection(value){
   const keys=(object,allowed)=>object&&typeof object==='object'&&!Array.isArray(object)&&Object.keys(object).every(key=>allowed.includes(key));
   if(!keys(value,['kind','status','reason','context','lookup','coverage'])||value.kind!=='answer_history'||typeof value.reason!=='string'||[...value.reason].length>240)return false;
-  const fixedScope=scope=>scope?.kind==='frozen_registered_authorized_event_sources'&&scope.otherEvents==='not_checked'
+  const fixedScope=scope=>['frozen_registered_authorized_event_sources','frozen_registered_authorized_ordinary_sources',
+    'frozen_registered_authorized_sources'].includes(scope?.kind)&&scope.otherEvents==='not_checked'
     &&scope.unregisteredHistory==='not_checked'&&scope.allHistoryAbsence==='not_established';
   const count=n=>Number.isSafeInteger(n)&&n>=0;
   // The formal inventory reader returns a different, bounded projection from a
@@ -36,19 +37,39 @@ export function validAnswerHistoryProjection(value){
       ||!keys(context,['kind','finding','coverage','evidence'])||typeof context.finding!=='string'||context.finding.length>100
       ||!keys(coverage,['kind','otherEvents','unregisteredHistory','allHistoryAbsence','status','registeredSources','readSources',
         'unavailableSources','unreadSources','unclassifiedSources','uncertainSources','ambiguousRevisionGroups',
-        'completeWithinFrozenScope','sourceAvailability','semanticVerification'])||!fixedScope(coverage)
+        'completeWithinFrozenScope','sourceAvailability','semanticVerification','originalSourceEvidence','answerProjection','materialSelection'])||!fixedScope(coverage)
       ||!['partial','complete_within_frozen_scope'].includes(coverage.status)
       ||!['registeredSources','readSources','unavailableSources'].every(name=>count(coverage[name]))
       ||!['unreadSources','unclassifiedSources','uncertainSources','ambiguousRevisionGroups'].every(name=>coverage[name]===null||count(coverage[name]))
       ||coverage.readSources>coverage.registeredSources||coverage.unavailableSources>coverage.registeredSources
       ||coverage.completeWithinFrozenScope!==(coverage.status==='complete_within_frozen_scope')
       ||!['partial_or_unknown','as_declared_by_sources'].includes(coverage.sourceAvailability)
+      ||!Array.isArray(context.evidence)
+      ||coverage.originalSourceEvidence!=null&&(!keys(coverage.originalSourceEvidence,['retainedSourceExcerpts','excludedNonOriginalQuotes'])
+        ||!count(coverage.originalSourceEvidence.retainedSourceExcerpts)||!count(coverage.originalSourceEvidence.excludedNonOriginalQuotes)
+        ||coverage.originalSourceEvidence.retainedSourceExcerpts!==context.evidence.length)
+      ||coverage.answerProjection!=null&&(!keys(coverage.answerProjection,['eligibleEvidence','projectedEvidence','omittedEvidence','omittedDirect','omittedRelated','selection'])
+        ||!['eligibleEvidence','projectedEvidence','omittedEvidence'].every(name=>count(coverage.answerProjection[name]))
+        ||coverage.answerProjection.projectedEvidence!==context.evidence.length
+        ||coverage.answerProjection.projectedEvidence+coverage.answerProjection.omittedEvidence!==coverage.answerProjection.eligibleEvidence
+        ||(coverage.answerProjection.omittedDirect!==undefined||coverage.answerProjection.omittedRelated!==undefined)
+          &&(!count(coverage.answerProjection.omittedDirect)||!count(coverage.answerProjection.omittedRelated)
+            ||coverage.answerProjection.omittedDirect+coverage.answerProjection.omittedRelated!==coverage.answerProjection.omittedEvidence)
+        ||!['direct_support_then_recent_source','direct_related_representatives_then_recent_source','verified_material_selection'].includes(coverage.answerProjection.selection))
+      ||coverage.materialSelection!=null&&(!keys(coverage.materialSelection,['status','candidateEvidence','selectedEvidence','excludedEvidence','nature'])
+        ||!['selected','needs_clarification','needs_source'].includes(coverage.materialSelection.status)
+        ||!['candidateEvidence','selectedEvidence','excludedEvidence'].every(name=>count(coverage.materialSelection[name]))
+        ||coverage.materialSelection.candidateEvidence!==coverage.materialSelection.selectedEvidence+coverage.materialSelection.excludedEvidence
+        ||coverage.materialSelection.selectedEvidence!==coverage.answerProjection?.eligibleEvidence
+        ||coverage.materialSelection.nature!=='semantic_navigation_not_fact_confirmation')
       ||coverage.semanticVerification!=='model_interpretation_after_exact_source_role_quote_checks'
-      ||!Array.isArray(context.evidence)||context.evidence.length>coverage.readSources
+      ||context.evidence.length>coverage.readSources
       ||(value.status==='read')!==(context.evidence.length>0)||Buffer.byteLength(JSON.stringify(value))>8192)return false;
     const refs=new Set();try{for(const row of context.evidence){
-      if(!keys(row,['sourceRef','sourceAuthorRole','messageRecordedAt','localMessageRecordedAt','eventOccurredAt','localEventOccurredAt',
-        'eventTimeStatus','content','range','roleBoundary'])||typeof row.sourceRef!=='string'||!/^r[1-9]\d*$/.test(row.sourceRef)||refs.has(row.sourceRef)
+      if(!keys(row,['sourceRef','sourceAuthorRole','supportRelation','messageRecordedAt','localMessageRecordedAt','eventOccurredAt','localEventOccurredAt',
+        'eventTimeStatus','content','range','projectedCoverage','roleBoundary'])||typeof row.sourceRef!=='string'||!/^r[1-9]\d*$/.test(row.sourceRef)||refs.has(row.sourceRef)
+        ||row.supportRelation!==undefined&&!['requested_detail','related_historical_detail'].includes(row.supportRelation)
+        ||row.projectedCoverage!==undefined&&!['complete_retained_body','exact_quote_only'].includes(row.projectedCoverage)
         ||!['user','assistant','tool'].includes(row.sourceAuthorRole)||!['not_recorded_in_legacy_receipt','unknown','source_supplied'].includes(row.eventTimeStatus)
         ||!keys(row.content,['kind','sourceContentKind','text'])||row.content.kind!=='exact_source_quote'
         ||!['source_excerpt','derived_summary','unknown'].includes(row.content.sourceContentKind)||typeof row.content.text!=='string'||!row.content.text
@@ -197,6 +218,23 @@ export function createCmcpResponsesTransport({ apiKey, ledgerRoot, manifest, run
   const taskLedger = taskBudget ? createLocalLoopJournal({ root: taskBudget.root, name: "cmcp-loop-task-posts-v1" }) : null;
   let secret = apiKey, busy = false, disposed = false, activeController;
   apiKey = undefined;
+  function prepareRequest(purpose,input){
+    const wire=buildCmcpDeepSeekWireRequest({purpose,input,config,stream,wireFormat,answerOutputMode});
+    const request=wire.request;
+    // Keep the preflight and the POST gate on the same compiled wire and limit.
+    const scopedLimit=operating&&purpose==='semantic'&&request.input.discussionContext!==undefined
+      &&config.semanticDiscussionMaxRequestBytes!==undefined;
+    const historyLimit=scopedLimit&&request.input.answerHistoryCatalog!==undefined&&config.semanticAnswerHistoryMaxRequestBytes!==undefined;
+    const answerLimit=operating&&purpose==='answer'&&config.answerMaxRequestBytes!==undefined;
+    let answerHistoryLimit=false;
+    if(answerLimit&&config.answerHistoryCapacity===true&&config.answerHistoryMaxRequestBytes!==undefined&&request.input.answerHistory!==undefined){
+      if(!validAnswerHistoryProjection(request.input.answerHistory))throw Error('invalid_answer_history_projection_for_capacity');
+      answerHistoryLimit=true;
+    }
+    const requestByteLimit=answerHistoryLimit?config.answerHistoryMaxRequestBytes:historyLimit?config.semanticAnswerHistoryMaxRequestBytes:scopedLimit?config.semanticDiscussionMaxRequestBytes:answerLimit?config.answerMaxRequestBytes:config.maxRequestBytes;
+    const requestByteLimitBasis=answerHistoryLimit?'opted_in_normal_answer_with_validated_answer_history_projection':historyLimit?'normal_semantic_with_validated_discussion_and_answer_history':scopedLimit?'normal_semantic_with_validated_discussion_context':answerLimit?'normal_answer':'configured_default';
+    return {...wire,requestBytes:Buffer.byteLength(wire.body),requestByteLimit,requestByteLimitBasis};
+  }
   return Object.freeze({
     descriptor: Object.freeze({ mode: "model", providerId: config.providerId, model: config.model,
       settings: { reasoning: config.reasoning, retries: 0, stream,
@@ -208,6 +246,11 @@ export function createCmcpResponsesTransport({ apiKey, ledgerRoot, manifest, run
           ...(operating&&config.answerHistoryMaxRequestBytes!==undefined?{answerHistoryBytes:config.answerHistoryMaxRequestBytes,
             answerHistoryAppliesTo:'opted_in_normal_answer_with_validated_answer_history_projection'}:{})},
         ...(wireFormat==='deepseek_chat'?{wireFormat,endpoint:CHAT_ENDPOINT}:{}) } }),
+    preflightRequest(purpose,input){
+      if(disposed||!CMCP_LOOP_PURPOSES.includes(purpose))throw Error('adapter_unavailable');
+      const {requestBytes,requestByteLimit,requestByteLimitBasis}=prepareRequest(purpose,input);
+      return {requestBytes,requestByteLimit,requestByteLimitBasis,fits:requestBytes<=requestByteLimit};
+    },
     dispose() { disposed = true; activeController?.abort(Error('request_cancelled')); if(!busy)secret = undefined; },
     async request(purpose, input, { canAttempt = async () => true, signal, deadlineAt, workContext,persistBodies=true } = {}) {
       if(typeof persistBodies!=='boolean')throw Error('invalid_body_retention_control');
@@ -229,22 +272,8 @@ export function createCmcpResponsesTransport({ apiKey, ledgerRoot, manifest, run
       const wait=promise=>Promise.race([promise,aborted]);
       try {
         if(abortCode||Date.now()>=totalDeadline)throw Error(abortCode??'request_deadline_exceeded');
-        const {request,body,endpoint}=buildCmcpDeepSeekWireRequest({purpose,input,config,stream,wireFormat,answerOutputMode});
-        // buildLoopRequest has already validated and compiled this optional context.
-        // The exception is normal semantic operation only, never an experiment,
-        // another purpose or a larger source/context/token authorization.
-        const scopedLimit=operating&&purpose==='semantic'&&request.input.discussionContext!==undefined
-          &&config.semanticDiscussionMaxRequestBytes!==undefined;
-        const historyLimit=scopedLimit&&request.input.answerHistoryCatalog!==undefined&&config.semanticAnswerHistoryMaxRequestBytes!==undefined;
-        const answerLimit=operating&&purpose==='answer'&&config.answerMaxRequestBytes!==undefined;
-        let answerHistoryLimit=false;
-        if(answerLimit&&config.answerHistoryCapacity===true&&config.answerHistoryMaxRequestBytes!==undefined&&request.input.answerHistory!==undefined){
-          if(!validAnswerHistoryProjection(request.input.answerHistory))throw Error('invalid_answer_history_projection_for_capacity');
-          answerHistoryLimit=true;
-        }
-        const requestByteLimit=answerHistoryLimit?config.answerHistoryMaxRequestBytes:historyLimit?config.semanticAnswerHistoryMaxRequestBytes:scopedLimit?config.semanticDiscussionMaxRequestBytes:answerLimit?config.answerMaxRequestBytes:config.maxRequestBytes;
-        const requestByteLimitBasis=answerHistoryLimit?'opted_in_normal_answer_with_validated_answer_history_projection':historyLimit?'normal_semantic_with_validated_discussion_and_answer_history':scopedLimit?'normal_semantic_with_validated_discussion_context':answerLimit?'normal_answer':'configured_default';
-        if (Buffer.byteLength(body) > requestByteLimit) throw Error("request_body_budget");
+        const {request,body,endpoint,requestBytes,requestByteLimit,requestByteLimitBasis}=prepareRequest(purpose,input);
+        if (requestBytes > requestByteLimit) throw Error("request_body_budget");
         const starts = (await ledger.read()).filter(row => row.record.kind === "started").map(row => row.record.value);
         if (starts.some(row => row.freezeId !== freezeId)) throw Error("attempt_manifest_mismatch");
         if (starts.length >= config.maxCalls || starts.filter(row => row.purpose === purpose).length >= (purposeLimits[purpose] ?? 0)) {
@@ -269,7 +298,7 @@ export function createCmcpResponsesTransport({ apiKey, ledgerRoot, manifest, run
         await ledger.append("started", { attempt, ...(taskAttempt ? { taskAttempt } : {}), ...(workJob ? { workJob: workJob.number } : {}), purpose, freezeId, pid: process.pid, startedAt,
           ...(operating?{authorizationId:workJob.authorizationId,sessionId:runtimeAuthorization.sessionId,protocolHash:expectedProtocolHash,
             workContext:workContext??null,deadlineAt:new Date(totalDeadline).toISOString()}:{}),
-          requestBody: persistBodies?body:null,bodyRetention:persistBodies?'enabled':'disabled_by_source_control',requestSha256: loopHash(body), requestBytes: Buffer.byteLength(body), requestByteLimit,requestByteLimitBasis,endpoint,
+          requestBody: persistBodies?body:null,bodyRetention:persistBodies?'enabled':'disabled_by_source_control',requestSha256: loopHash(body), requestBytes, requestByteLimit,requestByteLimitBasis,endpoint,
           ...(request.outputMode?{outputMode:request.outputMode}:{}),
           ...(jsonFraming!=='strict_json'&&request.outputMode!=='plain_text'?{jsonFraming}:{}),
           ...(persistBodies&&request.responseMapping?{responseMapping:{version:request.responseMapping.version,nodeAliases:request.responseMapping.nodeAliases,

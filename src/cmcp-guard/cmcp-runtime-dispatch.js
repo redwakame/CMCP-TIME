@@ -19,10 +19,10 @@ const orderedPairs=pairs=>[...pairs].sort(([a],[b])=>a<b?-1:a>b?1:0);
 
 /** Normal Runtime bridge only: existing focus, catalog, History, controls and common journal remain authoritative. */
 export function createCmcpRuntimeDispatch({root,scopeId,timezone,events,core,controlManager,adapter,runWork,delivery,
- clock=()=>new Date().toISOString(),eventContext={},maxProjectionBytes=14000,timeoutMs=90000,onResult=async()=>{}}){
+ clock=()=>new Date().toISOString(),eventContext={},maxProjectionBytes=14000,timeoutMs=90000,onResult=async()=>{},dispatchReady=async()=>true}){
  if(!path.isAbsolute(root)||typeof scopeId!=='string'||!scopeId||!Array.isArray(events)
    ||[core?.status,core?.bufferList,core?.catalog?.list,core?.history?.resolve,core?.ingest,controlManager?.snapshot,
-     adapter?.request,runWork,delivery?.present,clock,onResult].some(fn=>typeof fn!=='function')
+     adapter?.request,runWork,delivery?.present,clock,onResult,dispatchReady].some(fn=>typeof fn!=='function')
    ||!Number.isSafeInteger(maxProjectionBytes)||maxProjectionBytes<1)throw Error('runtime_dispatch_dependencies_required');
  const specs=events.map(item=>({...item,event:item.event??{scopeId,eventId:item.eventId}}));
  const now=()=>resolveCmcpTimeContext({now:clock(),timezone});
@@ -122,11 +122,12 @@ export function createCmcpRuntimeDispatch({root,scopeId,timezone,events,core,con
   }
   for(const pin of (await pins.list()).pins)if(pin.status==='active')result.push({route:'pin',id:pin.pinId,target:copy(pin.target),
    progressVersion:pin.progressVersion,sourcePointers:copy(pin.sourcePointers),dueAt:pin.dueAt,pinRevision:pin.revision,
+   ...(pin.requiresFreshAuthorization?{requiresFreshAuthorization:true}:{}),
    ...(pin.eligibilityPolicy?{eligibilityPolicy:pin.eligibilityPolicy}:{}),
    sourceHashes:copy(pin.sourceValidation.hashes)});
   return result;
  }
- async function validate(candidate){
+ async function validate(candidate,{stage}={}){
   try{
    await exactSources(candidate.sourcePointers,candidate.sourceHashes);
    if(candidate.target.eventId){
@@ -146,8 +147,10 @@ export function createCmcpRuntimeDispatch({root,scopeId,timezone,events,core,con
    }
    if(candidate.route==='pin'){
     const pin=(await pins.list()).pins.find(item=>item.pinId===candidate.id);
+    if(pin?.requiresFreshAuthorization)return {status:'ineligible',code:'restored_pin_requires_authorization'};
     if(pin?.status!=='active'||pin.revision!==candidate.pinRevision||pin.eligibilityPolicy!==candidate.eligibilityPolicy)return {status:'ineligible',code:'pin_closed_or_changed'};
    }
+   if(stage==='eligibility'&&!await dispatchReady(candidate))return {status:'ineligible',code:'host_destination_unavailable_or_busy'};
    return {status:'eligible',progressVersion:candidate.progressVersion,...(candidate.route==='pin'?{pinRevision:candidate.pinRevision}:{})};
   }catch(error){return {status:'ineligible',code:error.message};}
  }
@@ -196,21 +199,27 @@ export function createCmcpRuntimeDispatch({root,scopeId,timezone,events,core,con
    activeRoute=candidate.route;
    const {input,historyReceipt}=await modelInput(candidate,options.canContinue);await options.canContinue();
    return runWork(async()=>{
-    const result=await adapter.request('proactive',input,{signal:options.signal,canAttempt:options.canContinue});
+    const result=await adapter.request('proactive',input,{signal:options.signal,canAttempt:options.canContinue,dispatch:{candidate:copy(candidate),reservation:copy(options.reservation)}});
     if(typeof result?.value?.text!=='string'||!result.value.text.trim())throw Error('dispatch_model_not_completed');
-    return {text:result.value.text,receivedAt:now().now,projectionBytes:Buffer.byteLength(JSON.stringify(input)),historyReceipt};
+    return {text:result.value.text,receivedAt:now().now,projectionBytes:Buffer.byteLength(JSON.stringify(input)),historyReceipt,hostDelivery:result.hostDelivery??null};
    },{kind:'shared_runtime_proactive',route:candidate.route,event:candidate.target.eventId?{scopeId,eventId:candidate.target.eventId}:null,
     eventVersion:candidate.progressVersion,pointer:candidate.sourcePointers[0],sourceRefs:copy(candidate.sourcePointers),progressKey:cmcpDispatchProgressKey(candidate,scopeId),reservation:options.reservation,signal:options.signal});
   },
-  deliver:async(result,candidate,{canPresent,reservation})=>{
+  deliver:async(result,candidate,{canPresent,reservation,signal})=>{
    await canPresent();await proactiveHistory.verify(result.historyReceipt,{valid:canPresent});const snapshot=await controls();let saved=null;
+   let destinationSession=core.sessionId;
+   if(result.hostDelivery!==null&&result.hostDelivery!==undefined){
+    if(result.hostDelivery.scopeId!==scopeId||typeof result.hostDelivery.sessionId!=='string'||!result.hostDelivery.sessionId.trim())throw Error('dispatch_host_destination_mismatch');
+    destinationSession=result.hostDelivery.sessionId;
+   }
    if(snapshot.effective.saveAssistant!==false){
     saved=await core.ingest({text:result.text,role:'assistant',pointer:{version:1,providerNamespace:core.history.descriptor.providerNamespace,scopeId,
-      sessionId:core.sessionId,itemId:'dispatch-'+reservation.id,revisionId:'r1'},timeContext:{now:result.receivedAt,timezone},messageRecordedAt:result.receivedAt});
+      sessionId:destinationSession,itemId:'dispatch-'+reservation.id,revisionId:'r1'},timeContext:{now:result.receivedAt,timezone},messageRecordedAt:result.receivedAt});
     if(saved.status!=='stored'&&saved.status!=='unchanged'&&saved.status!=='registered')throw Error('dispatch_assistant_save_failed');
    }
-   await canPresent();await proactiveHistory.verify(result.historyReceipt,{valid:canPresent});const receipt=await delivery.present({kind:'proactive',text:result.text,scopeId,route:candidate.route,at:now().now});
-   return {status:receipt?.status??'unknown',channel:'local_console',remoteDelivery:'not_asserted',
+   await canPresent();await proactiveHistory.verify(result.historyReceipt,{valid:canPresent});const receipt=await delivery.present({kind:'proactive',text:result.text,scopeId,route:candidate.route,at:now().now,
+    candidate:copy(candidate),reservation:copy(reservation),hostDelivery:result.hostDelivery,canPresent,signal});
+   return {status:receipt?.status??'unknown',channel:receipt?.channel??'local_console',remoteDelivery:'not_asserted',hostReceipt:receipt?.hostReceipt??null,
     sourcePointer:saved?.pointer??null,storage:saved?'saved':'disabled',receivedAt:result.receivedAt,projectionBytes:result.projectionBytes,
     priorReplyRead:result.historyReceipt};
   }});
@@ -218,12 +227,19 @@ export function createCmcpRuntimeDispatch({root,scopeId,timezone,events,core,con
   if(['buffer_clear','buffer_cleared','buffer_disabled'].includes(reason)&&(activeRoute??arbiter.activeRoute())==='pin'){stopTimer();arms.clear();lastReason=reason;return;}
   generation++;stopTimer();arms.clear();arbiter.cancel(reason);lastReason=reason;
  }
+ function deferred(){
+  stopTimer();lastReason='dispatch_not_ready';lastResult={status:'deferred',reason:lastReason,modelCalls:0};
+  return copy(lastResult);
+ }
  async function evaluate(){
   if(closed||flight)return;const captured=generation;
   flight=(async()=>{
    const candidates=await collect();if(closed||captured!==generation)return;
+   if(!await dispatchReady()){deferred();return;}
+   if(closed||captured!==generation)return;
    const at=now().nowEpochMs,dueTokens=[...arms.entries()].filter(([,entry])=>parseCmcpInstant(entry.dueAt)<=at).map(([,entry])=>entry.token);
    lastResult=await arbiter.evaluate({candidates,armedDueTokens:dueTokens});lastReason=lastResult.reason??lastResult.status;
+   if(lastResult.status==='ineligible'&&lastResult.observed?.some(item=>item.reason==='host_destination_unavailable_or_busy')){deferred();return;}
    for(const [key,entry]of arms)if(parseCmcpInstant(entry.dueAt)<=at)arms.delete(key);
    await onResult(copy(lastResult));
   })().catch(error=>{lastResult={status:'failed',code:error.message};lastReason=error.message;}).finally(()=>{flight=null;activeRoute=null;});
@@ -239,9 +255,12 @@ export function createCmcpRuntimeDispatch({root,scopeId,timezone,events,core,con
  async function refresh(){
   stopTimer();if(closed)return {status:'closed'};const captured=generation,snapshot=await controls(),c=snapshot.effective;
   if(!c.enabled||c.clean||!c.proactive){lastReason='disabled';return {status:'disabled'};}
+  if(!await dispatchReady())return deferred();
+  if(closed||captured!==generation)return {status:'cancelled'};
   const candidates=await collect(),reserved=cmcpDispatchReservedKeys((await arbiter.status()).records,scopeId);
-  let next=null;
+  let next=null,requiresFreshAuthorization=false;
   for(const candidate of candidates){
+   if(candidate.requiresFreshAuthorization){requiresFreshAuthorization=true;continue;}
    if(candidate.dueAt===null||reserved.has(cmcpDispatchProgressKey(candidate,scopeId))||!c[candidate.route==='buffer'?'buffer':'pins'])continue;
    const due=parseCmcpInstant(candidate.dueAt),at=now().nowEpochMs;
    if(candidate.route==='buffer'){
@@ -252,8 +271,8 @@ export function createCmcpRuntimeDispatch({root,scopeId,timezone,events,core,con
    next=next===null?Math.max(at,due):Math.min(next,Math.max(at,due));
   }
   if(closed||captured!==generation)return {status:'cancelled'};
-  if(next!==null)schedule(next);lastReason=next===null?'no_eligible_scheduled_candidate':'waiting_due';
-  return {status:next===null?'idle':'scheduled',at:scheduledAt};
+  if(next!==null)schedule(next);lastReason=next===null?(requiresFreshAuthorization?'restored_pin_requires_authorization':'no_eligible_scheduled_candidate'):'waiting_due';
+  return {status:next===null?'idle':'scheduled',at:scheduledAt,reason:lastReason};
  }
  async function pinCreate({updateId,pinId=randomUUID(),eventKey,sourceIds,dueAt=null,userAction}){
   const effective=(await controls()).effective;if(!effective.pins)throw Error('pins_disabled');
@@ -292,9 +311,9 @@ export function createCmcpRuntimeDispatch({root,scopeId,timezone,events,core,con
   const result=await pins.create({updateId,pinId,target,sourcePointers,progressVersion,dueAt,userAction,timeContext:now(),
    ...(eligibilityPolicy?{eligibilityPolicy}:{})});await refresh();return result;
  }
- async function pinChange(input){interrupt('pin_changed');const result=await pins.change({...input,timeContext:now()});await refresh();return result;}
+ async function pinChange(input){const result=await pins.change({...input,timeContext:now()});interrupt('pin_changed');await refresh();return result;}
  async function status(){return {kind:'cmcp_runtime_dispatch',timerScheduled:timer!==null,scheduledAt,generating:flight!==null,closed,
   reason:lastReason,lastResult:copy(lastResult),arbitration:await arbiter.status(),pins:await pins.list(),modelCalls:0};}
  async function close(){closed=true;interrupt('runtime_closed');arbiter.close();await flight;}
- return Object.freeze({refresh,interrupt,close,status,pinCreate,pinChange,pinList:()=>pins.list()});
+ return Object.freeze({refresh,interrupt,close,status,pinCreate,pinChange,pinList:()=>pins.list(),waitForIdle:async()=>{await flight;}});
 }

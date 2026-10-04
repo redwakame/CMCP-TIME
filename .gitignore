@@ -13,3 +13,7 @@
 *.secret
 *.tgz
 *.zip
+
+# Generated Python bytecode is not public source.
+__pycache__/
+*.py[cod]

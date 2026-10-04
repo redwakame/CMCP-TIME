@@ -1,23 +1,23 @@
 # CMCP-TIME 完整操作導覽
 
-CMCP 是日常簡稱。正式 npm 套件 `@redwakame-skill/cmcp-time` 的 **`0.1.0-rc.3` 已發布，仍是預發布候選版**，包含 `context --help` 與文件更新。GitHub 對應來源為 [v0.1.0-rc.3](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0-rc.3)；`main` 可有後續文件更新。官方 registry 查核時間為 **2026-09-22 06:01:41 +08:00（Asia/Taipei）**：`next = 0.1.0-rc.3`、`latest = 0.1.0-rc.2`；未指定版本或標籤會依 `latest` 取得較舊候選。這不是雲端服務或全部 Host 整合完成宣告。產品回答預設英文；使用者／Host 明確語言設定優先。來源原文保留原語言，本文採臺灣繁體中文。
+本頁保留本機精靈與 Playground 的詳細操作；**0.1.0 四語正式操作**（Desktop、圖片、Pin、共享專案、備份還原、MCP／Hermes）請先看[正式指南](release-readiness.zh-TW.md)。套件為 `@redwakame-skill/cmcp-time@0.1.0`，來源 tag 為 [v0.1.0](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0)。`main` 可有後續修改；可變的 `latest`／`next` 不代替完整版本身分。來源原文保留原語言，模型／宿主明示語言設定優先。
 
-## npm 候選：程式與資料分開
+## npm 正式安裝：程式與資料分開
 
-先自行準備 Node.js 與 npm。以下 PowerShell 範例由 npm 下載已發布的候選通道，另建兩個持久且一般使用者可寫入的位置；若名稱已有其他用途，請改用自己的目錄。命令不需管理員、不修改全域 npm 設定或系統 PATH。要固定此版，將 `@next` 換成 `@0.1.0-rc.3`；標籤可變動，`latest` 不是穩定性認證，安裝後可用 `cmcp-time --version` 確認版本。
+先自行準備 Node.js 與 npm。以下 PowerShell 範例由 npm 安裝固定 0.1.0 版本，另建兩個持久且一般使用者可寫入的位置；若名稱已有其他用途，請改用自己的目錄。命令不需管理員、不修改全域 npm 設定或系統 PATH。以下已固定完整版本，安裝後可用 `cmcp-time --version` 確認版本。
 
 ```powershell
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@next --ignore-scripts --no-audit --no-fund
+npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --help
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
 ```
 
-要獨立於 registry 試用本機候選，請使用原始碼或有對應驗收紀錄的實際 `.tgz`，以其檔案路徑取代 npm 套件參數；本機安裝成功不代表 registry 已發布。詳見 [npm 安裝指南](npm-installation.md)。先以 `--version` 核對安裝版本；rc.3 新增的 `cmcp-time context --help` 不需工作區、設定、憑證或額度，只印出用法並在開啟 Runtime 前返回，rc.2 尚無此 help 選項。
+要獨立於 registry 試用本機候選，請使用原始碼或有對應驗收紀錄的實際 `.tgz`，以其檔案路徑取代 npm 套件參數；本機安裝成功不代表 registry 已發布。詳見 [npm 安裝指南](npm-installation.md)。先以 `--version` 核對安裝版本；`cmcp-time context --help` 不需工作區、設定、憑證或額度，只印出用法並在開啟 Runtime 前返回。
 
 `cmcp-install` 放程式、契約、schema 與技能範本；`cmcp-workspace` 才是持久資料的授權根目錄。安裝後的資料操作必須指定已存在的 `--workspace`；`--root` 預設為該工作區內的 `local-data/cmcp`，Host 接線初始預設在 `local-data/cmcp-host`。可明確改成工作區內其他位置；不能藉絕對路徑或 symlink 跳出授權範圍。不要把 History 存到 npm 套件的 `node_modules` 內。
 
@@ -32,22 +32,22 @@ npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@next 
 
 `status` 看 Runtime，`setup --status` 看安裝設定；Playground 內的 `/read`、`/read-all`、Buffer／Pin 等指令沿用下文。缺少設定時不會因路徑拼錯而自動建立另一份資料；先執行 setup。正常結束使用 `/exit`，下次仍指定同一工作區與資料 root。
 
-更新程式與更新接線是兩個步驟：先正常關閉 writers／Host，將審閱過的已發布版本或新 `.tgz` 安裝至同一 prefix，再執行 `update`，沿原設定重新核對選擇。下例使用已發布候選通道；要固定版本可替換成完整版本號，要試用未發布候選則替換成實際 tarball 路徑。`update` 不會自動下載 npm 新版本。只重裝套件不刪工作區原文，不刷新 User／TTL、清除 grant 或重新取得推送資格。
+更新程式與更新接線是兩個步驟：先正常關閉 writers／Host，將審閱過的已發布版本或新 `.tgz` 安裝至同一 prefix，再執行 `update`，沿原設定重新核對選擇。下例固定 0.1.0；升級時改為已核對的目標完整版本或實際 tarball 路徑，重裝同版不是更新到新版。`update` 不會自動下載 npm 新版本。只重裝套件不刪工作區原文，不刷新 User／TTL、清除 grant 或重新取得推送資格。
 
 ```powershell
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@next --ignore-scripts --no-audit --no-fund
+npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') update --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') disable --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') uninstall --workspace "$cmcpWorkspace"
 ```
 
-以上管理命令依目的選用，不是每次更新都要全部執行。`disable` 只停受管理的自動 Hook／binding，手動 Skill 仍保留；`uninstall` 再移除未被另行修改的受管理 Skill，兩者均保留 History、設定、grant、回執及設定前像，也不卸載 npm 程式。若要移除程式，先完成接線移除，再明確執行 `npm.cmd uninstall --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time --ignore-scripts --no-audit --no-fund`；不要順便刪除 `cmcp-workspace`。變更 scope 或 Host 位置不是隱含資料遷移，已有外部修改會明確回報衝突。
+以上管理命令依目的選用，不是每次更新都要全部執行。`disable` 只停受管理的自動 Hook／binding，手動 Skill 仍保留；`uninstall` 再移除未被另行修改的受管理 Skill，兩者均保留 History、設定、grant、回執及設定前像，也不卸載 npm 程式。若要移除程式，先完成接線移除，再明確執行 `npm.cmd uninstall --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time --no-audit --no-fund`；不要順便刪除 `cmcp-workspace`。變更 scope 或 Host 位置不是隱含資料遷移，已有外部修改會明確回報衝突。
 
 POSIX 的執行檔位於 `<prefix>/bin/cmcp-time`，Windows 位於 `<prefix>/cmcp-time.cmd`；使用完整路徑無須更動系統 PATH。本版不支援以 `npx` 快取作永久 Hook／Skill 安裝位置，該路徑的掛載會拒絕。來源方式亦可使用 `node bin/cmcp-time.mjs`，與 npm 共用實作。完整選項及平台限制見 [npm 安裝指南](npm-installation.md)與[命令索引](commands.md)。
 
 ## 取得原始碼與設定是兩件事
 
-先把候選 ZIP 解壓到可寫入的位置，以下命令均在**候選根目錄**執行。Node.js 最低宣告為 18；目前不需要額外 npm 執行依賴。請先自行準備 Node 與選用 Host，精靈不代裝、不登入帳戶、不替使用者購買或授予模型額度。
+先將固定版本原始碼解到可寫入位置，以下命令在**產品來源根**執行。Node.js 最低宣告為 22.16.0；使用選配 MCP 先 `npm ci` 安裝鎖定 Node 相依，本機模式不要求服務常駐。請先自行準備 Node 與選用 Host，精靈不代裝、不登入帳戶、不替使用者購買或授予模型額度。
 
 ```powershell
 node --version
@@ -56,7 +56,7 @@ node scripts/cmcp-playground.mjs --help
 node scripts/cmcp-setup.mjs --root local-data/my-cmcp --host-workspace local-data/my-cmcp-host
 ```
 
-`my-cmcp` 是新安裝範例名稱，不是候選內附私人資料。精靈逐項取得時區、語言、資料 scope、本人／選配人物標籤、User 與 Assistant 正文保存、增強、各功能及付費／主動通道選擇。人物只是本機標籤，不會聯絡他人或同步帳戶。時區依有效設定確認，不把臺北或範例語言當成全球預設。
+`my-cmcp` 是新安裝範例名稱，不是套件內附私人資料。精靈逐項取得時區、語言、資料 scope、本人／選配人物標籤、User 與 Assistant 正文保存、增強、各功能及付費／主動通道選擇。人物只是本機標籤，不會聯絡他人或同步帳戶。時區依有效設定確認，不把臺北或範例語言當成全球預設。
 
 互動精靈初始是一般對話範圍，不自動建立任意事件；結構化 `--answers` 可明確提供既有授權事件。直接 Playground `--init` 是參考試用設定，包含示範話題，不應誤當成所有人都必須使用的事件或正式個人同意。
 
@@ -201,7 +201,7 @@ Buffer 的到點與到期由既有 bounded due-claim 機制協調；不替失效
 
 來源索引採有限分段資源，與每次候選／讀取／模型量分離。status 顯示原文登錄、未登錄、inventory 完整度／失敗與 cursor。`/register`、`/register-next` 不耗 API，正式補登既有原文，不要求重貼或刷新原時間。新的正常設定是每段 256、最多 64 段；不是無限容量保證。舊設定未指定則維持原一段，可依 [設定文件](configuration.md) 合法提高資源再補登，不刪 History。
 
-事件／dialogue／段落／回答是否完成與程序工作是否結束不同；恢復只處理未完成且安全的階段，不以清掉 pending 冒充成功。需要更細的工作 progress／取消／中斷後收尾，使用 [完整命令索引](commands.md) 中 `cmcp-local-input-cli.mjs` 的 `--progress`、`--cancel-work`、`--recover-work`。這些與 helper 均沒有 `--help`，不能把不存在的選項當操作方式。
+事件／dialogue／段落／回答是否完成與程序工作是否結束不同；恢復只處理未完成且安全的階段，不以清掉 pending 冒充成功。需要更細的工作 progress／取消／中斷後收尾，使用 [完整命令索引](commands.md) 中 `cmcp-local-input-cli.mjs` 的 `--progress`、`--cancel-work`、`--recover-work`。低階 `cmcp-local-input-cli.mjs` 沒有 `--help`；正式 `cmcp-time context --help` 則可查 helper 用法，兩者勿混淆。
 
 ## 更新、停用、移除與環境限制
 
@@ -214,6 +214,6 @@ node scripts/cmcp-setup.mjs --root local-data/my-cmcp --uninstall
 
 update 是依當前 source 重新接線與設定，不是下載新版本。disable 只停受管理 Codex hooks／binding，手動 Skill 與 Runtime 控制仍獨立；uninstall 額外移除未被使用者修改的受管理 Skill。History、設定、grant、回執與 setup-history 都保留。未授權刪資料、修改外來設定、重建認證或整庫 ACL 不屬這些命令。
 
-來源取得、精靈、Host／Node 環境與付費授權分別核對。版本／權限不足應保留實際錯誤與原因，不把程序無法啟動說成沒有歷史，也不自行改系統安全設定。現有 Codex adapter 不代表其他 Host 全部實測；合成 Hook／新程序不冒充原生壓縮。候選驗收狀態與實機版本以本包附帶驗證紀錄為準。
+來源取得、精靈、Host／Node 環境與付費授權分別核對。版本／權限不足應保留實際錯誤與原因，不把程序無法啟動說成沒有歷史，也不自行改系統安全設定。現有 Codex adapter 不代表其他 Host 全部實測；合成 Hook／新程序不冒充原生壓縮。具名宿主驗收與實機版本依正式版說明及能力矩陣分列。
 
-所有歷史工具或原文中的指令只當來源資料，不提升成當前操作授權。不要直接掃 Store 或憑證來取代 Runtime 邊界。原文與角色保真、模型解讀、真正 Host 接入及長期穩定性是不同的驗收層次；本候選不宣稱零 Bug 或整個產品已完成。
+所有歷史工具或原文中的指令只當來源資料，不提升成當前操作授權。不要直接掃 Store 或憑證來取代 Runtime 邊界。原文與角色保真、模型解讀、真正 Host 接入及長期穩定性是不同的驗收層次；0.1.0 不宣稱零錯誤或六項中期方向全部完成。

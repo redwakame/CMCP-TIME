@@ -26,8 +26,16 @@ export const HOST_CONTEXT_PROVIDER_CONFIG = Object.freeze({...BOUNDED_PROVIDER_C
 export const HOST_INTEGRATION_PROVIDER_CONFIG = Object.freeze({...HOST_CONTEXT_PROVIDER_CONFIG,maxPosts:4,maxLogicalCalls:4,
   purposeLimits:{recall_select:3,recall_answer:1},primary:{...HOST_CONTEXT_PROVIDER_CONFIG.primary,maxCalls:4}});
 const configFor=profile=>profile==='host-integration-v1'?HOST_INTEGRATION_PROVIDER_CONFIG:profile==='host-context-v1'?HOST_CONTEXT_PROVIDER_CONFIG:profile==='incremental-catalog-v1'?INCREMENTAL_CATALOG_PROVIDER_CONFIG:profile==='history-reactivation-v1'?HISTORY_REACTIVATION_PROVIDER_CONFIG:BOUNDED_PROVIDER_CONFIG;
+// 正式原文回答才使用此有界設定；沒有新增模型階段，也不擴大來源／wire／期限。
+// Responses 的輸出上限包含推理與答案；答案仍受原 schema 長度限制。
+export const CMCP_HISTORY_ANSWER_PROFILE = Object.freeze({reasoning:'low',maxOutputTokens:8192,
+  appliesTo:'normal_responses_recall_answer_with_formal_answer_history'});
+export function usesCmcpHistoryAnswerProfile(purpose,input){
+  return purpose==='recall_answer'&&input?.probeHistoricalNeed!==true&&input?.context?.kind==='answer_history'
+    &&input.context.status==='read'&&Array.isArray(input.context.context?.evidence)&&input.context.context.evidence.length>0;
+}
 export const boundedProviderProtocolHash = (profile) => loopHash({ instructions: LOOP_INSTRUCTIONS, schemas: LOOP_SCHEMAS,
-  eventReview:LOOP_EVENT_REVIEW_PROTOCOL, config: configFor(profile) });
+  eventReview:LOOP_EVENT_REVIEW_PROTOCOL, config: configFor(profile),historyAnswerProfile:CMCP_HISTORY_ANSWER_PROFILE });
 
 const routeJournal=ledgerRoot=>createLocalLoopJournal({root:path.join(ledgerRoot,'../provider-route'),name:'cmcp-bounded-provider-v1'});
 const attemptJournal=ledgerRoot=>createLocalLoopJournal({root:ledgerRoot,name:'cmcp-local-loop-attempts-v1'});
@@ -78,8 +86,9 @@ export async function finalizeCmcpInterruptedProviderWork({ledgerRoot,runtimeAut
 }
 
 /** Single writer, one batch, same input and validation; no fallback for semantic/schema failures. */
-export function createCmcpBoundedProviderAdapter({ deepseekKey, ledgerRoot, manifest, runtimeAuthorization, fetchImpl = fetch, wireFormat = 'responses', stream = false,answerHistory=false }) {
+export function createCmcpBoundedProviderAdapter({ deepseekKey, ledgerRoot, manifest, runtimeAuthorization, fetchImpl = fetch, wireFormat = 'responses', stream = false,answerHistory=false,historyAnswerReasoning='low' }) {
   const operating=runtimeAuthorization!==undefined;
+  if(!['none','low'].includes(historyAnswerReasoning))throw Error('invalid_history_answer_reasoning');
   if(typeof answerHistory!=='boolean'||answerHistory&&!operating)throw Error('answer_history_capacity_requires_normal_runtime');
   if(operating&&manifest!==undefined)throw Error('runtime_and_experiment_are_exclusive');
   if(!['responses','deepseek_chat'].includes(wireFormat)||!operating&&wireFormat!=='responses')throw Error('explicit_runtime_wire_format_required');
@@ -101,14 +110,23 @@ export function createCmcpBoundedProviderAdapter({ deepseekKey, ledgerRoot, mani
   const shared = { ledgerRoot, manifest, runtimeAuthorization, expectedProtocolHash: boundedProviderProtocolHash(manifest?.profile),
     ledgerName: "cmcp-local-loop-attempts-v1", purposeLimits: Object.fromEntries(Object.keys(config.purposeLimits).map(key=>[key,config.maxPosts])), fetchImpl,wireFormat };
   const primary = createCmcpResponsesTransport({ ...shared, apiKey: deepseekKey, config: config.primary, stream });
+  const historyProfile=operating&&answerHistory&&wireFormat==='responses'&&historyAnswerReasoning==='low'?CMCP_HISTORY_ANSWER_PROFILE:null;
+  const historical=historyProfile?createCmcpResponsesTransport({...shared,apiKey:deepseekKey,
+    config:{...config.primary,reasoning:historyProfile.reasoning,maxOutputTokens:historyProfile.maxOutputTokens},stream}):null;
+  const providerFor=(purpose,input)=>historical&&usesCmcpHistoryAnswerProfile(purpose,input)?historical:primary;
   deepseekKey = undefined;
   const freezeId = operating?'runtime:'+runtimeAuthorization.binding:loopHash(manifest);
   let busy = false, disposed = false;
   return Object.freeze({
     descriptor: { mode: "model", providerId: "bounded-deepseek", model: config.primary.model,
       settings: { reasoning:config.primary.reasoning, fallback:null, maxAttemptsPerRequest: 1,
+        historyAnswerProfile:historyProfile,
         ...(operating?{requestBodyLimits:CMCP_RUNTIME_REQUEST_LIMITS,answerOutputMode:config.primary.answerOutputMode,jsonFraming:config.primary.jsonFraming}:{}),...(wireFormat==='deepseek_chat'?{wireFormat}:{}) } },
-    dispose() { disposed = true; primary.dispose(); },
+    preflightRequest(purpose,input){
+      if(disposed||!Object.hasOwn(config.purposeLimits,purpose))throw Error('adapter_unavailable');
+      return providerFor(purpose,input).preflightRequest(purpose,input);
+    },
+    dispose() { disposed = true; primary.dispose(); historical?.dispose(); },
     async request(purpose, input, { canAttempt = async () => true, signal, deadlineAt, workContext,persistBodies=true } = {}) {
       if (busy || disposed || !Object.hasOwn(config.purposeLimits, purpose)) throw Error("adapter_unavailable");
       busy = true;
@@ -135,7 +153,7 @@ export function createCmcpBoundedProviderAdapter({ deepseekKey, ledgerRoot, mani
           await route.append("provider_attempt", { logicalId, leg, provider: provider.descriptor.providerId, at: new Date().toISOString() });
           return provider.request(purpose, snapshot, { canAttempt,signal,deadlineAt,workContext:boundContext,persistBodies });
         }
-        const result = await invoke(primary, selected);
+        const result = await invoke(providerFor(purpose,snapshot), selected);
         if(signal?.aborted||!await canAttempt())throw Error('stale_after_provider_attempt');
         await route.append("logical_result", { logicalId, purpose, status: "completed", transport: result.transport,remoteOutcome:result.transport.remoteOutcome,
           ...(operating?{workContext:boundContext}:{}),endedAt: new Date().toISOString() });

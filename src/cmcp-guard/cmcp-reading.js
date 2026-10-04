@@ -197,13 +197,18 @@ export function inspectCmcpReadingProgress({reading,previousPages=[],scopeId}){
 export async function validateCmcpReadingPublication({stores,catalog,reading,timeContext,bufferGeneration,sourceRefs,valid=async()=>true}){
   const manifest=checkedManifest(reading,stores.scopeId),temporal=resolveCmcpTimeContext(timeContext);
   if(!Array.isArray(sourceRefs)||new Set(sourceRefs).size!==sourceRefs.length||sourceRefs.some(ref=>!manifest.sources.some(source=>source.ref===ref)))throw Error('reading_publication_refs_invalid');
-  const ensure=async()=>{
+  const ensure=async(durableBoundary=false)=>{
     if(!await valid())throw Error('reading_cancelled');
     if(manifest.bufferGeneration!==bufferGeneration||temporal.timezone!==manifest.timezone)throw Error('reading_generation_or_timezone_changed');
-    await assertCmcpBufferGeneration({root:stores.root,scopeId:stores.scopeId,generation:bufferGeneration});
+    // 整批發表前後核對持久 Clear 屏障；逐來源仍核對當前取消／控制。
+    // 中途寫入的 Clear 必須在出口拒絕整批，不逐筆重掃無關完整 journal。
+    if(durableBoundary){
+      await assertCmcpBufferGeneration({root:stores.root,scopeId:stores.scopeId,generation:bufferGeneration});
+      if(!await valid())throw Error('reading_cancelled');
+    }
     if(manifest.expiry!==null&&temporal.nowEpochMs>=parseCmcpInstant(manifest.expiry))throw Error('reading_expired');
   };
-  await ensure();
+  await ensure(true);
   await resolveCmcpReadingQuery({history:stores.history,scopeId:stores.scopeId,binding:manifest});
   const entries=await catalog.list(),unavailable=[],verified=[];let materializedSourceBytes=0;
   for(const ref of sourceRefs){
@@ -216,7 +221,7 @@ export async function validateCmcpReadingPublication({stores,catalog,reading,tim
     if(loopHash(found.evidence)!==source.evidenceHash||found.evidence.sourceAuthorRole!==source.sourceAuthorRole||found.evidence.messageRecordedAt!==source.messageRecordedAt)
       unavailable.push({ref,reason:'source_changed'});else verified.push(ref);
   }
-  await ensure();return {status:unavailable.length?'source_unavailable':'verified',verified,unavailable,materializedSourceBytes,
+  await ensure(true);return {status:unavailable.length?'source_unavailable':'verified',verified,unavailable,materializedSourceBytes,
     purpose:'current_authority_and_exact_version_recheck_no_activity_refresh'};
 }
 

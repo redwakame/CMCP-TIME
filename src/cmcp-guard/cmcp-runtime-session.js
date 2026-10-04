@@ -7,7 +7,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {createCmcpLocalInput} from './cmcp-local-input.js';
+import {projectCmcpStorageStatus} from './cmcp-storage-status.js';
 import {createCmcpRuntimeDispatch} from './cmcp-runtime-dispatch.js';
+import {readCmcpDispatchObservation} from './cmcp-dispatch-arbitration.js';
 import {createCmcpPinLifecycle} from './cmcp-pin-lifecycle.js';
 import {getCmcpHostContext} from './cmcp-host-context.js';
 import {createCmcpBoundedProviderAdapter,readCmcpRuntimeProviderWork,finalizeCmcpInterruptedProviderWork,CMCP_RUNTIME_REQUEST_LIMITS} from './cmcp-bounded-provider-adapter.js';
@@ -16,19 +18,31 @@ import {authorizeRuntimeBudget,readRuntimeBudget} from './cmcp-model-job-budget.
 import {loopHash,createLocalLoopJournal} from './cmcp-local-loop-journal.js';
 import {DEEPSEEK_LOOP_CONFIG} from './cmcp-deepseek-configured-adapter.js';
 import {createCmcpRuntimeWorkJournal,isCmcpProcessAlive} from './cmcp-runtime-work.js';
+import {acquireCmcpRecoveryLeases} from './cmcp-recovery-lease.js';
 import {resolveCmcpHistorySource} from './cmcp-history-provider.js';
 import {cmcpSourcePointerKey} from './cmcp-source-pointer.js';
 import {parseCmcpInstant} from './resolve-cmcp-time-context.js';
 import {inspectCmcpReadingProgress} from './cmcp-reading.js';
 import {normalizeCmcpBufferRetention} from './cmcp-buffer-retention.js';
 import {CMCP_CONTINUITY_CONTEXT_LIMITS} from './project-cmcp-compact-continuity.js';
-import {createCmcpFeatureControls,normalizeCmcpFeatureControlPatch} from './cmcp-feature-controls.js';
+import {createCmcpFeatureControls,normalizeCmcpFeatureControlPatch,cmcpDoNotDisturbActive} from './cmcp-feature-controls.js';
 import {cmcpReadingQueryKey,resolveCmcpReadingQuery,validateCmcpEphemeralReadingQuery,assertCmcpEphemeralQueryText} from './cmcp-reading-query-authorization.js';
 import {normalizeCmcpSourceCatalogConfig} from './cmcp-source-index-segments.js';
+import {readCmcpBufferBoundary,withCmcpBufferPublication} from './cmcp-buffer-lifecycle.js';
+import {readCmcpSelectedHistory} from './cmcp-history-reactivation.js';
 
 const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'
   ?Object.fromEntries(Object.keys(value).sort().map(k=>[k,canonical(value[k])])):value;
 const freeze=value=>{if(value&&typeof value==='object'){Object.values(value).forEach(freeze);Object.freeze(value);}return value;};
+/** 宿主回合的有限期限；一般操作及主動派送不使用此政策。 */
+export function normalizeCmcpHostTurnPolicy(value){
+  if(value===undefined)return Object.freeze({timeoutMs:240000,maxTimeoutMs:300000});
+  if(!value||typeof value!=='object'||Array.isArray(value)
+    ||Object.keys(value).sort().join(',')!=='maxTimeoutMs,timeoutMs'
+    ||!Number.isSafeInteger(value.timeoutMs)||!Number.isSafeInteger(value.maxTimeoutMs)
+    ||value.timeoutMs<=0||value.timeoutMs>value.maxTimeoutMs||value.maxTimeoutMs>1800000)throw Error('invalid_host_turn_policy');
+  return Object.freeze({timeoutMs:value.timeoutMs,maxTimeoutMs:value.maxTimeoutMs});
+}
 export function normalizeCmcpRuntimeConfig(value,{repoRoot}){
   if(value?.kind!=='cmcp_runtime_config'||value.version!==1||typeof value.runtimeId!=='string'||!value.runtimeId.trim()
     ||!path.isAbsolute(repoRoot)||!value.input||!value.controls
@@ -106,9 +120,12 @@ async function resolveRuntimeBudgetDependency(normalized,dependency,repoRoot){
 
 /** Shared normal-operation lifecycle over LocalInput. One writer, no model or recovery on open/status. */
 export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=false,controls,delivery,observe=async()=>{},
-  readCredential=readCmcpProtectedCredential,fetchImpl=fetch,clock,sessionId=randomUUID(),budgetDependency}){
+  readCredential=readCmcpProtectedCredential,fetchImpl=fetch,clock,sessionId=randomUUID(),budgetDependency,hostProvider,hostTurnPolicy,dispatchReady=async()=>true}){
+  if(typeof dispatchReady!=='function')throw Error('dispatch_ready_callback_required');
   const normalized=normalizeCmcpRuntimeConfig(raw,{repoRoot});
   const {config,bufferRetention:configuredRetention,binding}=normalized;
+  if(hostTurnPolicy!==undefined&&config.providerMode!=='host')throw Error('host_turn_policy_requires_host_provider');
+  const effectiveHostTurnPolicy=normalizeCmcpHostTurnPolicy(hostTurnPolicy);
   const {budgetRoot,ledgerRoot,budgetBinding,ownerRoot:budgetOwnerRoot,expectedAuthorizationId}=await resolveRuntimeBudgetDependency(normalized,budgetDependency,repoRoot);
   const answerHistoryEnabled=config.answerHistory?.enabled===true;
   const eventContext={...CMCP_EVENT_WORKING_SET_DEFAULTS,...config.eventContext};
@@ -141,7 +158,8 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
   bufferRetention=normalizeCmcpBufferRetention({hours:effective.bufferRetentionHours});
   if(!['enabled','clean','proactive'].every(k=>typeof effective[k]==='boolean'))throw Error('invalid_runtime_controls');
   if(!readOnly&&effective.proactive&&typeof delivery?.present!=='function')throw Error('explicit_proactive_delivery_required');
-  let core,adapter,dispatcher,lock,budgetOwnerLock,closed=false,busy=false,active=null,foregroundAdmission=false,clearFlight=null,controlFlight=Promise.resolve();
+  let core,adapter,dispatcher,lock,budgetOwnerLock,closed=false,busy=false,active=null,foregroundAdmission=false,clearFlight=null,controlFlight=Promise.resolve(),hostCompletionFlight=null;
+  const ownedHostTurns=new Set();let hostTurnAdmissions=0;
   const timeControlStamp=()=>loopHash(['enabled','clean','timeIndex','timezone'].map(key=>[key,effective[key],controlSnapshot.featureRevisions[key]??0]));
   const timeProjectionAllowed=()=>!closed&&effective.enabled&&!effective.clean&&effective.timeIndex!==false&&!requiresReopen;
   async function currentTimeCard(options={}){
@@ -161,11 +179,12 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
   const proxy={descriptor:{mode:'model',providerId:'bounded-deepseek',model:DEEPSEEK_LOOP_CONFIG.model,settings:{reasoning:DEEPSEEK_LOOP_CONFIG.reasoning}},
     async request(purpose,input,options={}){
       if(readOnly||closed)throw Error('runtime_not_writable');
-      if(config.providerMode==='host')throw Error('host_model_request_requires_host_bridge');
-      const budget=await assertExpectedBudget();if(!budget.canCall.deepseek)throw Error(budget.reason??'runtime_budget_exhausted');
-      if(!adapter){let key;try{key=await readCredential(config.credentialRef,'deepseek',{workspace:repoRoot});adapter=createCmcpBoundedProviderAdapter({deepseekKey:key,ledgerRoot,runtimeAuthorization:authorization,fetchImpl,wireFormat:config.deepseekTransport??'responses',stream:config.deepseekStream??false,answerHistory:answerHistoryEnabled});}
+      const viaHost=config.providerMode==='host';
+      if(viaHost&&(purpose!=='proactive'||typeof hostProvider?.request!=='function'))throw Error('host_model_request_requires_host_bridge');
+      if(!viaHost){const budget=await assertExpectedBudget();if(!budget.canCall.deepseek)throw Error(budget.reason??'runtime_budget_exhausted');}
+      if(!viaHost&&!adapter){let key;try{key=await readCredential(config.credentialRef,'deepseek',{workspace:repoRoot});adapter=createCmcpBoundedProviderAdapter({deepseekKey:key,ledgerRoot,runtimeAuthorization:authorization,fetchImpl,wireFormat:config.deepseekTransport??'responses',stream:config.deepseekStream??false,answerHistory:answerHistoryEnabled});}
         finally{key=undefined;}}
-      const valid=async()=>{await assertExpectedBudget();return await canContinue()&&await (options.canAttempt??(async()=>true))();};
+      const valid=async()=>{if(!viaHost)await assertExpectedBudget();return await canContinue()&&await (options.canAttempt??(async()=>true))();};
       // Request observation is distinct from the saved User instant and the
       // operation's shared temporal context. It never refreshes activity/TTL.
       const requestTime={now:clock?clock():new Date().toISOString(),timezone:runtimeTimezone};
@@ -178,7 +197,9 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
         exchangeTime,
         modelRequestTime:projectCmcpRuntimeTime(resolveCmcpTimeContext(requestTime))}:{}),
         ...(['answer','recall_answer','proactive'].includes(purpose)&&(config.responsePreferences||effective.language)?{responsePreferences:{...config.responsePreferences,...(effective.language?{language:effective.language}:{})}}:{})};
-      return adapter.request(purpose,projected,{...options,canAttempt:async()=>await valid()&&(!exchangeTime||timeProjectionAllowed()&&timeStamp===timeControlStamp()),signal:active?.controller.signal,
+      // 宿主模式只接受明確注入的主動接點；其模型授權與累計由既有受控 proxy 負責。
+      const requestSignals=[options.signal,active?.controller.signal].filter(Boolean);
+      return (viaHost?hostProvider:adapter).request(purpose,projected,{...options,canAttempt:async()=>await valid()&&(!exchangeTime||timeProjectionAllowed()&&timeStamp===timeControlStamp()),signal:requestSignals.length?AbortSignal.any(requestSignals):undefined,
         persistBodies:effective.saveUser&&effective.saveAssistant,
         deadlineAt:active?.deadlineAt,workContext:active?{workId:active.id,sourceVersion:active.sourceVersion??null}:undefined});
     },dispose(){adapter?.dispose();}};
@@ -285,7 +306,7 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
     }
     if(!readOnly)dispatcher=createCmcpRuntimeDispatch({root:config.input.root,scopeId:config.input.scopeId,timezone:runtimeTimezone,
       events:config.input.events,core,controlManager:{snapshot:async()=>constrainControls(await controlManager.snapshot())},adapter:proxy,runWork:runProactiveWork,
-      delivery:delivery??{async present(){throw Error('explicit_delivery_required');}},clock:clock??(()=>new Date().toISOString()),eventContext});
+      delivery:delivery??{async present(){throw Error('explicit_delivery_required');}},clock:clock??(()=>new Date().toISOString()),eventContext,dispatchReady:proactiveReady});
   }catch(error){adapter?.dispose();try{if(lock){await lock.close();await fs.unlink(lockFile);}}finally{if(budgetOwnerLock){await budgetOwnerLock.close();await fs.unlink(budgetOwnerLockFile);}}throw error;}
   async function status(){
     await controlFlight;
@@ -301,10 +322,16 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
       localReadProgress={workId:lastRead.workId,ticket:saved.ticket??null,status:saved.result?.host?.retrieval??null,
         ranges:saved.result?.host?.context?.readProgress??saved.result?.internal?.readRanges??null,
         cumulative:saved.result?.internal?.cumulative??null};}
-    return {kind:'cmcp_runtime_status',runtimeId:config.runtimeId,sessionId,pid:process.pid,readOnly,modelCalls:0,
+    const statusControls=constrainControls(await controlManager.snapshot());
+    const storageStatus=await projectCmcpStorageStatus({scopeId:config.input.scopeId,registration:state.registration,
+      controls:statusControls.effective,requiresReopen,resolveSource:pointer=>resolveCmcpHistorySource({provider:core.history,pointer})});
+    if((await controlManager.snapshot()).generation!==statusControls.generation)throw Error('status_controls_changed_refresh_required');
+    return {kind:'cmcp_runtime_status',runtimeId:config.runtimeId,sessionId,pid:process.pid,readOnly,modelCalls:0,storageStatus,
       dataScope:{root:config.input.root,scopeId:config.input.scopeId,eventKeys:config.input.events.map(e=>e.key)},
       ...(budgetAttachment?{budgetDependency:{...budgetAttachment,expectedAuthorizationId,active:budget.authorizationId===expectedAuthorizationId}}:{}),
-      controls:{...effective},controlConfiguration:constrainControls(await controlManager.snapshot()),sourceAuthorization:{...sourceAuthorization},runtimeTimezone,requiresReopen,budget,pins:await readOnlyPins.list(),
+      controls:{...effective},controlConfiguration:statusControls,sourceAuthorization:{...sourceAuthorization},runtimeTimezone,requiresReopen,budget,pins:await readOnlyPins.list(),
+      dispatchObservation:{...await readCmcpDispatchObservation({root:config.input.root,scopeId:config.input.scopeId}),
+        doNotDisturbActive:cmcpDoNotDisturbActive(effective,{now:clock?clock():new Date().toISOString(),timezone:runtimeTimezone})},
       bufferRetention:{...bufferRetention},
       timeLimits:{bufferNewActivationMs:bufferRetention.ttlMs,legacyMissingExpiryMs:config.input.loopTiming.ttlMs,
         readingTicketMs:config.input.loopTiming.ttlMs,proactiveInactivityMs:config.input.loopTiming.inactivityMs,
@@ -334,8 +361,17 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
       if(['buffer_clear','buffer_cleared','buffer_disabled'].includes(reason)&&!active.bufferDependent)return;
       active.cancelReason??=reason;active.controller.abort();}
   }
+  async function proactiveReady(candidate){
+    const available=()=>!readOnly&&!closed&&!busy&&!foregroundAdmission&&!hostCompletionFlight&&!hostTurnAdmissions&&!requiresReopen;
+    if(!available())return false;
+    // 原生模型回合跨越 beforeUser 與 afterAssistant；期間不讓主動工作取得相同 writer。
+    for(const workId of ownedHostTurns){const work=await works.read(workId);
+      if(work?.mode==='host_turn'&&work.state==='running'&&!work.cancelRequested&&parseCmcpInstant(work.deadlineAt)>Date.now())return false;
+    }
+    return await dispatchReady(candidate)===true&&available();
+  }
   async function runProactiveWork(run,context){
-    if(readOnly||closed||busy||foregroundAdmission||!effective.enabled||effective.clean||!effective.proactive)return {status:'ineligible'};
+    if(!await proactiveReady()||!effective.enabled||effective.clean||!effective.proactive)return {status:'ineligible'};
     // Same work/receipt/authorization lifecycle as foreground calls, with no new User source.
     const {signal,...proactiveContext}=context;
     return submit({proactiveContext,signal},run);
@@ -354,7 +390,35 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
     const keys=['enabled','clean'];
     if(['local_read','local_answer','local_recall','local_candidates','local_reading_navigation','local_reading_open','local_reading_page','local_reading_outline','local_history_query','local_history_query_resume','context_only'].includes(mode))keys.push('historyRecall','readingLimits');
     if(mode==='standalone'||mode==='local_event_resume')keys.push('saveUser','saveAssistant','answerHistory','discussionAssociation');
+    if(mode==='host_turn')keys.push('historyRecall','answerHistory','discussionAssociation','saveUser','saveAssistant','readingLimits','buffer','timeIndex','timezone');
     return loopHash(keys.map(key=>[key,snapshot.featureRevisions[key]??0]));
+  }
+  async function hostTurnState(){
+    const snapshot=constrainControls(await controlManager.snapshot());
+    const grants=(await inputJournal.readIncremental()).filter(row=>row.record.kind==='source_authorization');
+    return {snapshot,controlStamp:workControlStamp('host_turn',snapshot),sourceAuthorizationStamp:loopHash(grants.map(row=>row.sha256)),
+      boundary:await readCmcpBufferBoundary({root:config.input.root,scopeId:config.input.scopeId})};
+  }
+  async function checkHostTurn(ticket,{replyTo,allowCompleted=false}={}){
+    if(closed||ticket?.kind!=='cmcp_host_turn'||ticket.version!==1||typeof ticket.workId!=='string')throw Error('invalid_host_turn');
+    const work=await works.read(ticket.workId);
+    if(!work||work.mode!=='host_turn'||work.sessionId!==sessionId||work.cancelRequested
+      ||!(work.state==='running'||allowCompleted&&work.state==='completed'))throw Error('host_turn_not_active');
+    if(Date.now()>=parseCmcpInstant(work.deadlineAt))throw Error('host_turn_expired');
+    if(replyTo!==undefined&&(!replyTo||!work.nativeUserPointer
+      ||cmcpSourcePointerKey(replyTo)!==cmcpSourcePointerKey(work.nativeUserPointer)))throw Error('host_turn_reply_mismatch');
+    if(work.source){const found=await resolveCmcpHistorySource({provider:core.history,pointer:work.source.pointer});
+      if(found.status!=='found'||found.evidence.sourceAuthorRole!=='user'||loopHash(found.evidence)!==work.source.evidenceHash)throw Error('host_turn_source_changed');}
+    const current=await hostTurnState();
+    if(work.controlStamp!==current.controlStamp||work.controlStamp!==workControlStamp('host_turn')
+      ||work.sourceAuthorizationStamp!==current.sourceAuthorizationStamp||requiresReopen)throw Error('host_turn_controls_changed');
+    if(work.bufferDependent&&(work.bufferGeneration!==current.boundary.generation||work.bufferGeneration!==core.bufferGeneration
+      ||!current.snapshot.effective.enabled||current.snapshot.effective.clean||!current.snapshot.effective.historyRecall
+      ||!effective.enabled||effective.clean||!effective.historyRecall))throw Error('host_turn_context_stale');
+    const latest=await works.read(ticket.workId);
+    if(closed||latest.cancelRequested||!(latest.state==='running'||allowCompleted&&latest.state==='completed'))throw Error('host_turn_not_active');
+    if(Date.now()>=parseCmcpInstant(work.deadlineAt))throw Error('host_turn_expired');
+    return latest;
   }
   async function assertBufferReceipt(work,result){
     const dependent=work.bufferDependent??(work.mode==='proactive'||work.mode==='context_only'
@@ -464,7 +528,7 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
         reason:terminalResult?.reader.reason??null,limits:openingResult.reader.limits,collection:openingResult.reader.collection,coverage,unresolved,revoked:false},modelContext:null});
     }catch(error){if(['reading_revoked','buffer_receipt_stale','buffer_context_disabled'].includes(error.message))return readingExit({reader:{kind:'cmcp_reading_progress',ticket,status:'unavailable',reason:error.message,revoked:error.message==='reading_revoked'},modelContext:null});throw error;}
   }
-  async function submit(input,proactiveTask=null,bufferGeneration=core.bufferGeneration){
+  async function submit(input,proactiveTask=null,bufferGeneration=core.bufferGeneration,publicationGuard=()=>true){
     const operationBufferTtlMs=bufferRetention.ttlMs;
     if(clearFlight)await clearFlight;
     const bufferDependent=!!proactiveTask&&input.proactiveContext?.route!=='pin'||['candidates','read','recall','reading_navigation','reading_open','reading_page','reading_outline','history_query','history_query_resume'].includes(input.localOperation)
@@ -622,7 +686,8 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
         operation.localOperation==='discussion_link'?await core.linkDiscussionSegment(operation.declaration):operation.localOperation==='event_resume'?await core.resumeEventSource(operation):operation.localOperation==='reading_navigation'?await core.readingNavigate({...operation,ticket:workId,...(navigation?{navigationResult:navigation.result}:{})}):operation.localOperation==='reading_open'?readingExit(await core.readingOpen({...operation,ticket:workId,...(navigation?{navigationResult:navigation.result}:{})})):
         operation.localOperation==='reading_outline'?readingExit(await core.readingOutline({openingResult:reading.openingResult,previousPages:reading.previousPages})):
         operation.localOperation==='reading_page'?readingExit(await core.readingPage({openingResult:reading.openingResult,previousPages:reading.previousPages,project:operation.project===true})):
-        proactiveTask?await proactiveTask():operation.localOperation==='ingest'?await core.ingest(operation):operation.localOperation==='candidates'
+        proactiveTask?await proactiveTask():operation.localOperation==='ingest'?await core.ingest({...operation,
+          operationValid:async()=>publicationGuard()===true,publicationGuard}):operation.localOperation==='candidates'
         ?await core.localCandidates({...operation,ticket:workId}):operation.localOperation==='read'
           ?await core.localRead({candidateResult,refs:operation.refs,timeContext:operation.timeContext,answer:operation.answer===true,
             continuation:operation.continuation??null,readHistory,queryText:operation.queryText})
@@ -685,26 +750,29 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
       const readingTime=reading?.openingResult.internal.queryTime??result.internal?.queryTime;
       if(active.readingTicket&&readingTime!==undefined&&parseCmcpInstant(readingTime)+config.input.loopTiming.ttlMs<=bufferNow())throw Error('buffer_receipt_stale');
       return result;
-    }catch(error){await works.finish(workId,{state:active.controller.signal.aborted?'cancelled':'failed',reason:active.cancelReason??error.message,
+    }catch(error){const failedState=active.controller.signal.aborted?'cancelled':'failed';controller.abort(error.message);
+      await works.finish(workId,{state:failedState,reason:active.cancelReason??error.message,
       sourceProcessing:proactiveTask?'not_requested':'pending',remoteOutcome:'unknown',receiptPath:null});throw error;
     }finally{clearTimeout(timer);clearInterval(poll);signal?.removeEventListener('abort',abort);busy=false;active=null;done();
       if(!proactiveTask&&!closed)core.resumeProactive();}
   }
-  const foreground=async input=>{
+  const foreground=async (input,publicationGuard=()=>true)=>{
     await controlFlight;
     if(requiresReopen)throw Error('configuration_requires_reopen');
     const bufferGeneration=core.bufferGeneration;
     if(clearFlight)await clearFlight;
     if(foregroundAdmission)throw Error('runtime_not_writable_or_busy');
     foregroundAdmission=true;
-    try{return await submit(input,null,bufferGeneration);}finally{foregroundAdmission=false;if(!readOnly&&!closed){core.resumeProactive();await dispatcher?.refresh();}}
+    try{return await submit(input,null,bufferGeneration,publicationGuard);}finally{foregroundAdmission=false;if(!readOnly&&!closed){core.resumeProactive();await dispatcher?.refresh();}}
   };
-  const result={sessionId,config,binding,authorization,status,submit:foreground,
+  const result={sessionId,config,binding,authorization,hostTurnPolicy:effectiveHostTurnPolicy,status,submit:foreground,
     controlsSnapshot:async()=>constrainControls(await controlManager.snapshot()),
     async authorizeSources({updateId,patch,authorizedBy}){
-      if(readOnly||closed||busy)throw Error('source_authorization_requires_idle_runtime');
-      if(typeof updateId!=='string'||!updateId||typeof authorizedBy!=='string'||!authorizedBy.trim()||!patch||Object.keys(patch).some(k=>!['saveUser','saveAssistant'].includes(k))||Object.values(patch).some(v=>typeof v!=='boolean'))throw Error('explicit_source_authorization_required');
-      const prior=(await inputJournal.read()).find(row=>row.record.kind==='source_authorization'&&row.record.value.updateId===updateId);
+      if(readOnly||closed)throw Error('source_authorization_requires_writable_runtime');
+      if(typeof updateId!=='string'||!updateId||typeof authorizedBy!=='string'||!authorizedBy.trim()||!patch||typeof patch!=='object'||Array.isArray(patch)||!Object.keys(patch).length||Object.keys(patch).some(k=>!['saveUser','saveAssistant'].includes(k))||Object.values(patch).some(v=>typeof v!=='boolean'))throw Error('explicit_source_authorization_required');
+      const records=await inputJournal.read();
+      if(records.some(row=>row.record.kind==='source_authorization'&&row.record.value.scopeId!==config.input.scopeId))throw Error('source_authorization_scope_mismatch');
+      const prior=records.find(row=>row.record.kind==='source_authorization'&&row.record.value.updateId===updateId);
       if(prior&&loopHash(prior.record.value.patch)!==loopHash(patch))throw Error('source_authorization_conflict');
       if(!prior)await inputJournal.append('source_authorization',{updateId,scopeId:config.input.scopeId,patch,authorizedBy,at:new Date().toISOString()});
       // Replaying an old authorization ID is not a new grant: preserve all later
@@ -714,7 +782,12 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
         if(record.value.scopeId!==config.input.scopeId)throw Error('source_authorization_scope_mismatch');
         sourceAuthorization={...sourceAuthorization,...record.value.patch};}
       controlSnapshot=constrainControls(await controlManager.snapshot());Object.assign(effective,controlSnapshot.effective);core.setControls(effective);
-      dispatcher?.interrupt('source_authorization_changed');await dispatcher?.refresh();
+      // 先通過正式驗證與保存，再使執行中的模型失效；等待既有工作收束，不重設 writer。
+      const pending=active?.completed,hostPending=hostCompletionFlight;
+      if(active){active.cancelReason='source_authorization_changed';active.controller.abort('source_authorization_changed');}
+      dispatcher?.interrupt('source_authorization_changed');
+      if(pending)await pending;if(hostPending)await hostPending.catch(()=>{});
+      await dispatcher?.waitForIdle();await dispatcher?.refresh();
       return {status:prior?'unchanged':'authorized',sourceAuthorization:{...sourceAuthorization},modelCalls:0};
     },
     correctDialogueControl:input=>core.correctDialogueControl(input),
@@ -732,35 +805,178 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
       return {...next,requiresReopen};
     },
     async timeCard(options={}){if(closed)throw Error('runtime_closed');return currentTimeCard(options);},
-    async beforeUser({text,sourceId,timeContext}){
+    async validateMediaParent({pointer,evidenceHash,messageRecordedAt,textHash,forCapture=false}){
+      if(pointer?.scopeId!==config.input.scopeId||typeof evidenceHash!=='string'||!/^[a-f0-9]{64}$/.test(evidenceHash)
+        ||typeof textHash!=='string'||!/^[a-f0-9]{64}$/.test(textHash)||typeof messageRecordedAt!=='string'
+        ||typeof forCapture!=='boolean')throw Error('media_parent_binding_invalid');
+      await controlFlight;
+      const snapshot=()=>result.controlsSnapshot(),initial=await snapshot(),stamp=loopHash(initial);
+      const allowed=value=>value.enabled&&!value.clean&&(forCapture?value.saveUser:value.historyRecall&&value.answerHistory);
+      const valid=async()=>{const current=await snapshot();return !closed&&!requiresReopen&&allowed(current.effective)&&loopHash(current)===stamp;};
+      if(!await valid())throw Error('media_parent_controls_changed');
+      const entry=(await core.catalog.list()).find(row=>cmcpSourcePointerKey(row.pointer)===cmcpSourcePointerKey(pointer));
+      if(!entry||entry.evidenceHash!==evidenceHash||entry.sourceAuthorRole!=='user')throw Error('media_parent_binding_mismatch');
+      // 正式 provider 的精確來源核驗，只回傳 metadata；寫入授權不要求開啟舊原文回查。
+      const found=await resolveCmcpHistorySource({provider:core.history,pointer:entry.pointer});
+      if(found.status!=='found'||loopHash(found.evidence)!==evidenceHash||found.evidence.sourceAuthorRole!=='user'
+        ||found.evidence.messageRecordedAt!==messageRecordedAt||loopHash(found.evidence.content.body)!==textHash)throw Error('media_parent_source_unavailable_or_changed');
+      if(!await valid())throw Error('media_parent_controls_changed');
+      return {kind:'cmcp_media_parent_validation',status:'valid',sourcePointer:entry.pointer,evidenceHash,messageRecordedAt,textHash,modelCalls:0};
+    },
+    async readSource({pointer,evidenceHash,start=0,end,maxBytes=4096}){
+      if(pointer?.scopeId!==config.input.scopeId)throw Error('source_read_scope_mismatch');
+      if(typeof evidenceHash!=='string'||!/^[a-f0-9]{64}$/.test(evidenceHash)
+        ||!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start<0||end<=start||end-start>8192
+        ||!Number.isSafeInteger(maxBytes)||maxBytes<1||maxBytes>8192)throw Error('invalid_source_read_request');
+      await controlFlight;
+      const keys=['enabled','clean','historyRecall','answerHistory','readingLimits','timezone'];
+      const stamp=snapshot=>loopHash(keys.map(key=>[key,snapshot.effective[key],snapshot.featureRevisions[key]??0]));
+      const initial=await controlManager.snapshot();
+      const allowed=value=>value.enabled&&!value.clean&&value.historyRecall&&value.answerHistory;
+      const valid=async()=>{const current=await controlManager.snapshot();
+        return !closed&&!requiresReopen&&allowed(effective)&&allowed(current.effective)&&stamp(initial)===stamp(current);};
+      if(!await valid())throw Error('source_read_disabled_or_controls_changed');
+      const entry=(await core.catalog.list()).find(row=>cmcpSourcePointerKey(row.pointer)===cmcpSourcePointerKey(pointer));
+      if(!entry||entry.evidenceHash!==evidenceHash)throw Error('source_read_binding_mismatch');
+      // 使用既有正式範圍 reader；不新增 User、工作、閱讀活動或 Buffer 活化。
+      const read=await readCmcpSelectedHistory({stores:core.stores,selected:[{id:entry.id,pointer:entry.pointer,evidenceHash,
+        readRange:{unit:'unicode_code_points',start,end}}],temporal:resolveCmcpTimeContext({now:clock?clock():new Date().toISOString(),timezone:runtimeTimezone}),
+        limits:{maxSourceBytes:Math.min(maxBytes,effective.readingLimits?.maxReadBytes??maxBytes,effective.readingLimits?.pageBytes??maxBytes),
+          maxMaterializedSourceBytes:config.input.storageCapacity?.maxSourceBytes??4096,
+          maxProjectionBytes:Math.min(maxBytes+8192,effective.readingLimits?.maxProjectionBytes??(maxBytes+8192))},
+        contextOnly:true,valid});
+      if(!await valid())throw Error('source_read_disabled_or_controls_changed');
+      if(read.status!=='found')return {kind:'cmcp_source_read',status:'source_unavailable',reason:read.reason,modelCalls:0};
+      const current=await resolveCmcpHistorySource({provider:core.history,pointer:entry.pointer});
+      if(current.status!=='found'||loopHash(current.evidence)!==evidenceHash)throw Error('source_read_binding_mismatch');
+      if(!await valid())throw Error('source_read_disabled_or_controls_changed');
+      const source=current.evidence,range=read.readRanges[0];
+      return {kind:'cmcp_source_read',status:'found',sourcePointer:source.pointer,evidenceHash,sourceAuthorRole:source.sourceAuthorRole,
+        sourceKind:source.sourceKind,contentKind:source.content.kind,messageRecordedAt:source.messageRecordedAt,eventOccurredAt:source.eventOccurredAt,
+        range:range.location,text:read.projected.evidence[0].content,bytes:range.bytes,storedContentCodePoints:range.storedContentCodePoints,
+        completeStoredContent:range.completeStoredContent,activation:'none',modelCalls:0};
+    },
+    async beforeUser({text,sourceId,timeContext,hostTurn,sessionGuard=()=>true}){
       if(readOnly||closed)throw Error('runtime_not_writable');
+      if(typeof sessionGuard!=='function')throw Error('invalid_host_session_guard');
+      const checkSession=()=>{if(sessionGuard()!==true)throw Error('cmcp_source_authorization_changed');};
+      checkSession();
+      if(hostTurn!==undefined)hostTurnAdmissions++;
+      try{
       const pointer=sourceId?{version:1,providerNamespace:core.history.descriptor.providerNamespace,scopeId:config.input.scopeId,sessionId,itemId:sourceId,revisionId:'r1'}:undefined;
+      let turn,turnInputHash,initialTurnState;
+      if(hostTurn!==undefined){
+        if(!pointer||!hostTurn||typeof hostTurn!=='object'||typeof hostTurn.workId!=='string'
+          ||Object.keys(hostTurn).some(key=>!['workId','deadlineAt','bufferDependent'].includes(key))
+          ||hostTurn.bufferDependent!==undefined&&typeof hostTurn.bufferDependent!=='boolean')throw Error('invalid_host_turn_request');
+        turnInputHash=loopHash({sourceId,queryHash:loopHash(text),bufferDependent:hostTurn.bufferDependent??true});
+        turn=await works.read(hostTurn.workId);
+        if(turn&&(turn.mode!=='host_turn'||turn.sessionId!==sessionId||turn.inputHash!==turnInputHash))throw Error('host_turn_input_conflict');
+        if(!turn){
+          const deadlineAt=hostTurn.deadlineAt??new Date(Date.now()+effectiveHostTurnPolicy.timeoutMs).toISOString(),remaining=parseCmcpInstant(deadlineAt)-Date.now();
+          if(remaining<=0||remaining>effectiveHostTurnPolicy.maxTimeoutMs)throw Error('invalid_work_deadline');
+          initialTurnState={...await hostTurnState(),deadlineAt};
+        }
+      }
+      const finishCapture=async capture=>{
+        checkSession();
+        // 原生身分與原文保存分開；停止保存仍可綁定 Host 回合。
+        capture={...capture,nativeSourcePointer:pointer??null};
+        if(hostTurn===undefined)return capture;
+        const ticket={kind:'cmcp_host_turn',version:1,workId:hostTurn.workId};
+        if(!turn){
+          const found=capture.sourcePointer?await resolveCmcpHistorySource({provider:core.history,pointer:capture.sourcePointer}):null;
+          checkSession();
+          if(found&&found.status!=='found')throw Error('host_turn_source_unavailable');
+          turn=await works.start(hostTurn.workId,{sessionId,mode:'host_turn',inputHash:turnInputHash,deadlineAt:initialTurnState.deadlineAt,
+            hostTurnPolicy:effectiveHostTurnPolicy,
+            source:found?{pointer:found.evidence.pointer,evidenceHash:loopHash(found.evidence)}:null,nativeUserPointer:pointer,
+            bufferDependent:hostTurn.bufferDependent??true,bufferGeneration:initialTurnState.boundary.generation,
+            controlStamp:initialTurnState.controlStamp,sourceAuthorizationStamp:initialTurnState.sourceAuthorizationStamp});
+        }
+        ownedHostTurns.add(hostTurn.workId);
+        await checkHostTurn(ticket,{allowCompleted:true});
+        checkSession();
+        return {...capture,hostTurn:ticket};
+      };
       const timeStamp=timeControlStamp(),card=await result.timeCard({timeContext,excludePointers:pointer?[pointer]:[]});
+      checkSession();
       const retainedCard=()=>timeProjectionAllowed()&&timeStamp===timeControlStamp()?card:null;
-      if(!sourceAuthorization.saveUser||effective.saveUser===false)return {status:'not_saved',timeCard:retainedCard(),sourcePointer:null};
+      if(!sourceAuthorization.saveUser||effective.saveUser===false)return await finishCapture({status:'not_saved',timeCard:retainedCard(),sourcePointer:null});
       if(pointer){const prior=await resolveCmcpHistorySource({provider:core.history,pointer});if(prior.status==='found'){
         if(prior.evidence.sourceAuthorRole!=='user'||prior.evidence.content.body!==text)throw Error('host_source_identity_conflict');
-        return {status:'unchanged',timeCard:retainedCard(),sourcePointer:pointer};}}
-      const saved=await result.ingest({text,role:'user',pointer,timeContext});
-      return {status:saved.status,timeCard:retainedCard(),sourcePointer:saved.pointer};
+        return await finishCapture({status:'unchanged',timeCard:retainedCard(),sourcePointer:pointer});}}
+      // 對話撤權沿既有原文發布守護生效，不只在排入工作前檢查一次。
+      const saved=await foreground({text,role:'user',pointer,timeContext,localOperation:'ingest'},sessionGuard);
+      return await finishCapture({status:saved.status,timeCard:retainedCard(),sourcePointer:saved.pointer});
+      }finally{if(hostTurn!==undefined)hostTurnAdmissions--;}
     },
-    async afterAssistant({text,sourceId,replyTo,timeContext}){
+    async validateHostTurn(hostTurn){
+      const work=await checkHostTurn(hostTurn,{allowCompleted:true});
+      return {kind:'cmcp_host_turn_validation',status:'valid',workId:work.workId,state:work.state,modelCalls:0};
+    },
+    async afterAssistant({text,sourceId,replyTo,timeContext,hostTurn,finalizeHostTurn=true,sessionGuard=()=>true}){
       if(readOnly||closed)throw Error('runtime_not_writable');
-      if(!sourceAuthorization.saveAssistant||effective.saveAssistant===false)return {status:'not_saved',sourcePointer:null};
-      let replyBinding='none';
-      if(replyTo){if(replyTo.scopeId!==config.input.scopeId||replyTo.sessionId!==sessionId)throw Error('assistant_reply_scope_mismatch');
-        const found=await resolveCmcpHistorySource({provider:core.history,pointer:replyTo});
-        if(found.status==='found'&&found.evidence.sourceAuthorRole!=='user')throw Error('assistant_reply_role_mismatch');
-        if(found.status!=='found'&&effective.saveUser!==false)throw Error('assistant_reply_source_unavailable');
-        replyBinding=found.status==='found'?'verified_user_source':'native_identity_only_user_body_not_saved';}
-      const pointer=sourceId?{version:1,providerNamespace:core.history.descriptor.providerNamespace,scopeId:config.input.scopeId,sessionId,itemId:sourceId,revisionId:'r1'}:undefined;
-      if(pointer){const prior=await resolveCmcpHistorySource({provider:core.history,pointer});if(prior.status==='found'){
-        if(prior.evidence.sourceAuthorRole!=='assistant'||prior.evidence.content.body!==text)throw Error('host_source_identity_conflict');
-        return {status:'unchanged',sourcePointer:pointer,replyTo:replyTo??null};}}
-      const saved=await result.ingest({text,role:'assistant',pointer,timeContext});
-      if(replyTo)await createLocalLoopJournal({root:path.join(config.input.root,'input-journal'),name:'cmcp-common-input-v1'}).append('host_reply_binding',{
-        pointer:saved.pointer,replyTo,evidenceHash:loopHash(saved.evidence),messageRecordedAt:saved.evidence.messageRecordedAt,replyBinding});
-      return {status:saved.status,sourcePointer:saved.pointer,replyTo:replyTo??null,replyBinding};
+      if(typeof finalizeHostTurn!=='boolean'||!finalizeHostTurn&&!hostTurn)throw Error('invalid_host_assistant_finalization');
+      if(typeof sessionGuard!=='function')throw Error('invalid_host_session_guard');
+      const validateTurn=async()=>{
+        if(sessionGuard()!==true)throw Error('cmcp_source_authorization_changed');
+        const work=await checkHostTurn(hostTurn,{replyTo:replyTo??null,allowCompleted:finalizeHostTurn});
+        if(sessionGuard()!==true)throw Error('cmcp_source_authorization_changed');return work;
+      };
+      const publish=async()=>{
+        const turn=hostTurn?await validateTurn():null;
+        if(hostTurn&&!sourceId)throw Error('host_turn_assistant_identity_required');
+        if(!sourceAuthorization.saveAssistant||effective.saveAssistant===false){
+          if(turn&&finalizeHostTurn)await works.finish(turn.workId,{state:'completed',sourceProcessing:'not_requested',remoteOutcome:'host_observed',receiptPath:null,hostReply:{sourcePointer:null,bodyRetention:'disabled'}});
+          return {status:'not_saved',sourcePointer:null,...(hostTurn?{hostTurn}: {})};
+        }
+        let replyBinding='none';
+        if(replyTo){if(replyTo.scopeId!==config.input.scopeId||replyTo.sessionId!==sessionId)throw Error('assistant_reply_scope_mismatch');
+          const found=await resolveCmcpHistorySource({provider:core.history,pointer:replyTo});
+          if(found.status==='found'&&found.evidence.sourceAuthorRole!=='user')throw Error('assistant_reply_role_mismatch');
+          if(found.status!=='found'&&effective.saveUser!==false)throw Error('assistant_reply_source_unavailable');
+          replyBinding=found.status==='found'?'verified_user_source':'native_identity_only_user_body_not_saved';
+          if(found.status==='found')replyTo=found.evidence.pointer;}
+        const pointer=sourceId?{version:1,providerNamespace:core.history.descriptor.providerNamespace,scopeId:config.input.scopeId,sessionId,itemId:sourceId,revisionId:'r1'}:undefined;
+        if(turn?.state==='completed'&&(!turn.terminal.hostReply?.sourcePointer
+          ||cmcpSourcePointerKey(turn.terminal.hostReply.sourcePointer)!==cmcpSourcePointerKey(pointer)))throw Error('host_turn_answer_identity_conflict');
+        let saved;
+        if(pointer){const prior=await resolveCmcpHistorySource({provider:core.history,pointer});if(prior.status==='found'){
+          if(prior.evidence.sourceAuthorRole!=='assistant'||prior.evidence.content.body!==text)throw Error('host_source_identity_conflict');
+          saved={status:'unchanged',pointer:prior.evidence.pointer,evidence:prior.evidence};}}
+        if(hostTurn)await validateTurn();
+        // 受守護的 Host 回合已持有 Runtime 發布邊界，沿用 Core 保存，避免巢狀前景工作。
+        try{saved??=await (hostTurn?core.ingest({text,role:'assistant',pointer,timeContext,
+          operationValid:async()=>{await validateTurn();return true;},publicationGuard:sessionGuard}):result.ingest({text,role:'assistant',pointer,timeContext}));}
+        catch(error){if(hostTurn)await validateTurn();throw error;}
+        if(hostTurn)await validateTurn();
+        let formalReply=null;
+        if(replyBinding==='verified_user_source')formalReply=await core.recordHostReply({pointer:saved.pointer,replyTo});
+        if(replyTo){
+          const binding={pointer:saved.pointer,replyTo,evidenceHash:loopHash(saved.evidence),messageRecordedAt:saved.evidence.messageRecordedAt,replyBinding};
+          const prior=(await inputJournal.read()).find(row=>row.record.kind==='host_reply_binding'
+            &&cmcpSourcePointerKey(row.record.value.pointer)===cmcpSourcePointerKey(saved.pointer))?.record.value;
+          if(prior&&loopHash(prior)!==loopHash(binding))throw Error('host_reply_binding_conflict');
+          if(!prior)await inputJournal.append('host_reply_binding',binding);
+        }
+        if(hostTurn)await validateTurn();
+        if(hostTurn&&finalizeHostTurn){
+          const finished=await works.finish(turn.workId,{state:'completed',sourceProcessing:'not_requested',remoteOutcome:'host_observed',receiptPath:null,
+            hostReply:{sourcePointer:saved.pointer,evidenceHash:loopHash(saved.evidence),replyTo:replyTo??null}});
+          if(finished.state!=='completed')throw Error('host_turn_not_active');
+          await validateTurn();
+        }
+        return {status:saved.status,sourcePointer:saved.pointer,replyTo:replyTo??null,replyBinding,
+          formalReply:formalReply?{status:'verified',sourceHash:formalReply.sourceHash,replyToEvidenceHash:formalReply.replyToEvidenceHash}:null,
+          ...(hostTurn?{hostTurn}: {})};
+      };
+      if(!hostTurn)return publish();
+      await controlFlight;
+      if(busy||foregroundAdmission||hostCompletionFlight)throw Error('runtime_not_writable_or_busy');
+      busy=true;foregroundAdmission=true;
+      hostCompletionFlight=withCmcpBufferPublication({root:config.input.root,scopeId:config.input.scopeId},publish);
+      try{return await hostCompletionFlight;}finally{hostCompletionFlight=null;busy=false;foregroundAdmission=false;}
     },
     setBufferRetention(value){
       if(readOnly||closed||busy||foregroundAdmission)throw Error('buffer_retention_change_requires_idle_runtime');
@@ -823,6 +1039,8 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
     },
     progress:workId=>works.read(workId),
     cancelWork:({workId,reason})=>works.cancel(workId,reason),
+    refreshDispatch:()=>dispatcher?.refresh()??{status:'read_only',modelCalls:0},
+    dispatchStatus:()=>dispatcher?.status()??null,
     recoverWork:({workId,reason})=>recoverCmcpRuntimeWork({config,repoRoot,workId,reason}),
     async resumeSource(pointer,options={}){
       if(options.stage!==undefined&&!['event','dialogue','discussion','conversation'].includes(options.stage))throw Error('invalid_source_recovery_stage');
@@ -840,7 +1058,7 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
     resumeDialogue:(pointer,options={})=>result.resumeSource(pointer,{...options,stage:'dialogue'}),
     resumeDiscussion:(pointer,options={})=>result.resumeSource(pointer,{...options,stage:'discussion'}),
     resumeConversation:(pointer,options={})=>result.resumeSource(pointer,{...options,stage:'conversation'}),
-    async recover(options={}){if(closed||readOnly||busy)throw Error('runtime_not_writable_or_busy');busy=true;try{return await core.recover(options);}finally{busy=false;}},
+    async recover(options={}){if(closed||readOnly||busy||active||foregroundAdmission||hostCompletionFlight)throw Error('runtime_not_writable_or_busy');busy=true;try{return await core.recover(options);}finally{busy=false;}},
     setControls(next){if(closed)throw Error('runtime_closed');const updated={...effective,...Object.fromEntries(Object.entries(next).filter(([key])=>['enabled','clean','proactive'].includes(key)))};
       if(!['enabled','clean','proactive'].every(key=>typeof updated[key]==='boolean'))throw Error('invalid_runtime_controls');
       if(!readOnly&&updated.proactive&&typeof delivery?.present!=='function')throw Error('explicit_proactive_delivery_required');
@@ -858,6 +1076,9 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
       return getCmcpHostContext({runtime:{submit:input=>result.resumeSource(pointer,{...options,contextOnly:true,timeContext:input.timeContext})},
         text:found.evidence.content.body,timeContext:options.timeContext});},
     async close(){if(closed)return;await controlFlight;closed=true;core.interruptProactive('runtime_closed');dispatcher?.interrupt('runtime_closed');
+      if(hostCompletionFlight)await hostCompletionFlight.catch(()=>{});
+      for(const workId of ownedHostTurns){const work=await works.read(workId);if(work?.state==='running'||work?.state==='cancelling'){
+        await works.cancel(workId,'runtime_closed');await works.finish(workId,{state:'cancelled',sourceProcessing:'not_requested',remoteOutcome:'unknown',receiptPath:null});}}
       if(clearFlight)await clearFlight;
       if(active){const current=active,pending=current.completed;current.controller.abort();await works.cancel(current.id,'runtime_closed');await pending;}
       await core.waitForProactive();
@@ -894,23 +1115,15 @@ export async function recoverCmcpRuntimeWork({config:raw,repoRoot,workId,logical
   if(!work&&!selected.length)throw Error('provider_work_not_found');
   if(budgetOwnerRoot&&!work)throw Error('shared_budget_recovery_requires_bound_work');
   // Serialize formal recovery with normal writers using their existing lease.
-  const lockFiles=[...(budgetOwnerRoot?[path.join(budgetOwnerRoot,'.common-input-writer.lock')]:[]),path.join(config.input.root,'.common-input-writer.lock')],reclaim=[],leases=[];
-  for(const lockFile of lockFiles){let lockText;try{lockText=await fs.readFile(lockFile,'utf8');}catch(e){if(e.code!=='ENOENT')throw e;}
-   if(lockText!==undefined){const owner=Number(lockText),expected=work?.ownerPid??provider.find(r=>r.logicalId===logicalId)?.pid;
-    if(owner!==expected||isCmcpProcessAlive(owner))throw Error('writer_lock_owner_not_confirmed_exited');
-    reclaim.push({lockFile,owner});}}
-  // Both leases must be attributable to the same demonstrably exited work owner
-  // before reclaiming either one; never delete another Runtime's live lease.
-  for(const {lockFile,owner} of reclaim){
-    await createLocalLoopJournal({root:path.join(config.input.root,'runtime-recovery'),name:'cmcp-runtime-recovery-v1'}).append('ended_owner_lease_reclaimed',
-      {workId:workId??null,logicalId:logicalId??null,ownerPid:owner,leaseRoot:path.dirname(lockFile),recoveredByPid:process.pid,at:new Date().toISOString(),reason,sourceProcessing:'pending'});
-    await fs.unlink(lockFile);}
+  const lockFiles=[...(budgetOwnerRoot?[path.join(budgetOwnerRoot,'.common-input-writer.lock')]:[]),path.join(config.input.root,'.common-input-writer.lock')];
+  const leases=await acquireCmcpRecoveryLeases({lockFiles,expectedOwnerPid:work?.ownerPid??provider.find(r=>r.logicalId===logicalId)?.pid,
+    onPreserved:row=>createLocalLoopJournal({root:path.join(config.input.root,'runtime-recovery'),name:'cmcp-runtime-recovery-v1'}).append('ended_owner_lease_preserved',
+      {...row,workId:workId??null,logicalId:logicalId??null,recoveredByPid:process.pid,reason,sourceProcessing:'pending'})});
   try{
-    for(const lockFile of lockFiles){const lease=await fs.open(lockFile,'wx');leases.push({lease,lockFile});await lease.writeFile(String(process.pid));await lease.sync();}
     for(const row of selected)recovered.push(await finalizeCmcpInterruptedProviderWork({ledgerRoot,runtimeAuthorization:authorization,logicalId:row.logicalId,reason}));
     const terminal=work?await works.recover(workId,reason):null;
-    return {status:'recovered',work:terminal,provider:recovered,modelCalls:0,sourceProcessing:'pending',remoteOutcome:'unknown',budgetRefunded:false};
-  }finally{for(const {lease,lockFile} of leases.reverse()){await lease.close();await fs.unlink(lockFile);}}
+    return {status:'recovered',work:terminal,provider:recovered,preservedLeases:leases.preserved,modelCalls:0,sourceProcessing:'pending',remoteOutcome:'unknown',budgetRefunded:false};
+  }finally{await leases.release();}
 }
 
 /** Explicit caller action only. Never called by open, resume, status, helpers or model requests. */

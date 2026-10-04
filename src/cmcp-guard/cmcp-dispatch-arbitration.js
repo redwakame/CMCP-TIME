@@ -47,6 +47,15 @@ export function cmcpDispatchReservedKeys(records,scopeId){
   }return keys;
 }
 
+/** 只投影既有派送紀錄；不建立仲裁器、計時器或新授權。 */
+export async function readCmcpDispatchObservation({root,scopeId}){
+  if(!path.isAbsolute(root)||typeof scopeId!=='string'||!scopeId)throw Error('explicit_dispatch_observation_scope_required');
+  const journal=createLocalLoopJournal({root:path.join(root,'input-journal'),name:'cmcp-common-input-v1'});
+  const records=(await journal.read()).map(row=>row.record).filter(row=>row.kind.startsWith('dispatch_')&&row.value.scopeId===scopeId);
+  return {kind:'cmcp_dispatch_observation',records:clone(records),latest:clone(records.at(-1)??null),modelCalls:0,
+    execution:'not_started_by_observation',coverage:'recorded_dispatch_events_only'};
+}
+
 /** One in-process due evaluation, common durable reservations, caller-owned budget/work/delivery. */
 export function createCmcpDispatchArbiter({root,scopeId,getControls,validate,generate,deliver,clock,timeoutMs=90000}){
   if(!path.isAbsolute(root)||typeof scopeId!=='string'||!scopeId
@@ -57,7 +66,7 @@ export function createCmcpDispatchArbiter({root,scopeId,getControls,validate,gen
   const now=()=>{const context=resolveCmcpTimeContext(clock());if(context.source!=='explicit_injected')throw Error('explicit_dispatch_time_required');return context;};
   const append=(kind,value)=>withCmcpBufferPublication({root,scopeId},()=>journal.append(kind,{version:1,scopeId,...value}));
   async function status(){
-    const records=(await journal.read()).map(row=>row.record).filter(row=>row.kind.startsWith('dispatch_')&&row.value.scopeId===scopeId);
+    const {records}=await readCmcpDispatchObservation({root,scopeId});
     return {kind:'cmcp_dispatch_status',generating:flight!==null,closed,armedCount:armed.size,
       records:clone(records),latest:clone(records.at(-1)??null),modelCalls:0};
   }
@@ -154,11 +163,14 @@ export function createCmcpDispatchArbiter({root,scopeId,getControls,validate,gen
       await append('dispatch_presentation_started',{id:reservation.id,key:reservation.key,at:now().now});presentationStarted=true;
       // Delivery must check canPresent immediately before its local side effect, not just when generation returns.
       const receipt=await deliver(result,clone(candidate),{signal:controller.signal,reservation:clone(reservation),canPresent:async()=>{await ensure('delivery');return true;}});
-      if(receipt?.status!=='presented')throw Error('dispatch_presentation_unconfirmed');
-      await append('dispatch_result',{id:reservation.id,key:reservation.key,status:'presented',at:now().now,receipt:clone(receipt)});
-      return {status:'presented',candidateId:candidate.id,route:candidate.route,reservationId:reservation.id,receipt,modelCalls:1,observed};
+      // 宿主正式提交與使用者畫面呈現分開；兩者都消耗本次唯一派送資格。
+      if(receipt?.status!=='presented'&&!(receipt?.status==='handed_to_host'&&receipt?.hostReceipt?.stage==='host_committed'))throw Error('dispatch_presentation_unconfirmed');
+      await append('dispatch_result',{id:reservation.id,key:reservation.key,status:receipt.status,at:now().now,receipt:clone(receipt)});
+      return {status:receipt.status,candidateId:candidate.id,route:candidate.route,reservationId:reservation.id,receipt,modelCalls:1,observed};
     }catch(error){
       const outcome=presentationStarted?'presentation_unknown':controller.signal.aborted||capturedEpoch!==epoch?'cancelled':'not_presented';
+      // 生成後的來源／交付核對失敗也立即釋放宿主暫存，不等到期限。
+      controller.abort(error.message);
       await append('dispatch_result',{id:reservation.id,key:reservation.key,status:outcome,code:error.message,at:now().now,
         remoteOutcome:modelStarted?'unknown':'not_started'});
       return {status:outcome,code:error.message,reservationId:reservation.id,modelCalls:modelStarted?1:0,observed};

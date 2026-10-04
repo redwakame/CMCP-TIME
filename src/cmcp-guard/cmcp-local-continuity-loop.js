@@ -415,6 +415,35 @@ export async function createCmcpLocalContinuityLoop({ root, event: inputEvent, o
           await emit('dialogue_closed',{pointer:source.pointer,eventProcessing:'pending',focus:clone(state)});
         }
       };
+      // A complete Event proposal is still unusable when its review omitted
+      // meaningful source text. That omission cannot veto a separately bound
+      // original-reading answer, but it must remain pending for Event recovery.
+      if(!independentAnswerHistory&&answer&&requireEventReview&&preview.status==='ready'
+        &&before===afterPreview&&answerHistoryPrepared&&readAnswerHistory&&answerHistoryPlan&&rawProposal
+        &&transport?.status==='completed'&&transport.http===200&&transport.responseComplete===true){
+        try{validateEventContentReview(eventReview,rawProposal,source,dialogue);}
+        catch(error){
+          if(error.message!=='event_review_source_gap')throw error;
+          await journal.append('event_review_rejected',{pointer:source.pointer,sourceHash:loopHash(source),
+            eventVersion:before,reviewCode:error.message,eventMutation:'none',at:now().now});
+          const plan=validateCmcpAnswerHistoryPlan(answerHistoryPlan,answerHistoryPrepared);
+          if(plan.status!=='selected')throw error;
+          answerHistoryPlan=plan;
+          independentAnswerHistory={kind:'independent_answer_history_after_review_gap',version:1,plan,
+            semanticSchema:'passed',reviewCode:error.message,invalidComponents:['eventReview'],
+            eventProcessing:'pending',dialogueProcessing:'pending',discussionProcessing:'pending'};
+          await journal.append('event_review_rejected_for_independent_answer',{pointer:source.pointer,
+            sourceHash:loopHash(source),eventVersion:before,reviewCode:error.message,
+            eventProcessing:'pending',dialogueProcessing:'pending',discussionProcessing:'pending',
+            eventMutation:'none',review:eventReview,at:now().now});
+          // A supported explicit stop has its own source/control validation;
+          // rejecting Event coverage must not silently leave that focus open.
+          if(dialogue?.status==='closed'&&!closureSaved){
+            try{await acceptExplicitClosure();}catch(closureError){await journal.append('independent_dialogue_control_rejected',{
+              pointer:source.pointer,status:'pending',code:closureError.message,reviewCode:error.message});}
+          }
+        }
+      }
       if(!independentAnswerHistory&&preview.status!=='ready'&&!preview.sourceValidation
         &&answerHistoryPrepared&&readAnswerHistory&&answerHistoryPlan&&rawProposal
         &&transport?.status==='completed'&&transport.http===200&&transport.responseComplete===true){
@@ -443,11 +472,13 @@ export async function createCmcpLocalContinuityLoop({ root, event: inputEvent, o
         const sourceValidation={status:'verified',sourceAuthorRole:'user',pointer:source.pointer,evidenceHash:loopHash(source),eventVersion:before,
           validationScope:'original_user_for_independent_answer'};
         const canAnswer=async()=>await canCommit()&&versionOf(await readEvent())===before;
-        const code=independentAnswerHistory.semanticSchema==='passed'?'semantic_preview_rejected_independent_answer':'semantic_schema_invalid_independent_answer';
+        const code=independentAnswerHistory.reviewCode?'event_review_rejected_independent_answer':
+          independentAnswerHistory.semanticSchema==='passed'?'semantic_preview_rejected_independent_answer':'semantic_schema_invalid_independent_answer';
         const dialogueProcessing=closureSaved?'handled':'pending';
         await mutate(draft=>{
           draft.processing??=[];draft.processing.push({pointer:source.pointer,eventProcessing:'pending',dialogueProcessing,discussionProcessing:'pending',
             code,sourceValidation,semanticVerification:'not_performed',invalidComponents:independentAnswerHistory.invalidComponents,
+            ...(independentAnswerHistory.reviewCode?{reviewCode:independentAnswerHistory.reviewCode}:{}),
             ...(independentAnswerHistory.previewCode?{previewCode:independentAnswerHistory.previewCode}:{})});
         },canAnswer);
         const receipt={status:'pending',code,pointer:source.pointer,eventProcessing:'pending',dialogueProcessing,discussionProcessing:'pending',

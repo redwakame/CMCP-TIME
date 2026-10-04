@@ -21,15 +21,34 @@ import {normalizeCmcpReadingLimits,openCmcpReadingCollection,readCmcpReadingPage
 import {addCmcpReadingProgressLocators,buildCmcpReadingSelectionCatalog,collectCmcpHistoryLookupPointers} from './cmcp-reading-progress-locators.js';
 import {createCmcpDiscussionSegments} from './cmcp-discussion-segments.js';
 import {createCmcpAutoDiscussion} from './cmcp-auto-discussion.js';
-import {createCmcpAnswerHistory,normalizeCmcpAnswerHistoryConfig} from './cmcp-answer-history.js';
+import {createCmcpAnswerHistory,normalizeCmcpAnswerHistoryConfig,projectCmcpAnswerHistoryLookup} from './cmcp-answer-history.js';
 import {buildCmcpNaturalTemporalCatalog,refineCmcpNaturalTemporalCatalog,normalizeCmcpNaturalTemporalSelection} from './cmcp-natural-temporal-reading.js';
 import {createCmcpInteractionTime} from './cmcp-interaction-time.js';
 import {selectCmcpReadingCalendarCollection,selectCmcpReadingAuthorizedCollection} from './cmcp-history-query.js';
 import {createCmcpHistoryQueryRuntime} from './cmcp-history-query-runtime.js';
-import {createCmcpEphemeralReadingQuery,assertCmcpEphemeralQueryText,resolveCmcpReadingQuery,cmcpReadingQueryKey} from './cmcp-reading-query-authorization.js';
+import {prepareCmcpAnswerMaterialSelection,selectCmcpAnswerMaterial} from './cmcp-answer-material-selection.js';
+import {createCmcpEphemeralReadingQuery,validateCmcpEphemeralReadingQuery,assertCmcpEphemeralQueryText,resolveCmcpReadingQuery,cmcpReadingQueryKey} from './cmcp-reading-query-authorization.js';
 
 const copy=value=>structuredClone(value);
 const jsonBytes=value=>Buffer.byteLength(JSON.stringify(value));
+function selectOrdinaryReadingCollection({entries,scopeId,excludePointers=[],prepared,chosen}){
+ const selected=selectCmcpReadingAuthorizedCollection({entries:entries.filter(entry=>!entry.eventScope&&!entry.eventLink?.event),scopeId,excludePointers});
+ selected.descriptor={...selected.descriptor,membership:'unassociated_conversation_only',excludedEventSources:'not_checked',navigationDisposition:'model_selected_ordinary_history'};
+ if(chosen.sourceRefs===undefined)return selected;
+ const offered=new Set(prepared.input.ordinaryHistory?.sourceHints?.map(row=>row.ref)),mapping=prepared.ordinarySourceMap??[],keys=new Set();
+ for(const ref of chosen.sourceRefs){const mapped=mapping.find(row=>row.ref===ref);
+  const entry=mapped?.pointer&&selected.entries.find(row=>cmcpSourcePointerKey(row.pointer)===cmcpSourcePointerKey(mapped.pointer));
+  if(!offered.has(ref)||!entry||entry.id!==mapped.id||entry.evidenceHash!==mapped.evidenceHash)throw Error('ordinary_source_ref_binding_mismatch');
+  keys.add(cmcpSourcePointerKey(entry.pointer));
+ }
+ if(keys.size!==chosen.sourceRefs.length||!keys.size)throw Error('invalid_ordinary_source_refs');
+ const inventoryCount=selected.entries.length;selected.entries=selected.entries.filter(entry=>keys.has(cmcpSourcePointerKey(entry.pointer)));
+ selected.descriptor={...selected.descriptor,scopeCoverage:'frozen_authorized_selected_source_subset',navigationDisposition:'model_selected_ordinary_source_refs',
+  inventory:{...selected.descriptor.inventory,matchedSources:selected.entries.length,completeWithinRegisteredInventory:selected.entries.length===inventoryCount},
+  sourceSelection:{refs:copy(chosen.sourceRefs),selectedSources:selected.entries.length,unselectedRegisteredSources:inventoryCount-selected.entries.length,
+   coverage:'selected_projected_locators_only',historyCompleteness:'not_established'}};
+ return selected;
+}
 const validReadRange=(range,length)=>range&&typeof range==='object'&&!Array.isArray(range)
   &&Object.keys(range).length===3&&Object.keys(range).every(key=>['unit','start','end'].includes(key))
   &&range.unit==='unicode_code_points'&&Number.isSafeInteger(range.start)&&Number.isSafeInteger(range.end)
@@ -80,9 +99,10 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
     evidenceHash:entry.evidenceHash,basis:'existing_verified_source_catalog'}))});
   const discussions=createCmcpDiscussionSegments({stores,catalog,journal,events,maxSources:capacity.maxSources,maxSourceBytes:capacity.maxSourceBytes,
     now:()=>temporalFor().now,valid:async()=>enabled&&!clean&&await canContinue()});
-  const replyAssociations=(discussionAssociation?.enabled||answerHistory?.enabled)?createCmcpAutoDiscussion({discussions,stores,journal,timezone,
+  const replyRecords=createCmcpAutoDiscussion({discussions,stores,journal,timezone,
     limits:{maxSources:Math.min(64,capacity.maxSources),maxSourceBytes:capacity.maxSourceBytes,maxRecordBytes:65536},
-    now:()=>temporalFor().now,valid:async()=>enabled&&!clean&&await canContinue()}):null;
+    now:()=>temporalFor().now,valid:async()=>enabled&&!clean&&await canContinue()});
+  const replyAssociations=(discussionAssociation?.enabled||answerHistory?.enabled)?replyRecords:null;
   const automaticDiscussions=discussionAssociation?.enabled?replyAssociations:null;
   const binding={version:1,scopeId,events,limits,timezone:bindingTimezone,loopTiming,...(storageCapacity?{storageCapacity}:{}),...(localRetrieval?{localRetrieval}:{})};
   const rows=await journal.read();
@@ -109,15 +129,27 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
   const localIndex=localRetrieval?createCmcpLocalCandidates({root:path.join(root,'local-lexical-index'),scopeId,history:original,catalog,limits:localRetrieval,maxSegments:catalogResources.maxSegments}):null;
   const answerHistoryAccess=answerHistory?.enabled?createCmcpAnswerHistory({stores,catalog,journal,localIndex,timezone,
     limits:{maxSelectedSources:answerHistory.maxSelectedSources},now:()=>temporalFor().now,valid:async()=>enabled&&!clean&&features.historyRecall&&features.answerHistory&&await canContinue(),
-    lookupMissingHistory:async({query,eventKey})=>{
+    lookupMissingHistory:async({query,eventKey,valid,needBasis})=>{
       const requestId='answer-lookup-'+loopHash([query.pointer,loopHash(query)]);
       const result=await historyQueries.run({requestId,text:query.content.body,purpose:'evidence_lookup',
+        ...(needBasis==='prior_content_reference'?{originalMaterialNavigation:true}:{}),
         readingLimits:{maxSources:capacity.maxSources,maxTotalBytes:131072,maxPageBytes:4096,maxPages:256,maxProjectionBytes:8192},
         batchLimits:{maxBatchSources:8,maxInputBytes:8000,maxBatches:16},
         executionBudget:{maxBatchesPerExecution:2,reserveMs:100000,requestTimeoutMs:90000},
-        navigation:{inventory:{eventKey},savedQueryPointer:query.pointer,naturalTime:false}});
-      return {result,verify:()=>historyQueries.verify(requestId)};
+        navigation:{inventory:{eventKey},savedQueryPointer:query.pointer,naturalTime:false},operationValid:valid});
+      return {result,verify:()=>historyQueries.verify(requestId),selectMaterial:selectAnswerMaterial,
+        verifiedReadSources:()=>historyQueries.verifiedReadSources(requestId)};
     }}):null;
+  async function selectAnswerMaterial({result,verifiedReadSources,needBasis,maxProjectionBytes,valid}){
+    const projection=projectCmcpAnswerHistoryLookup({result,timezone,maxProjectionBytes,needBasis,verifiedReadSources});
+    const prepared=prepareCmcpAnswerMaterialSelection({result,verifiedReadSources,needBasis,
+      projection:projection.model,maxProjectionBytes});
+    const selected=await selectCmcpAnswerMaterial({prepared,adapter,journal,retainReason:features.saveUser,
+      valid:async()=>await valid()&&enabled&&!clean&&features.historyRecall&&features.answerHistory&&await historyQueries.verify(result.requestId)});
+    if(result.aggregate?.navigationOnly&&selected.plan?.status==='selected')selected.activation=
+      await historyQueries.activateSelectedMaterials(result.requestId,selected.plan.refs,valid);
+    return selected;
+  }
   async function note(kind,value){try{await journal.append(kind,value);return true;}catch{return false;}}
   async function register(pointer,{sourceCatalog=catalog,sourceIndex=localIndex}={}){
     try{const result=await sourceCatalog.registerSource({pointer});let index=null;
@@ -127,10 +159,10 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
     catch(error){if(['catalog_batch_cancelled','local_index_batch_cancelled'].includes(error.message))throw error;
       await note('registration_pending',{pointer,code:error.message});return {status:'pending',code:error.message};}
   }
-  function scopedHistory(associatedEvent=null){return Object.freeze({...original,async writeEvidence(input){
+  function scopedHistory(associatedEvent=null){return Object.freeze({...original,async writeEvidence(input,publicationOptions){
     if(input?.pointer?.scopeId!==scopeId)throw Error('source_outside_authorized_collection');
     if(input.sourceAuthorRole==='user'&&!features.saveUser||input.sourceAuthorRole==='assistant'&&!features.saveAssistant)throw Error('new_source_save_disabled');
-    const result=await original.writeEvidence(input);
+    const result=await original.writeEvidence(input,publicationOptions);
     if(!['stored','unchanged'].includes(result.status))return result;
     await onSourceSaved(input);
     if(enabled&&!clean&&features.timeIndex)await interactionTime.record(input);
@@ -367,11 +399,14 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
   }
   async function recover(options={}){
     if(readOnly)throw Error('read_only_common_input');
+    const operationValid=options.operationValid??(()=>true);
+    if(typeof operationValid!=='function')throw Error('invalid_registration_recovery_guard');
+    if(!await operationValid())throw Error('catalog_batch_cancelled');
     if(!enabled||clean)return {status:'not_run_disabled',modelCalls:0};
     recovered=true; // One automatic recovery attempt per session; explicit recover remains available.
     const inventory=await inventoryPages(options);
     if(!['complete','partial'].includes(inventory.status))return {status:'pending',inventory,modelCalls:0};
-    const pending=[],captured=bufferGeneration,valid=async()=>enabled&&!clean&&captured===bufferGeneration&&await canContinue();
+    const pending=[],captured=bufferGeneration,valid=async()=>enabled&&!clean&&captured===bufferGeneration&&await canContinue()&&await operationValid();
     const reconcile=async sourceCatalog=>{
       const registerAll=async sourceIndex=>{for(const pointer of inventory.pointers){
         if(!await valid())throw Error('catalog_batch_cancelled');
@@ -381,6 +416,7 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
       pending.push(...await refreshEvents({sourceCatalog,valid}));
     };
     if(catalog.withBatch)await catalog.withBatch(reconcile,{valid});else await reconcile(catalog);
+    if(!await valid())throw Error('catalog_batch_cancelled');
     recovered=true;
     return {status:pending.length?'pending':inventory.status==='complete'?'complete':'partial',sources:inventory.pointers.length,pending,
       inventory:{status:inventory.status,recordCount:inventory.recordCount,pages:inventory.pages,nextCursor:inventory.nextCursor},modelCalls:0};
@@ -498,7 +534,7 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
       evaluatedAt:temporal.now,timezone,modelCalls:0,originalTimesNotRefreshed:true};
   }
   async function ingest({text,role='user',contentKind='source_excerpt',pointer,eventKey=null,timeContext,
-    messageRecordedAt,eventOccurredAt=null,availability='partial'}){
+    messageRecordedAt,eventOccurredAt=null,availability='partial',operationValid=async()=>true,publicationGuard=()=>true}){
     if(readOnly||!await canContinue())throw Error('read_only_or_cancelled_input');
     if(typeof text!=='string'||!text.trim()||Buffer.byteLength(text)>capacity.maxSourceBytes)throw Error('invalid_source_input_or_storage_byte_limit');
     const selected=eventKey===null?null:events.find(item=>item.key===eventKey);
@@ -508,7 +544,7 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
       sourceKind:role==='tool'?'tool_result':'message',sourceAuthorRole:role,messageRecordedAt:messageRecordedAt===undefined?temporal.now:messageRecordedAt,
       eventOccurredAt,content:{kind:contentKind,body:text},metadata:{availability}});
     if(evidence.pointer.scopeId!==scopeId)throw Error('source_outside_authorized_collection');
-    const result=await history.writeEvidence(evidence);
+    const result=await history.writeEvidence(evidence,{canContinue:async()=>await canContinue()&&await operationValid(),publicationGuard});
     if(!['stored','unchanged'].includes(result.status))throw Error('source_history_write_failed');
     if(selected){await note('source_association',{pointer:evidence.pointer,event:selected.event});
       try{await catalog.annotate({pointer:evidence.pointer,event:selected.event,eventProcessing:'pending',dialogueProcessing:'not_requested'});}
@@ -702,8 +738,18 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
     return async()=>generation===bufferGeneration&&enabled&&!clean&&features.historyRecall&&!await readingRevoked(ticket)&&(!expiry||
       (timeContext!==undefined&&!persistentFocus?temporal:temporalFor()).nowEpochMs<resolveCmcpTimeContext({now:expiry,timezone}).nowEpochMs)&&await canContinue();
   }
-  async function prepareReadingQuery({text,ticket,temporal,savedQueryPointer}){
+  let activeEphemeralAnswerQuery=null;
+  async function prepareReadingQuery({text,ticket,temporal,savedQueryPointer,queryAuthorization}){
     if(typeof text!=='string'||!text.trim()||Buffer.byteLength(text)>(localRetrieval?.maxQueryBytes??4096))throw Error('invalid_temporal_reading_question');
+    if(queryAuthorization){
+      const auth=validateCmcpEphemeralReadingQuery(queryAuthorization,scopeId);
+      if(savedQueryPointer||auth.sessionId!==sessionId||!activeEphemeralAnswerQuery
+        ||cmcpReadingQueryKey({queryAuthorization:auth,queryPointer:null})!==cmcpReadingQueryKey(activeEphemeralAnswerQuery))throw Error('ephemeral_reading_query_not_active');
+      assertCmcpEphemeralQueryText(auth,text);
+      const queryBinding={queryPointer:null,queryAuthorization:copy(auth),queryHash:loopHash(auth),queryTime:auth.issuedAt};
+      await resolveCmcpReadingQuery({history,scopeId,binding:queryBinding});
+      return {pointer:null,queryBinding};
+    }
     if(!savedQueryPointer&&!features.saveUser){
       const queryAuthorization=createCmcpEphemeralReadingQuery({scopeId,sessionId,operationId:ticket,text,issuedAt:temporal.now});
       const queryBinding={queryPointer:null,queryAuthorization,queryHash:loopHash(queryAuthorization),queryTime:queryAuthorization.issuedAt};
@@ -758,8 +804,9 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
       selection:{input:request.input,instructions:request.instructions,schema:request.schema},modelCalls:0,
       coverage:'frozen_authorized_registered_navigation_not_read_evidence',modelContext:null},internal};
   }
-  async function readingOpen({text,mode='read',ticket,limits:readingLimits,timeContext,discussion,calendarRange,naturalTime,inventory,savedQueryPointer,navigationResult,selection:hostSelection,queryText}){
+  async function readingOpen({text,mode='read',ticket,limits:readingLimits,timeContext,discussion,calendarRange,naturalTime,inventory,savedQueryPointer,queryAuthorization,navigationResult,selection:hostSelection,queryText,operationValid=async()=>true}){
     const generation=bufferGeneration,readingBufferTtlMs=activationTtlMs;
+    if(typeof operationValid!=='function')throw Error('invalid_reading_operation_valid');
     if(!enabled||clean||!features.historyRecall)return {reader:{kind:'cmcp_reading_collection',ticket:null,mode,status:'disabled',collection:null},modelContext:null,internal:{modelCalls:0}};
     if(readOnly||!['read','all'].includes(mode))throw Error('invalid_or_read_only_reading');
     readingLimits=normalizeCmcpReadingLimits(readingLimits);
@@ -767,7 +814,7 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
     if(generation!==bufferGeneration||!await canContinue()||await readingRevoked(ticket))throw Error('reading_cancelled');
     const temporal=temporalFor(timeContext);
     if(navigationResult){
-      if([discussion,calendarRange,inventory,savedQueryPointer,naturalTime,text].some(value=>value!==undefined))throw Error('host_reading_uses_frozen_question');
+      if([discussion,calendarRange,inventory,savedQueryPointer,queryAuthorization,naturalTime,text].some(value=>value!==undefined))throw Error('host_reading_uses_frozen_question');
       const internal=copy(navigationResult.internal),prepared=internal.prepared;
       if(internal.queryAuthorization){assertCmcpEphemeralQueryText(internal.queryAuthorization,queryText??internal.question);
         internal.question=queryText??internal.question;prepared.input.question=internal.question;}
@@ -785,6 +832,9 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
       if(chosen.kind==='segments')selected=await discussions.selectMany({eventKey:chosen.eventKey,segmentIds:chosen.segmentIds,segmentHashes:chosen.segmentHashes,timezone:chosen.timezone??timezone});
       else if(chosen.kind==='calendar')selected=selectCmcpReadingCalendarCollection({entries:internal.registered,scopeId,ranges:chosen.ranges,
         event:chosen.eventKey===null?null:events.find(event=>event.key===chosen.eventKey)?.event});
+      else if(chosen.kind==='ordinary'){
+        selected=selectOrdinaryReadingCollection({entries:internal.registered,scopeId,excludePointers:internal.queryPointer?[internal.queryPointer]:[],prepared,chosen});
+      }
       else selected=selectCmcpReadingAuthorizedCollection({entries:internal.registered,scopeId,event:events.find(event=>event.key===chosen.eventKey)?.event});
       if(!await valid())throw Error('reading_cancelled');
       if(selected.status!=='selected')return {reader:{kind:'cmcp_reading_collection',ticket,mode,status:selected.status,reason:selected.reason??'no_source_in_selected_scope',collection:null,historyAbsence:'not_established'},modelContext:null,internal:outputInternal};
@@ -811,16 +861,23 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
         bufferGeneration:generation,ttlMs:loopTiming.ttlMs,bufferTtlMs:readingBufferTtlMs,valid,scopeDescriptor:selected.descriptor});
       if(!await valid())throw Error('reading_cancelled');return result;
     }
-    if(savedQueryPointer!==undefined)throw Error('saved_reading_query_requires_inventory_navigation');
+    // A normal answer may need a natural source selection after its User text
+    // was already saved. Bind that selection to the same exact query source;
+    // only an explicit new reading operation may create a new User source.
+    if((savedQueryPointer!==undefined||queryAuthorization!==undefined)&&naturalTime!==true)throw Error('saved_reading_query_requires_inventory_or_natural_navigation');
+    if(savedQueryPointer!==undefined&&queryAuthorization!==undefined)throw Error('conflicting_reading_query_bindings');
     if(naturalTime!==undefined&&typeof naturalTime!=='boolean')throw Error('invalid_natural_temporal_option');
     const declared=discussion===undefined&&calendarRange===undefined&&naturalTime!==false?await discussions.list({timezone}):null;
     if(discussion===undefined&&calendarRange===undefined&&(naturalTime===true||declared?.segments.length)){
       if(typeof text!=='string'||!text.trim()||Buffer.byteLength(text)>(localRetrieval?.maxQueryBytes??4096))throw Error('invalid_temporal_reading_question');
-      const saved=await prepareReadingQuery({text,ticket,temporal});await note('history_lookup_request',{...saved.queryBinding,ticket});
+      const saved=await prepareReadingQuery({text,ticket,temporal,savedQueryPointer,queryAuthorization});await note('history_lookup_request',{...saved.queryBinding,ticket});
       const internal={...saved.queryBinding,bufferGeneration:generation,modelCalls:0};
-      const valid=readingValidity({generation,queryTime:temporal.now,timeContext,temporal,ticket});
-      const registered=await catalog.list(),prepared=buildCmcpNaturalTemporalCatalog({question:text,events,segments:declared?.segments??[],entries:registered,
-        timeContext:temporal,maxBytes:naturalReading?.maxCatalogBytes??localRetrieval?.maxCandidateBytes??6000});
+      const readingValid=readingValidity({generation,queryTime:internal.queryTime,timeContext,temporal,ticket});
+      const valid=async()=>await readingValid()&&await operationValid();
+      const registered=(await catalog.list()).filter(entry=>!saved.pointer||cmcpSourcePointerKey(entry.pointer)!==cmcpSourcePointerKey(saved.pointer));
+      const queryTemporal=resolveCmcpTimeContext({now:internal.queryTime,timezone});
+      let prepared=buildCmcpNaturalTemporalCatalog({question:text,events,segments:declared?.segments??[],entries:registered,
+        timeContext:queryTemporal,maxBytes:naturalReading?.maxCatalogBytes??localRetrieval?.maxCandidateBytes??6000});
       if(!await valid())throw Error('reading_cancelled');
       const reply=await adapter.request('temporal_read_select',prepared.input,{canAttempt:valid});
       if(!await valid())throw Error('reading_cancelled');
@@ -835,7 +892,7 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
       }
       if(chosen.status==='needs_navigation'&&(chosen.eventKey||chosen.eventCandidates?.length===1)){
         const refined=refineCmcpNaturalTemporalCatalog({prepared,eventKey:chosen.eventKey??chosen.eventCandidates[0],
-          question:text,events,segments:declared?.segments??[],entries:registered,timeContext:temporal,
+          question:text,events,segments:declared?.segments??[],entries:registered,timeContext:queryTemporal,
           maxBytes:naturalReading?.maxCatalogBytes??localRetrieval?.maxCandidateBytes??6000});
         if(refined.refinement.status==='locators_ready'){
           if(!await valid())throw Error('reading_cancelled');
@@ -849,12 +906,23 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
             if(!['ambiguous_local_calendar_boundary','nonexistent_local_calendar_boundary'].includes(error.message))throw error;
             chosen={status:'needs_clarification',reason:error.message};
           }
+          prepared=refined;
         }else chosen={...chosen,reason:refined.refinement.status};
       }
+      // An ordinary collection is only executable when the semantic selector
+      // explicitly requests it. Runtime never converts an unresolved calendar
+      // or event decision into a broader History scope.
       if(chosen.status!=='selected')return {reader:{kind:'cmcp_reading_collection',ticket,mode,status:chosen.status,reason:chosen.reason,
         collection:null,historyAbsence:'not_established_by_bounded_temporal_lookup'},modelContext:null,internal};
       let selected;
-      if(chosen.kind==='segments')selected=await discussions.selectMany({eventKey:chosen.eventKey,segmentIds:chosen.segmentIds,segmentHashes:chosen.segmentHashes,timezone:chosen.timezone??timezone});
+      if(chosen.kind==='ordinary'){
+        const ordinary=registered.filter(entry=>!entry.eventScope&&!entry.eventLink?.event);
+        selected=selectOrdinaryReadingCollection({entries:ordinary,scopeId,excludePointers:saved.pointer?[saved.pointer]:[],prepared,chosen});
+        await note('ordinary_history_formal_scope',{ticket,queryPointer:saved.pointer,queryTime:internal.queryTime,
+          temporalSelection:features.saveUser?copy(internal.refinedSelection??reply.value):null,ordinaryRegisteredSources:ordinary.length,
+          selectedSources:selected.entries.length,scope:chosen.sourceRefs?'frozen_selected_ordinary_sources':'frozen_unassociated_authorized_sources',
+          evidenceStatus:'not_yet_read',bufferGeneration:generation});
+      }else if(chosen.kind==='segments')selected=await discussions.selectMany({eventKey:chosen.eventKey,segmentIds:chosen.segmentIds,segmentHashes:chosen.segmentHashes,timezone:chosen.timezone??timezone});
       else if(chosen.kind==='calendar'){
         selected=selectCmcpReadingCalendarCollection({entries:registered,scopeId,ranges:chosen.ranges,
           event:chosen.eventKey===null?null:events.find(event=>event.key===chosen.eventKey)?.event,excludePointers:saved.pointer?[saved.pointer]:[]});
@@ -982,11 +1050,14 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
     result.internal.queryPointer=manifest.queryPointer;if(manifest.queryAuthorization)result.internal.queryAuthorization=copy(manifest.queryAuthorization);return result;
   }
   const historyQueries=createCmcpHistoryQueryRuntime({scopeId,journal,historyProvider:history,readingOpen,readingPage,adapter,remainingWorkMs,
+    getReplyBindings:async()=>(await (journal.readIncremental?.()??journal.read())).map(row=>row.record)
+      .filter(row=>row.kind==='assistant_reply_binding').map(row=>row.value),
     now:()=>temporalFor().now,valid:async()=>enabled&&!clean&&features.historyRecall&&await canContinue(),
-    activateMatches:async({reading,pages,refs})=>{
+    activateMatches:async({reading,pages,refs,operationValid=async()=>true})=>{
       if(!features.buffer||!refs.length)return {status:'not_activated',reason:features.buffer?'no_supported_match':'buffer_disabled'};
       const manifest=reading.internal.manifest,generation=manifest.bufferGeneration,temporal=temporalFor();
-      const valid=readingValidity({generation,queryTime:manifest.queryTime,temporal,ticket:manifest.ticket});
+      const readingValid=readingValidity({generation,queryTime:manifest.queryTime,temporal,ticket:manifest.ticket});
+      const valid=async()=>await operationValid()&&await readingValid();
       const query=await resolveCmcpReadingQuery({history,scopeId,binding:manifest});
       const selected=refs.map(ref=>manifest.sources.find(source=>source.ref===ref));
       if(selected.some(source=>!source))throw Error('aggregate_activation_reference_scope');
@@ -999,6 +1070,16 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
     validatePublication:({reading,sourceRefs})=>validateCmcpReadingPublication({stores,catalog,reading,sourceRefs,timeContext:temporalFor(),bufferGeneration,
       valid:readingValidity({generation:bufferGeneration,queryTime:reading.internal.manifest.queryTime,temporal:temporalFor(),ticket:reading.reader.ticket})})});
   const api=Object.freeze({history,stores,catalog,sessionId,recover,status,ingest,localCandidates,localRead,localRecall,bufferList,clearBuffer,resumeDiscussion,resumeConversation,
+    async recordHostReply({pointer,replyTo}){
+      if(readOnly||!features.saveAssistant||!await canContinue())throw Error('host_reply_not_writable');
+      const [assistant,user]=await Promise.all([resolveCmcpHistorySource({provider:history,pointer}),resolveCmcpHistorySource({provider:history,pointer:replyTo})]);
+      if(assistant.status!=='found'||user.status!=='found')throw Error('assistant_reply_source_unavailable');
+      // Host 身分只建立回覆關聯，不推導 Event、討論區段、User 採納或新 Buffer 活動。
+      const prior=(await journal.read()).find(row=>row.record.kind==='assistant_reply_binding'
+        &&cmcpSourcePointerKey(row.record.value.pointer)===cmcpSourcePointerKey(pointer))?.record.value;
+      return replyRecords.recordReply({source:assistant.evidence,replyTo:user.evidence.pointer,replyToEvidenceHash:loopHash(user.evidence),
+        eventKey:prior?.eventKey??null,eventVersion:prior?.eventVersion??null,bufferGeneration:prior?.bufferGeneration??bufferGeneration});
+    },
     historyQuery:input=>historyQueries.run(input),resumeHistoryQuery:input=>historyQueries.resume(input),historyQueryStatus:id=>historyQueries.status(id),
     timeCard:options=>interactionTime.project({timeContext:temporalFor(options?.timeContext),excludePointers:options?.excludePointers??[]}),
     readingNavigate,readingOpen,readingPage,readingOutline,readingRevoked,revokeReading,
@@ -1051,13 +1132,14 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
       if(savedQueryPointer&&(!recall||eventKey!==null||savedQueryPointer.scopeId!==scopeId))throw Error('invalid_resume_source_scope');
       if(savedQueryPointer&&sourceBufferGeneration!==generation)throw Error('buffer_receipt_stale');
       const selected=eventKey===null?null:events.find(item=>item.key===eventKey);if(eventKey!==null&&!selected)throw Error('event_outside_authorized_collection');
+      const generalHistoryEligible=enabled&&!clean&&!selected&&!recall&&features.historyRecall&&features.answerHistory&&!!answerHistoryAccess;
       const bufferScoped=enabled&&!clean&&!!(selected||recall);
       const temporal=resolveCmcpTimeContext(timeContext??{now:clock(),timezone});if(temporal.timezone!==timezone)throw Error('input_timezone_mismatch');
       if(bufferScoped&&bufferClearPending)await bufferClearPending;
       if(bufferScoped&&generation!==bufferGeneration)throw Error('buffer_cleared_during_operation');
       busy=true;let loop;if(persistentFocus)interruptProactive('new_user_input');
       try{
-        if(!features.saveUser&&!(recall&&enabled&&!clean&&features.historyRecall)){
+        if(!features.saveUser&&!generalHistoryEligible&&!(recall&&enabled&&!clean&&features.historyRecall)){
           if(contextOnly)return {status:'unaugmented',modelContext:'',queryPointer:null,selected:[],proactiveEligible:false};
           const reply=await adapter.request('recall_answer',{question:text},{canAttempt:canContinue});
           if(!validateLoopSchema(reply.value,buildLoopRequest('recall_answer',{question:text}).schema)||reply.value.sourceRefs.length)throw Error('invalid_unstored_answer');
@@ -1072,15 +1154,74 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
         // Recovery only on an authorized enhanced operation, never on OFF/Clean or mere status.
         if(enabled&&!clean&&!recovered){const recovery=await recover();if(recovery.status!=='complete')await note('recovery_pending',recovery);}
         if(!enabled||clean||!selected){
+          let generalLookupUsed=false;
+          const enhancedOperation=enabled&&!clean&&features.historyRecall&&(recall||generalHistoryEligible);
+          const enhancementStillValid=async()=>await canContinue()&&(!enhancedOperation||
+            enabled&&!clean&&features.historyRecall&&(recall||features.answerHistory));
           const grant=enabled&&!clean&&features.historyRecall&&recall?(await catalog.list()).filter(entry=>!savedQueryPointer||cmcpSourcePointerKey(entry.pointer)!==cmcpSourcePointerKey(savedQueryPointer)).map(entry=>entry.id):[];
-          const component=createCmcpHistoryReactivation({stores,allowedSourceIds:grant,limits:recall?recallLimits:limits,adapter,sessionId,canContinue,clock,
-            ttlMs:loopTiming?.ttlMs,bufferTtlMs:submissionBufferTtlMs,continuingClock:persistentFocus||timeContext===undefined,bufferBoundary:{generation,valid:()=>generation===bufferGeneration}});
-          component.setControls({enabled:enabled&&features.historyRecall&&recall,clean});
+          const component=createCmcpHistoryReactivation({stores,allowedSourceIds:grant,limits:recall?recallLimits:limits,adapter,sessionId,canContinue:enhancementStillValid,clock,
+            ttlMs:loopTiming?.ttlMs,bufferTtlMs:submissionBufferTtlMs,continuingClock:persistentFocus||timeContext===undefined,bufferBoundary:{generation,valid:()=>generation===bufferGeneration},
+            ...(generalHistoryEligible?{onGeneralAnswerNeed:async({query,text:question,valid,need})=>{
+              generalLookupUsed=true;
+              if(bufferClearPending)await bufferClearPending;
+              if(generation!==bufferGeneration||!await valid())throw Error('general_history_lookup_cancelled');
+              const requestId='normal-answer-lookup-'+loopHash([query.pointer,loopHash(query),need]);
+              const result=await historyQueries.run({requestId,text:question,purpose:'evidence_lookup',
+                ...(need.basis==='prior_content_reference'?{originalMaterialNavigation:true}:{}),
+                readingLimits:{maxSources:capacity.maxSources,maxTotalBytes:131072,maxPageBytes:4096,maxPages:256,maxProjectionBytes:8192},
+                batchLimits:{maxBatchSources:8,maxInputBytes:8000,maxBatches:16},
+                executionBudget:{maxBatchesPerExecution:16,reserveMs:0,requestTimeoutMs:90000},
+                navigation:{...(query.queryAuthorization?{queryAuthorization:query.queryAuthorization}:{savedQueryPointer:query.pointer}),naturalTime:true},
+                operationValid:valid});
+              if(generation!==bufferGeneration||!await valid())throw Error('general_history_lookup_cancelled');
+              const verifiedReadSources=result.publication?.status==='verified'&&result.aggregate?.evidence?.length
+                ?await historyQueries.verifiedReadSources(requestId):null;
+              const projectionLimit=Math.min(8192,localRetrieval?.maxProjectionBytes??8500);
+              const verify=async()=>generation===bufferGeneration&&await valid()&&(
+                result.publication?.status==='verified'?await historyQueries.verify(requestId):
+                  ['needs_clarification','not_found','needs_navigation'].includes(result.status));
+              const material=await selectAnswerMaterial({result,verifiedReadSources,needBasis:need.basis,
+                // selectAnswerMaterial 自己核對正式來源；呼叫端只傳本輪控制，
+                // 避免每個 provider 邊界巢狀重讀同一凍結集合兩次。
+                maxProjectionBytes:projectionLimit,valid:async()=>generation===bufferGeneration&&await valid()});
+              // Reprojection only reads this verified in-memory result. A final
+              // wire-size adjustment cannot start another lookup or model POST.
+              const project=maxProjectionBytes=>{
+                if(!Number.isSafeInteger(maxProjectionBytes)||maxProjectionBytes<1||maxProjectionBytes>projectionLimit)
+                  throw Error('invalid_general_answer_projection_limit');
+                const projected=projectCmcpAnswerHistoryLookup({result,timezone,maxProjectionBytes,
+                  needBasis:need.basis,verifiedReadSources,materialSelection:material.plan});
+                const refs=(projected.model.context?.evidence??[]).map(row=>row.sourceRef);
+                return {context:projected.model,sourceRefs:refs,verify,receipt:{requestId,queryPointer:copy(query.pointer),
+                  queryHash:loopHash(query),need:features.saveUser?copy(need):{basis:need.basis,quoteRetention:'not_saved_by_current_controls'},
+                  status:result.status,readingTicket:result.readingTicket??null,
+                  acceptedBatches:result.acceptedBatches??0,modelCalls:(result.modelCalls??0)+(result.readingSelectionModelCalls??0)+material.modelCalls,
+                  aggregateModelCalls:result.modelCalls??0,readingSelectionModelCalls:result.readingSelectionModelCalls??0,
+                  materialSelection:material,
+                  projection:projected.measurement,
+                  referencedEvidence:refs,availableEvidence:projected.model.context?.evidence?.length??0}};
+              };
+              return {...project(projectionLimit),reproject:project};
+            }}:{})});
+          component.setControls({enabled:enabled&&features.historyRecall&&(recall||generalHistoryEligible),clean});
           const queryBinding=!features.saveUser&&!savedQueryPointer?(await prepareReadingQuery({text,ticket:randomUUID(),temporal})).queryBinding:null;
-          const result=await component.submit({text,timeContext:temporal,contextOnly,savedQueryPointer,queryBinding,saveAssistant:features.saveAssistant,activateBuffer:features.buffer});
+          activeEphemeralAnswerQuery=generalHistoryEligible&&queryBinding?copy(queryBinding):null;
+          const result=await component.submit({text,timeContext:temporal,contextOnly,savedQueryPointer,queryBinding,saveAssistant:features.saveAssistant,
+            activateBuffer:features.buffer,probeHistoricalNeed:generalHistoryEligible});
+          if(!await enhancementStillValid())throw Error('operation_cancelled');
+          if(enabled&&!clean&&replyAssociations&&result.queryPointer&&result.answerPointer){
+            const [user,assistant]=await Promise.all([resolveCmcpHistorySource({provider:history,pointer:result.queryPointer}),
+              resolveCmcpHistorySource({provider:history,pointer:result.answerPointer})]);
+            if(user.status!=='found'||assistant.status!=='found'||user.evidence.sourceAuthorRole!=='user'
+              ||assistant.evidence.sourceAuthorRole!=='assistant')throw Error('ordinary_reply_source_unavailable');
+            const binding=await replyAssociations.recordReply({source:assistant.evidence,replyTo:user.evidence.pointer,
+              replyToEvidenceHash:loopHash(user.evidence),eventKey:null,eventVersion:null,bufferGeneration:generation});
+            await note('ordinary_reply_bound',{queryPointer:result.queryPointer,answerPointer:result.answerPointer,
+              replyToEvidenceHash:binding.replyToEvidenceHash,sourceHash:binding.sourceHash,bufferGeneration:generation});
+          }
           // New sources were registered through the same wrapped History dependency.
           if(result.answer){try{
-            if(bufferScoped&&generation!==bufferGeneration||!await canContinue())throw Error('buffer_cleared_during_operation');
+            if((bufferScoped||generalLookupUsed)&&generation!==bufferGeneration||!await enhancementStillValid())throw Error('operation_cancelled');
             result.assistantTiming.presentationStartedAt=observeCmcpAssistantTime(clock,temporal.timezone);
             const presented=await delivery.present({kind:'answer',text:result.answer,sourcePointer:result.answerPointer,sessionId});
             if(presented?.status!=='presented')throw Error('local_presentation_failed');
@@ -1089,7 +1230,7 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
           await note(recall?'reactivation':'submission',{eventKey:null,bufferGeneration:generation,status:result.status,queryPointer:result.queryPointer,answerPointer:result.answerPointer,
             selected:result.selected,sourceMap:result.sourceMap,sourceBytes:result.sourceBytes,projectionBytes:result.projectionBytes,reason:features.saveUser?result.reason??result.clarification??null:null,
             bufferBefore:result.bufferBefore,bufferAfter:result.bufferAfter,activeAt:result.activeAt});
-          if(bufferScoped&&generation!==bufferGeneration)throw Error('buffer_cleared_during_operation');
+          if((bufferScoped||generalLookupUsed)&&generation!==bufferGeneration||!await enhancementStillValid())throw Error('operation_cancelled');
           return result;
         }
         loop=await openLoop(selected,{timeContext:timeContext?temporal:undefined,retain:persistentFocus,generation});
@@ -1110,7 +1251,7 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
         const pending=await refreshEvents();await note('submission',{eventKey,result,bufferGeneration:generation,registrationPending:pending});
         if(generation!==bufferGeneration)throw Error('buffer_cleared_during_operation');
         return {...result,bufferGeneration:generation,registrationPending:pending};
-      }finally{if(loop&&!persistentFocus)await loop.close();busy=false;if(persistentFocus)resumeProactive();}
+      }finally{activeEphemeralAnswerQuery=null;if(loop&&!persistentFocus)await loop.close();busy=false;if(persistentFocus)resumeProactive();}
     },async close(){interruptProactive('runtime_closed');if(retainedLoop){await retainedLoop.close();retainedLoop=null;retainedEvent=null;}adapter.dispose?.();}
   });
   return api;

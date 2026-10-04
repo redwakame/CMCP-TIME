@@ -42,6 +42,9 @@ export async function reserveModelJob({ root, phase, provider, purpose, policy =
 const RUNTIME_BUDGET_POLICY = 'runtime-authorization-v1';
 const RUNTIME_PROVIDERS = ['deepseek', 'codex'];
 const sameLimits = (a, b) => RUNTIME_PROVIDERS.every(provider => a[provider] === b[provider]);
+// 不設累計上限仍須明確授權，逐次預約與失敗記帳不變；舊 reader 拒絕新版紀錄。
+const exceedsLimit = (limit, used) => limit !== 'unlimited' && used > limit;
+const budgetVersion = (...limits) => limits.some(value => value?.deepseek === 'unlimited') ? 2 : 1;
 function runtimeString(value, code) {
   if (typeof value !== 'string' || !value.trim() || value.length > 512 || value.includes('\0')) throw Error(code);
   return value;
@@ -53,8 +56,9 @@ function runtimeLocation(root, binding) {
 }
 function runtimeLimits(limits) {
   if (!limits || Array.isArray(limits) || Object.keys(limits).length !== 2
-    || !RUNTIME_PROVIDERS.every(provider => Number.isSafeInteger(limits[provider]) && limits[provider] >= 0)
-    || !RUNTIME_PROVIDERS.some(provider => limits[provider] > 0)) throw Error('invalid_runtime_budget_limits');
+    || !RUNTIME_PROVIDERS.every(provider => (Number.isSafeInteger(limits[provider]) && limits[provider] >= 0)
+      || (provider === 'deepseek' && limits[provider] === 'unlimited'))
+    || !RUNTIME_PROVIDERS.some(provider => limits[provider] === 'unlimited' || limits[provider] > 0)) throw Error('invalid_runtime_budget_limits');
   return { deepseek: limits.deepseek, codex: limits.codex };
 }
 function runtimeLedger(root) {
@@ -71,19 +75,27 @@ async function runtimeSnapshot(root, binding) {
       runtimeString(value.authorizationId, 'runtime_budget_record_invalid');
       runtimeString(value.authorizedBy, 'runtime_budget_record_invalid');
       runtimeLimits(value.limits);
-      if (value.version !== 1 || grants.has(value.authorizationId)) throw Error('runtime_budget_record_invalid');
+      if (value.version !== budgetVersion(value.limits) || grants.has(value.authorizationId)) throw Error('runtime_budget_record_invalid');
       grants.set(value.authorizationId, value); active = value; used = { deepseek: 0, codex: 0 };
+    } else if (kind === 'authorization_adjustment') {
+      runtimeString(value.authorizedBy, 'runtime_budget_record_invalid');
+      runtimeString(value.reason, 'runtime_budget_record_invalid');
+      runtimeLimits(value.limits);
+      if (!active || value.version !== budgetVersion(value.limits, value.previousLimits) || value.authorizationId !== active.authorizationId
+        || !value.previousLimits || !sameLimits(value.previousLimits, active.limits)
+        || RUNTIME_PROVIDERS.some(provider => exceedsLimit(value.limits[provider], used[provider]))) throw Error('runtime_budget_record_invalid');
+      active = { ...active, limits: value.limits, adjustment: value };
     } else if (kind === 'started') {
       if (!active || value.authorizationId !== active.authorizationId || !RUNTIME_PROVIDERS.includes(value.provider)
         || value.number !== number + 1 || !value.limits || !sameLimits(value.limits, active.limits)) throw Error('runtime_budget_record_invalid');
       runtimeString(value.purpose, 'runtime_budget_record_invalid');
       runtimeString(value.sessionId, 'runtime_budget_record_invalid');
       number++; used[value.provider]++;
-      if (used[value.provider] > active.limits[value.provider]) throw Error('runtime_budget_record_invalid');
+      if (exceedsLimit(active.limits[value.provider], used[value.provider])) throw Error('runtime_budget_record_invalid');
     } else throw Error('runtime_budget_record_invalid');
   }
-  const remaining = Object.fromEntries(RUNTIME_PROVIDERS.map(provider => [provider, active ? active.limits[provider] - used[provider] : 0]));
-  const canCall = Object.fromEntries(RUNTIME_PROVIDERS.map(provider => [provider, remaining[provider] > 0]));
+  const remaining = Object.fromEntries(RUNTIME_PROVIDERS.map(provider => [provider, active?.limits[provider] === 'unlimited' ? null : active ? active.limits[provider] - used[provider] : 0]));
+  const canCall = Object.fromEntries(RUNTIME_PROVIDERS.map(provider => [provider, active?.limits[provider] === 'unlimited' || remaining[provider] > 0]));
   const anyAvailable = Object.values(canCall).some(Boolean);
   const status = { status: !active ? 'blocked' : anyAvailable ? 'ready' : 'exhausted', binding,
     authorization: active, authorizationId: active?.authorizationId ?? null, used, remaining, canCall,
@@ -117,13 +129,33 @@ export async function authorizeRuntimeBudget({ root, authorizationId, binding, l
       if (!sameLimits(previous.limits, limits) || previous.authorizedBy !== authorizedBy) throw Error('runtime_authorization_conflict');
       return { status: 'unchanged', budget: snapshot.status };
     }
-    await runtimeLedger(root).append('authorization', { version: 1, policy: RUNTIME_BUDGET_POLICY,
+    await runtimeLedger(root).append('authorization', { version: budgetVersion(limits), policy: RUNTIME_BUDGET_POLICY,
       authorizationId, binding, limits, authorizedBy, authorizedAt: new Date().toISOString(), pid: process.pid });
     return { status: 'authorized', budget: (await runtimeSnapshot(root, binding)).status };
   });
 }
 
 /** Read-only even when root is absent. No credential or model access. */
+// 明示調整同一工單額度：只追加紀錄，既有使用次數／失敗與流水號都不歸零。
+export async function adjustRuntimeBudget({ root, authorizationId, binding, previousLimits, limits, authorizedBy, reason }) {
+  root = runtimeLocation(root, binding);
+  runtimeString(authorizationId, 'invalid_runtime_authorization_id');
+  runtimeString(authorizedBy, 'explicit_runtime_authorizer_required');
+  runtimeString(reason, 'explicit_runtime_adjustment_reason_required');
+  previousLimits = runtimeLimits(previousLimits); limits = runtimeLimits(limits);
+  return withRuntimeBudgetWriter(root, async () => {
+    const before = (await runtimeSnapshot(root, binding)).status;
+    if (before.authorizationId !== authorizationId) throw Error('runtime_expected_authorization_changed');
+    if (!sameLimits(before.authorization.limits, previousLimits)) throw Error('runtime_authorization_conflict');
+    if (RUNTIME_PROVIDERS.some(provider => exceedsLimit(limits[provider], before.used[provider]))) throw Error('runtime_adjustment_below_used');
+    if (sameLimits(previousLimits, limits)) return { status: 'unchanged', budget: before };
+    await runtimeLedger(root).append('authorization_adjustment', { version: budgetVersion(limits, previousLimits), policy: RUNTIME_BUDGET_POLICY,
+      authorizationId, binding, previousLimits, limits, authorizedBy, reason, adjustedAt: new Date().toISOString(), pid: process.pid });
+    return { status: 'adjusted', budget: (await runtimeSnapshot(root, binding)).status };
+  });
+}
+
+/** 唯讀快照不新增授權、不重置累計。 */
 export async function readRuntimeBudget({ root, binding }) {
   root = runtimeLocation(root, binding);
   return (await runtimeSnapshot(root, binding)).status;

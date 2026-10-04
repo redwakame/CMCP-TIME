@@ -1,19 +1,38 @@
-# Development direction
+# CMCP-TIME 路線與正式版範圍
 
-This is a sequence of areas to investigate, not promised delivery dates or an instruction to redefine the product.
+本頁是 0.1.0 來源凍結時的產品範圍。公開發布是否完成，請核對 [GitHub Release](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.0) 與 [npm 指定版本](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0)；本頁不預填上傳結果。
 
-## Current source candidate
+CMCP 採 Skill-first，保留宿主原生模型、工具與其他 Skills。原文、角色、來源版本、原時間與正式授權是依據；摘要、Buffer、索引及模型描述不能取代原件。控制、保存、閱讀、派送與顯示偏好分開。
 
-Publish a small, inspectable skill/Runtime with original source and time fidelity, bounded reading, separate controls, explicit Pins, a guided setup path and honest host/version evidence. Preserve existing API/core behavior while the public documentation and installation experience improve.
+## 0.1.0 的承諾與證據層級
 
-## Follow-up work to evaluate
+| 範圍 | 已驗層級 | 限制 |
+| --- | --- | --- |
+| 文字原文與跨對話回查 | 正式保存、來源清冊、有界分頁、原答綁定；限定真宿主修訂案例 | 有限未命中不等於全歷史不存在；模型仍可能有措辭錯誤 |
+| 圖片／截圖原件 | JPEG 官方 Desktop 限定案例；PNG、hash、缺件與備份還原離線驗證 | 原件回查不等於所有模型皆能視覺理解；不含音訊、影片、視覺搜尋 |
+| 可選最小介面與控制 | 官方 Harness 接點、原生 slash、最小化／一般列／隱藏；元件及離屏布局 | npm 安裝本身不會自動接入任意 Desktop；不改官方封裝 |
+| 明確 Pin | 已授權目標、真時鐘限定站內派送、取消／OFF／Clean／DND／去重 | 服務與目標可用期間；不是外部通知或全天候服務；未定補發政策不自行套用 |
+| 順序跨宿主 | 同一使用者明示專案：Harness 0.2.0-rc.2 SDK、Codex 0.159.0-alpha.12.1 app-server；Hermes v2026.9.24／0.21.5 CLI 與 Harness 往返 | SDK／CLI 隔離 profile 不冒稱全部日常 GUI；不透明擷取任意私人對話 |
+| 選配 MCP 與自架服務 | 官方 SDK 1.32.0，stdio／Streamable HTTP 真 client、loopback、JWT、scope／撤權／重啟與單 writer | 遠端 TLS、雲端與封閉平台帳戶審核未驗；本機模式不依賴常駐服務 |
+| 資料責任 | 正式匯出／驗證／新目標還原、容量與缺件拒絕、取消與晚到守護、精確登錄更新／拔插 | 還原不恢復執行授權；解除接線不刪 History；共用 OS 帳戶不是代理隔離 |
 
-Improve source/catalog scaling and batching from real profiles; strengthen retrieval under paraphrase and cross-language ambiguity; complete History-deletion governance; validate additional host mappings and automatic compaction; broaden installation and failure-recovery coverage.
+Windows Node 24.18.0 為工程現場。宣告最低 Node 22.16.0；較早候選的 Linux／Node 22.16.0 可攜重跑由獨立使用者核對，新 MCP／Hermes 增量不據此宣稱全平台已驗。正式包當輪平台與零模型安裝結果，另由公開 Release 驗收摘要列明。完整供應商 wire、隱藏推理及全天候運行不在證據範圍。
 
-An optional embedding index or reflection workflow should be motivated by an observed gap. It should not become a second source of truth, alter the original history, silently add paid services or replace the host model's expertise.
+## 六項原始方向保留
 
-## Later product work
+| 方向 | 目前成果 | 尚未完成／重評條件 |
+| --- | --- | --- |
+| 1. 多模態記憶 | 圖片／截圖原件、來源、時間及跨 Session 定位，描述與原件分離 | 音訊、影片、更廣格式與宿主視覺輸入；須保留原始媒體 |
+| 2. 語意搜尋與混合檢索 | 詞彙／時間／來源、有界正式閱讀與代表性自然改寫案例 | 更廣跨語、相似版本與召回穩定性；向量本階段不採用，只有量測到收益、可重建且無向量路徑保留才重評 |
+| 3. 跨 Agent 共享 | 同使用者、同授權專案的順序交接與 MCP 讀取 | 並行、多人、雲端同步、各平台完整生命週期；單人範圍不是永久上限 |
+| 4. 時間感知主動跟進 | 明確 Pin 站內跟進、DND、取消、去重與使用者控制 | 一般 Buffer 策略、離線補發、未載入目標轉送、重啟永久授權待決；不恢復模型自判重大事件特殊優先 |
+| 5. 可觀測性與除錯 | 薄介面串保存、登錄、候選、正式讀取、可觀測模型材料與原答 | 宿主不可觀測層仍標未知；不建第二聊天室或大型監控平台 |
+| 6. 可插拔儲存 | 保留檔案後端、持久服務與正式備份還原 | SQLite 依實際瓶頸評估；有伺服器／多人需要才研究 PostgreSQL；不預先全面搬庫 |
 
-More accessible interfaces, additional deployment modes and collaboration can be explored without making every future feature a prerequisite for this initial skill release. Cross-account sharing and cloud synchronization require explicit design and authorization rather than being enabled by inference.
+## 正式首版關卡與後續
 
-The non-negotiable direction is source and time fidelity, context bounded by current need, user-controlled intervention and host/model independence at the core. The implementation may evolve; unknown or untested capabilities must remain labeled.
+已核對的工程範圍包括資料匯出還原、容量滿／缺件、取消與重啟、Codex 同 Thread 原生 Context 壓縮、精確更新／解除及正常跨宿主文字往返。GUI、SDK、替身、同機程序與真正遠端證據分列；未受本次文件／版本整理影響的真宿主證據沿用，不為改版號重跑模型。
+
+正式發布須固定同源版本與成品、四語文件／圖片、公開清單與脫敏、非作者路徑實包安裝，再核對 GitHub main／tag／Release 與 npm 版本／標籤／新下載包。來源 ZIP 與 npm 執行套件用途不同；雜湊映射見正式 Release 的外置清單。歷史候選紀錄見 [版本說明](release-0.1.0.md)，不代表目前 registry 狀態。
+
+下一階段只由新工單安排。離線補發、永久授權、多人隔離及新資料外送仍需要明確產品決策。OpenClaw／dots／Grok Bot／Muse 的介面、審核與完整生命週期狀態見 [能力矩陣](interop-capabilities.zh-TW.md)，不以通用 MCP 支援代替具名實測。

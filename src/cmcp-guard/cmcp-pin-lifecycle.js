@@ -26,7 +26,9 @@ export function createCmcpPinLifecycle({root,scopeId,verifyUserAction,verifySour
       const pin=value.pin,previous=pins.get(pin?.pinId);
       if(value.version!==1||!pin||!text(pin.pinId)||pin.revision!==(previous?.revision??0)+1
         ||!['active','completed','cancelled'].includes(pin.status))throw Error('invalid_pin_journal');
-      pins.set(pin.pinId,clone(pin));
+      const projected=clone(pin);
+      if(value.authorization?.status==='historical_only')projected.requiresFreshAuthorization=true;
+      pins.set(pin.pinId,projected);
     }
     return {kind:'cmcp_pin_list',scopeId,pins:[...pins.values()],modelCalls:0};
   }
@@ -80,6 +82,8 @@ export function createCmcpPinLifecycle({root,scopeId,verifyUserAction,verifySour
           createdAt:temporal.now,updatedAt:temporal.now,sourceValidation};
       }else{
         pin={...previous,revision:previous.revision+1,updatedAt:temporal.now};
+        // 匯入只保留歷史目標；既有正式修改取得新 userAction 後才恢復執行權。
+        delete pin.requiresFreshAuthorization;
         if(command.action==='schedule')pin.dueAt=command.dueAt;
         else {pin.status=command.action==='complete'?'completed':'cancelled';pin.closedAt=temporal.now;}
       }

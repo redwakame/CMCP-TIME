@@ -1,3 +1,9 @@
+# CMCP-TIME 0.1.0
+
+Formal version notes in four languages: [0.1.0](docs/release-0.1.0.md). Source tag: v0.1.0. Public upload state and exact package hashes are recorded in the GitHub Release, not inferred from historical candidate records.
+
+## Historical release notes (preserved)
+
 # CMCP-TIME 0.1.0-rc.3 — help and documentation update
 
 This document accompanies `0.1.0-rc.3`. At preparation, the verified published baseline was `@redwakame-skill/cmcp-time@0.1.0-rc.2`. Its publication checks included anonymous registry installation, and the release-sync preflight on 2026-09-22 (Asia/Taipei) found `next` and `latest` pointing to rc.2. Published availability is verified separately: consult the registry/current `@next` and the installed `--version`. A mutable tag does not certify stability, and source contents alone do not prove registry publication.

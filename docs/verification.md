@@ -1,10 +1,16 @@
 # Verification and known limits
 
-## What this page claims
+## Current 0.1.0 evidence layers
 
-The source is a release candidate. Exact source preservation, deterministic Runtime controls, model interpretation, host lifecycle behavior and packaging are different verification layers. A successful request, passing schema or synthetic test does not establish every layer.
+Source preservation, Runtime controls, model interpretation, host lifecycle, actual GUI and packaging are separate layers. Transport/schema success does not prove model semantics; documentation in four languages does not certify four-language behavior. Version identity is described in [0.1.0 notes](release-0.1.0.md).
 
-[VERIFICATION.json](../VERIFICATION.json) is the unchanged original packaging record. [PUBLICATION-VERIFICATION.json](../PUBLICATION-VERIFICATION.json) records the subsequent presentation/test-portability preparation. Do not merge their environments into a claim that all platforms were tested.
+The preceding same-source engineering increment completed real MCP stdio/Streamable HTTP clients, guarded source/media reading and local persistence; official Hermes v2026.9.24 headless lifecycle → isolated Harness 0.2.0-rc.2 SDK → new Hermes Session; six originals, four formal source pages and subsequent tool-material evidence. Native-only control preserves host functionality without CMCP capture. This is bounded interoperability evidence, not Hermes TUI, a new Desktop GUI, remote TLS/cloud deployment or security certification.
+
+Earlier native Harness Desktop text/JPEG retrieval, explicit in-app Pin and controls remain separately scoped evidence. Prior Codex/Harness SDK/app-server handoff and compaction also remain separate; arbitrary App Threads do not automatically join. Status rendering separates stored, pending/failed registration and formal/receiver-specific eligibility. Buffer, Pin, originals and authorizations are not interchangeable.
+
+The latest interoperability increment ran on Windows Node 24.18.0 and Hermes Python 3.12.14. Declared Node minimum is 22.16.0, based on API requirements and prior portable evidence. Earlier Linux/22.16.0 runs below do not prove all later changes on that platform. Use [support matrix](interop-capabilities.zh-TW.md) and [operating guide](release-readiness.en.md) for limits and dependency versions.
+
+The sections below and [VERIFICATION.json](../VERIFICATION.json), [PUBLICATION-VERIFICATION.json](../PUBLICATION-VERIFICATION.json) retain the **earlier candidate's historical evidence**. Their test counts, Node versions and dates are not new 0.1.0 publication receipts.
 
 ## Original candidate record
 
@@ -37,12 +43,14 @@ npm run test:setup
 npm run test:dispatch
 ```
 
-The synthetic suites create unique artifacts below the candidate's ignored local test directory. Run them sequentially. No npm dependency installation, credential or paid model grant is required. Test outputs are local evidence, not public release content. Perform `npm pack --dry-run --json --offline --ignore-scripts` on a clean source copy, not on a tree filled with test data.
+The synthetic suites create unique artifacts below the candidate's ignored local test directory. Run them sequentially. No npm dependency installation, credential or paid model grant is required. Test outputs are local evidence, not public release content. Perform `npm pack --dry-run --json --offline` on a clean source copy, not on a tree filled with test data.
 
 ## Limits to disclose
 
-The declared Node minimum remains 18, but the full version/platform matrix has not been validated. Current managed host wiring targets Codex. The supplied configured credential route requires Windows DPAPI/PowerShell 7. Other hosts, complete Linux/macOS deployment, automatic-compaction behavior, mobile delivery and complete least-privilege isolation are not established by this packaging work.
+The historical baseline declared Node 18; the current 0.1.0 minimum is 22.16.0. That historical packaging run only validated its then-current Codex wiring. The supplied configured credential route requires Windows DPAPI/PowerShell 7. Other hosts, complete Linux/macOS deployment, automatic-compaction behavior, mobile delivery and complete least-privilege isolation are not established by this packaging work.
 
 The catalog has finite configured segments and metadata costs can grow. Proactive prior-answer context is bounded and requires a formal source relationship. Models can still add assumptions or misinterpret otherwise correct sources. Full History-deletion governance and propagation to every derived layer is not implemented. No universal accuracy, latency, cost reduction or independent security certification is claimed.
 
-Four translated introductions and their diagrams explain the same candidate. Translation coverage is not model-behavior certification. Diagram examples are illustrative, not historical transcripts.
+The four translated introductions and diagrams now explain 0.1.0. Translation coverage is not model-behavior certification. Diagram examples are illustrative, not historical transcripts.
+
+Current reproducible test layers and dependency preparation are in [testing](testing.md). Do not infer that an older no-dependency test list covers the optional MCP/Hermes adapters.

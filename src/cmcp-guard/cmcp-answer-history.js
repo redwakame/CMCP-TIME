@@ -6,6 +6,7 @@ import {readCmcpBufferBoundary} from './cmcp-buffer-lifecycle.js';
 import {formatCmcpLocalInstant} from './project-cmcp-local-time.js';
 import {parseCmcpInstant,resolveCmcpTimeContext} from './resolve-cmcp-time-context.js';
 import {boundCmcpLocalLocator} from './cmcp-local-candidates.js';
+import {CMCP_HISTORY_INLINE_SOURCE_MAX_BYTES} from './cmcp-history-aggregation.js';
 import {CMCP_ANSWER_NO_READ_NEEDS as noReadNeeds,CMCP_ANSWER_READ_NEEDS as readNeeds,
   validateCmcpAnswerHistoryNeedShape as validateNeedShape,validateCmcpAnswerHistoryNeed} from './cmcp-answer-material-need.js';
 export {cmcpAnswerHistoryMaterialScope,validateCmcpAnswerHistoryNeed} from './cmcp-answer-material-need.js';
@@ -13,6 +14,13 @@ export {cmcpAnswerHistoryMaterialScope,validateCmcpAnswerHistoryNeed} from './cm
 const copy=value=>structuredClone(value),key=cmcpSourcePointerKey,bytes=value=>Buffer.byteLength(JSON.stringify(value));
 const sameEvent=(left,right)=>left?.scopeId===right?.scopeId&&left?.eventId===right?.eventId;
 const defaults={maxCandidates:6,maxSelectedSources:2,maxCatalogBytes:4096,maxReadBytes:4096,maxProjectionBytes:8192,maxSourceBytes:4096};
+// A named subject in the current question can order already verified originals.
+// It is only a projection preference: unmatched/anaphoric sources stay eligible.
+const namedQuestionSubjects=question=>typeof question==='string'
+  ?[...new Set([...question.matchAll(/\p{Lu}[\p{L}\p{M}\p{N}]*(?:[ \t]+\p{Lu}[\p{L}\p{M}\p{N}]*)+/gu)]
+    .map(match=>match[0].replace(/\s+/gu,' ').toLocaleLowerCase()))]:[];
+const namesSubject=(text,subjects)=>typeof text==='string'&&subjects.some(subject=>
+  text.replace(/\s+/gu,' ').toLocaleLowerCase().includes(subject));
 export const CMCP_ANSWER_HISTORY_MAX_SELECTED_SOURCES=3;
 // A bounded diagnostic explanation, never quoted as source evidence or promoted
 // into the answer context. Source-count and byte budgets remain independent.
@@ -133,7 +141,7 @@ export function validateCmcpAnswerHistoryPlan(plan,prepared){
 }
 
 /** Model view of the existing formal reader/aggregate receipt, not a second search result. */
-export function projectCmcpAnswerHistoryLookup({result,timezone,maxProjectionBytes}){
+export function projectCmcpAnswerHistoryLookup({result,timezone,maxProjectionBytes,needBasis=null,verifiedReadSources=null,materialSelection=null}){
   if(!result||!['cmcp_history_query_result','cmcp_history_query_status'].includes(result.kind)||typeof result.requestId!=='string'
     ||!Number.isSafeInteger(maxProjectionBytes)||maxProjectionBytes<1)throw Error('invalid_answer_history_lookup_result');
   resolveCmcpTimeContext({now:'2000-01-01T00:00:00Z',timezone});
@@ -141,12 +149,43 @@ export function projectCmcpAnswerHistoryLookup({result,timezone,maxProjectionByt
   if(available&&(aggregate.kind!=='cmcp_history_aggregate'||aggregate.purpose!=='evidence_lookup'
     ||!Array.isArray(aggregate.evidence)||!aggregate.coverage||!Number.isSafeInteger(aggregate.coverage.sourceCount)
     ||aggregate.coverage.sourceCount<0))throw Error('invalid_answer_history_lookup_aggregate');
-  const scope={kind:'frozen_registered_authorized_event_sources',otherEvents:'not_checked',
+  const completeByRef=new Map();
+  if(verifiedReadSources!==null){
+    if(verifiedReadSources?.kind!=='cmcp_verified_read_source_projection'||!Array.isArray(verifiedReadSources.sources)
+      ||verifiedReadSources.sources.length>(aggregate?.coverage?.completedSources??0))throw Error('invalid_answer_history_verified_read_sources');
+    const evidenceByRef=new Map((aggregate?.evidence??[]).map(row=>[row.ref,row]));
+    for(const source of verifiedReadSources.sources){
+      const row=evidenceByRef.get(source?.ref),body=source?.text;
+      // Receipts from before the binding field was added still project their
+      // original verified citation. Do not turn a compatible replay into an
+      // error or treat an unbound body as complete answer material.
+      if(row&&(!row.evidenceHash||row.contentKind!=='source_excerpt'))continue;
+      if(!row||completeByRef.has(source.ref)||typeof body!=='string'||!body
+        ||Buffer.byteLength(body)>CMCP_HISTORY_INLINE_SOURCE_MAX_BYTES
+        ||![...body].length||source.codePoints!==[...body].length
+        ||source.evidenceHash!==row.evidenceHash||source.sourceAuthorRole!==row.sourceAuthorRole
+        ||source.contentKind!==row.contentKind||row.citation?.unit!=='unicode_code_points'
+        ||[...body].slice(row.citation.start,row.citation.end).join('')!==row.citation.text)
+        throw Error('invalid_answer_history_verified_read_sources');
+      completeByRef.set(source.ref,source);
+    }
+  }
+  const ordinary=result.sourceCollectionKind==='ordinary';
+  const scopeKind=ordinary?'frozen_registered_authorized_ordinary_sources':result.sourceCollectionKind==='event_or_time_bounded'?
+    'frozen_registered_authorized_sources':'frozen_registered_authorized_event_sources';
+  const scope={kind:scopeKind,otherEvents:'not_checked',
     unregisteredHistory:'not_checked',allHistoryAbsence:'not_established'};
+  // 原稿導航是正式讀過的候選，不是事實分類；未完成選取不得直接拿來作答。
+  if(aggregate?.navigationOnly&&!materialSelection){const model={kind:'answer_history',status:'needs_source',
+    reason:'The originals were formally read but still require purpose-specific material selection; historical absence is not established.',context:null,
+    lookup:{status:'material_selection_required',scope}};
+    if(bytes(model)>maxProjectionBytes)throw Error('answer_history_lookup_projection_budget');
+    return {model,measurement:{attemptedBytes:bytes(model),projectedBytes:bytes(model),maxProjectionBytes,completeSourcePromotions:0,omittedWholeProjection:false}};}
   let model={kind:'answer_history',status:'needs_source',reason:'The further bounded source check did not complete; historical absence is not established.',
     context:null,lookup:{status:result.status,reason:result.reason??null,scope}};
+  let completeSourcePromotions=0;
   if(available){
-    const coverage=aggregate.coverage,seen=new Set(),evidence=aggregate.evidence.map(row=>{
+    const coverage=aggregate.coverage,seen=new Set(),readEvidence=aggregate.evidence.map(row=>{
       if(typeof row.ref!=='string'||seen.has(row.ref)||!['user','assistant','tool'].includes(row.sourceAuthorRole)
         ||row.citation?.unit!=='unicode_code_points'||!Number.isSafeInteger(row.citation.start)||row.citation.start<0
         ||!Number.isSafeInteger(row.citation.end)||row.citation.end<=row.citation.start||typeof row.citation.text!=='string'
@@ -154,23 +193,151 @@ export function projectCmcpAnswerHistoryLookup({result,timezone,maxProjectionByt
       seen.add(row.ref);if(row.messageRecordedAt!==null)parseCmcpInstant(row.messageRecordedAt);
       if(row.eventOccurredAt!==undefined&&row.eventOccurredAt!==null)parseCmcpInstant(row.eventOccurredAt);
       if(row.contentKind!==undefined&&row.contentKind!==null&&!['source_excerpt','derived_summary'].includes(row.contentKind))throw Error('invalid_answer_history_lookup_content_kind');
-      return {sourceRef:row.ref,sourceAuthorRole:row.sourceAuthorRole,messageRecordedAt:row.messageRecordedAt,
+      if(row.supportRelation!==undefined&&!['requested_detail','related_historical_detail',...(aggregate.navigationOnly?['unclassified_original_material']:[])].includes(row.supportRelation))throw Error('invalid_answer_history_lookup_support_relation');
+      return {sourceRef:row.ref,sourceAuthorRole:row.sourceAuthorRole,supportRelation:row.supportRelation==='unclassified_original_material'?'requested_detail':row.supportRelation??'requested_detail',messageRecordedAt:row.messageRecordedAt,
         localMessageRecordedAt:formatCmcpLocalInstant(row.messageRecordedAt,timezone),eventOccurredAt:row.eventOccurredAt??null,
         localEventOccurredAt:formatCmcpLocalInstant(row.eventOccurredAt??null,timezone),eventTimeStatus:row.eventOccurredAt===undefined?'not_recorded_in_legacy_receipt':row.eventOccurredAt===null?'unknown':'source_supplied',
         content:{kind:'exact_source_quote',sourceContentKind:row.contentKind??'unknown',text:row.citation.text},range:{unit:row.citation.unit,start:row.citation.start,end:row.citation.end},
+        projectedCoverage:'exact_quote_only',
         roleBoundary:'Assistant_text_is_not_a_User_decision_or_independently_verified_fact'};
     });
+    // The exact quote of a derived synopsis is still not an original record.
+    // Keep it in the formal receipt as a locator, but do not promote it to
+    // answer evidence for a requested original or a historical fact.
+    const originalRequired=['prior_content_reference','recorded_fact_lookup'].includes(needBasis);
+    let evidence=originalRequired?readEvidence.filter(row=>row.content.sourceContentKind==='source_excerpt'):readEvidence;
+    const excludedDerivedForOriginal=originalRequired?readEvidence.length-evidence.length:0;
+    const selectionCandidates=evidence.length;
+    if(materialSelection!==null){
+      if(needBasis!=='prior_content_reference'||!['selected','needs_clarification','needs_source'].includes(materialSelection.status)
+        ||!Array.isArray(materialSelection.refs)||new Set(materialSelection.refs).size!==materialSelection.refs.length
+        ||materialSelection.refs.length>8||materialSelection.refs.some(ref=>!evidence.some(row=>row.sourceRef===ref))
+        ||(materialSelection.status==='selected'?materialSelection.refs.length<1:materialSelection.refs.length!==0))
+        throw Error('invalid_answer_history_material_selection');
+      evidence=evidence.filter(row=>materialSelection.refs.includes(row.sourceRef));
+    }
     const checked={...scope,status:aggregate.status,registeredSources:coverage.sourceCount,readSources:coverage.completedSources,
       unavailableSources:coverage.unavailableSources,unreadSources:coverage.unread?.length??null,
       unclassifiedSources:coverage.unclassified?.length??null,uncertainSources:coverage.uncertain?.length??null,
       ambiguousRevisionGroups:coverage.ambiguousRevisions?.length??null,completeWithinFrozenScope:aggregate.status==='complete_within_frozen_scope',
       sourceAvailability:coverage.partialSources?.length?'partial_or_unknown':'as_declared_by_sources',
+      originalSourceEvidence:originalRequired?{retainedSourceExcerpts:evidence.length,excludedNonOriginalQuotes:excludedDerivedForOriginal}:null,
       semanticVerification:'model_interpretation_after_exact_source_role_quote_checks'};
+    if(materialSelection)checked.materialSelection={status:materialSelection.status,candidateEvidence:selectionCandidates,
+      selectedEvidence:evidence.length,excludedEvidence:selectionCandidates-evidence.length,
+      nature:'semantic_navigation_not_fact_confirmation'};
+    const directEvidence=evidence.filter(row=>row.supportRelation==='requested_detail');
     model={kind:'answer_history',status:evidence.length?'read':'needs_source',
-      reason:evidence.length?'Exact supporting quotations were found; use only the stated checked scope and preserve unresolved coverage.':
-        aggregate.status==='complete_within_frozen_scope'?'No support was found within this completely checked registered event collection; other events and unregistered History were not checked.':
+      reason:directEvidence.length?'Exact supporting quotations were found; use only the stated checked scope and preserve unresolved coverage.':
+        evidence.length?'Exact related historical quotations were found, but they do not by themselves establish the requested final detail.':
+        excludedDerivedForOriginal?'Only derived or unclassified wording was located; the requested original record or historical fact is not confirmed in the checked sources.':
+        aggregate.status==='complete_within_frozen_scope'?`No support was found within this completely checked registered ${ordinary?'ordinary conversation':'selected source'} collection; unregistered and out-of-scope History was not checked.`:
           'The bounded check found no confirmed support so far; unread, unavailable or uncertain sources remain. This does not establish absence from History.',
-      context:{kind:'bounded_exact_history_lookup',finding:aggregate.finding,coverage:checked,evidence}};
+      context:{kind:'bounded_exact_history_lookup',finding:directEvidence.length?aggregate.finding:evidence.length?'related_historical_context_only':
+        excludedDerivedForOriginal?'original_source_not_confirmed':aggregate.finding,
+        coverage:checked,evidence}};
+    if(materialSelection?.status==='needs_clarification'||materialSelection?.status==='needs_source'){
+      model.reason=materialSelection.status==='needs_clarification'
+        ?'The source navigation remains genuinely ambiguous; ask the User to clarify the referenced original. This is not absence from History.'
+        :'The source navigation did not identify the necessary originals; their absence from History is not established.';
+      model.context.finding=materialSelection.status;
+    }
+    // A full formal read can identify more useful originals than one answer
+    // request can carry. Keep whole, exact quotations in a bounded answer view;
+    // the formal receipt still retains every classification and read range.
+    // Never describe a source omitted by this projection as absent in History.
+    const eligible=model.context.evidence;
+    const subjects=namedQuestionSubjects(aggregate.question);
+    // The current-question subject is matched only against a bound full
+    // original; shorter citations retain the existing projection preference.
+    const subjectMatch=row=>namesSubject(completeByRef.get(row.sourceRef)?.text,subjects);
+    const subjectPriority=!materialSelection&&eligible.some(subjectMatch)&&eligible.some(row=>!subjectMatch(row));
+    checked.answerProjection={eligibleEvidence:eligible.length,projectedEvidence:eligible.length,omittedEvidence:0,
+      omittedDirect:0,omittedRelated:0,selection:materialSelection?'verified_material_selection':'direct_related_representatives_then_recent_source'};
+    const promote=target=>{
+      const source=completeByRef.get(target.sourceRef);
+      if(!source||target.projectedCoverage==='complete_retained_body')return;
+      const previousContent=target.content,previousRange=target.range,previousCoverage=target.projectedCoverage;
+      target.content={...previousContent,text:source.text};
+      target.range={unit:'unicode_code_points',start:0,end:source.codePoints};
+      target.projectedCoverage='complete_retained_body';
+      if(bytes(model)>maxProjectionBytes){target.content=previousContent;target.range=previousRange;target.projectedCoverage=previousCoverage;}
+      else completeSourcePromotions++;
+    };
+    if(bytes(model)>maxProjectionBytes&&eligible.length){
+      const recent=(a,b)=>String(b.messageRecordedAt??'').localeCompare(String(a.messageRecordedAt??''))
+        ||Number(a.sourceRef.slice(1))-Number(b.sourceRef.slice(1));
+      const direct=eligible.filter(row=>row.supportRelation==='requested_detail').sort(recent);
+      const related=eligible.filter(row=>row.supportRelation==='related_historical_detail').sort(recent);
+      // Preserve one direct source and the oldest dated contrasted source before
+      // filling the remaining room. This is a projection preference, not a
+      // conclusion that either quote establishes a final User decision.
+      const matchingRelated=subjectPriority?related.filter(subjectMatch):[];
+      // A named current subject can identify the contrasted source. Preserve
+      // an older related representative from that subject before falling back
+      // to an unrelated old classification from the wider formal read.
+      const contrast=matchingRelated.length?matchingRelated:related;
+      const oldestRelated=[...contrast].filter(row=>row.messageRecordedAt!==null)
+        .sort((a,b)=>String(a.messageRecordedAt).localeCompare(String(b.messageRecordedAt))
+          ||Number(a.sourceRef.slice(1))-Number(b.sourceRef.slice(1)))[0]??contrast.at(-1);
+      const defaultRanked=[direct[0],oldestRelated,...direct.slice(1),...related.filter(row=>row!==oldestRelated)].filter(Boolean);
+      // Within the existing direct/related projection, a named subject in
+      // verified source wording gets first use of the bounded answer space.
+      // Keep one older related quote beside the first direct quote, including
+      // when its anaphoric wording does not repeat the named subject.
+      const matchingDirect=direct.filter(subjectMatch);
+      const prioritized=subjectPriority?[matchingDirect[0],oldestRelated,...matchingDirect.slice(1),
+        ...matchingRelated.filter(row=>row!==oldestRelated)].filter(Boolean):[];
+      // An anaphoric revision can omit the named subject while still being a
+      // verified related quotation. Prefer unmatched support near the named
+      // originals in recorded time, rather than unrelated newer subjects.
+      // This only ranks a bounded answer view; proximity never proves that
+      // sources describe the same event or that a proposal was adopted.
+      const anchorTimes=prioritized.filter(subjectMatch).filter(row=>row.messageRecordedAt!==null)
+        .map(row=>parseCmcpInstant(row.messageRecordedAt));
+      const distance=row=>row.messageRecordedAt===null||!anchorTimes.length?Number.POSITIVE_INFINITY:
+        Math.min(...anchorTimes.map(time=>Math.abs(parseCmcpInstant(row.messageRecordedAt)-time)));
+      const ranked=materialSelection?materialSelection.refs.map(ref=>eligible.find(row=>row.sourceRef===ref)):subjectPriority?[...prioritized,...[...direct,...related].filter(row=>!prioritized.includes(row))
+        .sort((a,b)=>distance(a)-distance(b)||recent(a,b))]:defaultRanked;
+      const retained=new Set();
+      const setProjection=()=>{
+        model.context.evidence=eligible.filter(row=>retained.has(row.sourceRef));
+        checked.answerProjection.projectedEvidence=model.context.evidence.length;
+        checked.answerProjection.omittedEvidence=eligible.length-model.context.evidence.length;
+        checked.answerProjection.omittedDirect=direct.filter(row=>!retained.has(row.sourceRef)).length;
+        checked.answerProjection.omittedRelated=related.filter(row=>!retained.has(row.sourceRef)).length;
+        if(checked.originalSourceEvidence)checked.originalSourceEvidence.retainedSourceExcerpts=model.context.evidence.length;
+        model.reason='Only a bounded subset of exact supporting quotations fits this answer input; omitted support remains in the formal read and must not be called absent.';
+        model.status=model.context.evidence.length?'read':'needs_source';
+        model.context.finding=model.context.evidence.some(row=>row.supportRelation==='requested_detail')?'supported_evidence':
+          model.context.evidence.length?'related_historical_context_only':'limited_projection_no_support';
+      };
+      const retain=candidate=>{
+        retained.add(candidate.sourceRef);setProjection();
+        if(bytes(model)>maxProjectionBytes){retained.delete(candidate.sourceRef);setProjection();}
+      };
+      if(subjectPriority){
+        // Reserve relevant citations and one contrasted representative before
+        // spending remaining bytes on complete bodies and other support rows.
+        for(const candidate of prioritized)retain(candidate);
+        for(const candidate of prioritized)if(retained.has(candidate.sourceRef)&&subjectMatch(candidate))promote(candidate);
+        for(const candidate of ranked.slice(prioritized.length))retain(candidate);
+      }else for(const candidate of ranked)retain(candidate);
+    }
+    // The classifier's short quote remains the semantic support citation in
+    // the durable aggregate. For this one answer, a short, fully read original
+    // may replace that excerpt with its exact complete message when the SAME
+    // projection budget has room. Never trim either text to fit.
+    if(completeByRef.size&&model.context.evidence.length){
+      const ordered=[...model.context.evidence].sort((a,b)=>{
+        if(subjectPriority){const match=Number(subjectMatch(b))-Number(subjectMatch(a));if(match)return match;}
+        const relation=(b.supportRelation==='requested_detail')-(a.supportRelation==='requested_detail');
+        return relation||String(b.messageRecordedAt??'').localeCompare(String(a.messageRecordedAt??''));
+      });
+      for(const candidate of ordered){
+        promote(candidate);
+      }
+    }
   }
   const attemptedBytes=bytes(model);
   if(attemptedBytes>maxProjectionBytes){
@@ -178,7 +345,8 @@ export function projectCmcpAnswerHistoryLookup({result,timezone,maxProjectionByt
       context:null,lookup:{status:'projection_budget_exceeded',scope}};
     if(bytes(model)>maxProjectionBytes)throw Error('answer_history_lookup_projection_budget');
   }
-  return {model,measurement:{attemptedBytes,projectedBytes:bytes(model),maxProjectionBytes,omittedWholeProjection:attemptedBytes>maxProjectionBytes}};
+  return {model,measurement:{attemptedBytes,projectedBytes:bytes(model),maxProjectionBytes,
+    completeSourcePromotions,omittedWholeProjection:attemptedBytes>maxProjectionBytes}};
 }
 
 /** A purpose-specific answer view of an already verified lookup, not a new search
@@ -187,7 +355,8 @@ export function projectCmcpAnswerHistoryLookup({result,timezone,maxProjectionByt
 export function projectCmcpEvidenceLookupAnswerInput(input){
   const history=input?.answerHistory,context=history?.context;
   const recognized=context?.kind==='bounded_exact_history_lookup'
-    ||history?.lookup?.scope?.kind==='frozen_registered_authorized_event_sources';
+    ||['frozen_registered_authorized_event_sources','frozen_registered_authorized_ordinary_sources',
+      'frozen_registered_authorized_sources'].includes(history?.lookup?.scope?.kind);
   if(!recognized)return null;
   if(history.kind!=='answer_history'||!['read','needs_source'].includes(history.status)
     ||input.user?.sourceAuthorRole!=='user'||typeof input.user.text!=='string'||!input.user.text.trim())throw Error('invalid_evidence_lookup_answer_input');
@@ -201,7 +370,11 @@ export function projectCmcpEvidenceLookupAnswerInput(input){
     const complete=c.completeWithinFrozenScope===true&&c.status==='complete_within_frozen_scope'
       &&c.readSources===c.registeredSources&&['unavailableSources','unreadSources','unclassifiedSources','uncertainSources','ambiguousRevisionGroups'].every(key=>c[key]===0);
     if(c.completeWithinFrozenScope===true&&!complete)throw Error('inconsistent_evidence_lookup_answer_coverage');
-    disposition=context.evidence.length?'report_supplied_support':complete?'report_no_support_within_checked_scope':'report_incomplete_check';
+    const projectionOmitted=(c.answerProjection?.omittedEvidence??0)>0;
+    disposition=c.materialSelection&&c.materialSelection.status!=='selected'?'check_unavailable':projectionOmitted?'report_incomplete_check':
+      context.evidence.some(row=>(row.supportRelation??'requested_detail')==='requested_detail')?'report_supplied_support':
+      context.evidence.length?'report_related_context_only':
+        complete?'report_no_support_within_checked_scope':'report_incomplete_check';
   }
   const selected={answerTask:{kind:'bounded_history_evidence_answer',disposition,
     evidenceBoundary:'exact_lookup_sources_only',scopeBoundary:'registered_authorized_collection_not_entire_History'},
@@ -348,12 +521,17 @@ export function createCmcpAnswerHistory({stores,catalog,journal,localIndex=null,
       // aggregate journal through the caller's same work/grant and User source.
       // The original model plan stays immutable in the receipt.
       const lookup=await lookupMissingHistory({query:copy(query),event:copy(basis.event),eventKey:basis.eventKey,
-        temporal:copy(temporal),bufferGeneration,eventVersion:version,recovery,activeAt,valid:()=>currentValid(true)});
+        temporal:copy(temporal),bufferGeneration,eventVersion:version,recovery,activeAt,needBasis:plan.need?.basis??null,valid:()=>currentValid(true)});
       if(!lookup||typeof lookup.verify!=='function')throw Error('answer_history_lookup_verifier_required');
-      const projected=projectCmcpAnswerHistoryLookup({result:lookup.result,timezone,maxProjectionBytes:limits.maxProjectionBytes});
+      const verifiedReadSources=lookup.result.publication?.status==='verified'&&lookup.result.aggregate?.evidence?.length
+        ?await lookup.verifiedReadSources?.()??null:null;
+      const material=await lookup.selectMaterial?.({result:lookup.result,verifiedReadSources,needBasis:plan.need?.basis??null,
+        maxProjectionBytes:limits.maxProjectionBytes,valid:()=>currentValid(true)})??null;
+      const projected=projectCmcpAnswerHistoryLookup({result:lookup.result,timezone,maxProjectionBytes:limits.maxProjectionBytes,
+        needBasis:plan.need?.basis??null,verifiedReadSources,materialSelection:material?.plan??null});
       if(!await currentValid()||await lookup.verify()!==true)throw Error('answer_history_lookup_cancelled_or_source_changed');
       lookupVerify=lookup.verify;model=projected.model;
-      Object.assign(receipt,{lookup:copy(lookup.result),lookupProjection:projected.measurement,
+      Object.assign(receipt,{lookup:copy(lookup.result),lookupProjection:projected.measurement,materialSelection:material,
         readStatus:model.status==='read'?'bounded_lookup_found':'bounded_lookup_incomplete_or_insufficient',
         sourceBytes:lookup.result.aggregate?.coverage?.cumulative?.sourceBytes??0,projectionBytes:bytes(model),
         activation:lookup.result.activation??'none',lookupPurpose:'event_registered_inventory_evidence_lookup_not_all_history',

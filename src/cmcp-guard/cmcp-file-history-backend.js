@@ -48,9 +48,10 @@ export function createCmcpFileHistoryBackend({ root }) {
         throw error;
       }
     },
-    async create(key, data) {
+    async create(key, data, {canContinue=async()=>true,publicationGuard=()=>true}={}) {
       const target = destination(key);
       if (typeof data !== "string") throw new TypeError("invalid_file_history_data");
+      if(typeof canContinue!=='function'||typeof publicationGuard!=='function')throw new TypeError('invalid_history_publication_guard');
       await fs.mkdir(directory, { recursive: true });
       const pending = path.join(directory, ".pending-" + randomUUID());
       const handle = await fs.open(pending, "wx", 0o600);
@@ -68,6 +69,9 @@ export function createCmcpFileHistoryBackend({ root }) {
       try {
         // Atomic no-replace publication on a filesystem supporting hard links.
         // No rename/overwrite fallback on unsupported filesystems.
+        if(!await canContinue()||publicationGuard()!==true)throw storageError('HISTORY_PUBLICATION_CANCELLED');
+        // Session revocation is synchronous. No await lies between its final
+        // check and link submission; an already submitted publication is kept.
         await fs.link(pending, target);
         status = "created";
       } catch (error) {

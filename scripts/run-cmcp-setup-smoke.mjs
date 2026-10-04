@@ -25,7 +25,10 @@ await run('explicit_authorization_validation_and_no_admin',async()=>{
  assert.throws(()=>normalizeCmcpSetupChoices({...choices,timezone:'Invalid/Zone'}),/timezone/);
  for(const hours of [5,49,NaN])assert.throws(()=>normalizeCmcpSetupChoices({...choices,bufferHours:hours}),/hours/);
  for(const hours of [6,12,48])assert.equal(normalizeCmcpSetupChoices({...choices,bufferHours:hours}).bufferHours,hours);
- assert.throws(()=>inspectCmcpSetupEnvironment({nodeVersion:'16.0.0'}),/node_18/);
+ let probes=0;const probe=()=>{probes++;return {status:0,stdout:'codex-cli synthetic-version'};};
+ for(const nodeVersion of ['16.0.0','18.20.8','20.19.0','22.0.0','22.15.99','22.16','22.16.0-pre','garbage'])assert.throws(()=>inspectCmcpSetupEnvironment({nodeVersion,probe}),/node_22_16/);
+ assert.equal(probes,0,'低於最低版或不合法版本不得探測宿主');
+ for(const nodeVersion of ['22.16.0','22.16.1','23.0.0','24.18.0'])assert.equal(inspectCmcpSetupEnvironment({nodeVersion,probe}).nodeSupported,true);
 });
 await run('clean_project_setup_creates_generic_config_skill_hooks_without_grant',async()=>{
  const host=path.join(root,'clean host');await fs.mkdir(path.join(host,'.codex'),{recursive:true});

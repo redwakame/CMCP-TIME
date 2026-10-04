@@ -20,7 +20,7 @@ This source distribution contains no personal runtime root, credentials or autho
 - **Revocation/cancellation** governs the relevant work/ticket; it cannot un-send content already delivered.
 - **Pin completion** requires explicit completion or an agreed corresponding condition. A notification being sent is not completion.
 
-Complete reference-History deletion and propagation through every derived layer is not implemented in this release candidate. Do not advertise Clear as that capability. Data remains subject to the actual provider, configuration and storage availability, not an unqualified permanent-retention guarantee.
+Complete reference-History deletion and propagation through every derived layer is not implemented in this release. Do not advertise Clear as that capability. Data remains subject to the actual provider, configuration and storage availability, not an unqualified permanent-retention guarantee.
 
 ## Safe troubleshooting
 
