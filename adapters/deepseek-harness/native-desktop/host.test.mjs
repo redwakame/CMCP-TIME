@@ -7,6 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
 import {deflateSync} from 'node:zlib';
 import {apply,projectModelInputMetadata} from './host.mjs';
+import {CONTINUITY_BEFORE_ANSWER_POLICY,CONTINUITY_POLICY_METADATA,CONTINUITY_READING_CONTRACT,CONTINUITY_READING_CONTRACT_METADATA,CONTINUITY_KIND_RULES,CONTINUITY_PLAN_GRANULARITY_RULES,CONTINUITY_PLAN_ROLE_RULES,CONTINUITY_REASON_BINDING_RULES,CONTINUITY_PLAN_V3_RULES,CONTINUITY_SOURCE_BOUND_ANSWER_RULES,CONTINUITY_ATTRIBUTION_RULES,CONTINUITY_PLAN_SCOPE_REVIEW_RULES,CONTINUITY_EXPLICIT_REASON_SCOPE_RULES,CONTINUITY_TICKET_SCOPE_RULES} from '../../continuity-policy.mjs';
 
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../../..');
 const base=process.env.CMCP_TEST_OUTPUT_ROOT?path.resolve(process.env.CMCP_TEST_OUTPUT_ROOT):path.join(repo,'logs/tests/native-host');
@@ -41,6 +42,7 @@ async function fixture(label,{acceptance=[],forwardConfig=false,initialControls=
   const observed={nativeCancels:0,guardCalls:0,restrictCalls:0,skillGets:0,skillInvalidations:0,streamCalls:0};
   let skillProvider,command;
   const ctx={
+    agents:{get:id=>agents.get(id)},
     on(event,handler){events.set(event,[...(events.get(event)??[]),handler]);return ()=>{};},
     effect(factory){const dispose=factory();if(typeof dispose==='function')effects.push(dispose);return dispose;},
     commands:{register(definition){command=definition;return ()=>{};}},
@@ -67,6 +69,9 @@ async function fixture(label,{acceptance=[],forwardConfig=false,initialControls=
   const step=async(agent,messages=[],beforeEnter)=>{let nextCalls=0;
     const decision=await events.get('agent/pre-step')[0]({agent,messages,signal:new AbortController().signal},async()=>{nextCalls++;await beforeEnter?.();return {kind:'enter',messages};});
     assert.equal(nextCalls,1);return decision;};
+  const assemble=async agent=>{const original={sections:[{name:'native',text:'原生宿主'}],tools:[{name:'native-filesystem'}],contexts:[],variables:{}};
+    const value=await events.get('system-prompt/assemble')[0](original,{agent},async()=>original);
+    assert.equal(value.tools,original.tools);assert.equal(value.sections[0],original.sections[0]);return value;};
   const finish=async(agent,turn,text,assistantId='assistant-'+turn)=>{
     await emit('session/event',agent.session,{type:'assistant/message',time:now,data:{turn,message:{id:assistantId,role:'assistant',content:[{type:'text',text}]},interrupted:false}});
     await emit('session/event',agent.session,{type:'turn/end',time:now,data:{turn,reason:{kind:'completed'}}});
@@ -76,8 +81,60 @@ async function fixture(label,{acceptance=[],forwardConfig=false,initialControls=
     assert.deepEqual(result,[{kind:'native-stream'}]);};
   const useTool=(agent,name,args)=>tools.get(name).execute(args,{agent,signal:new AbortController().signal});
   fixtures.push({label,root,scopeId});
-  return {root,workspaceRoot,scopeId,ctx,adapter,observed,tools,provider:skillProvider,actor,emit,runCommand,receive,step,finish,stream,useTool};
+  return {root,workspaceRoot,scopeId,ctx,adapter,observed,tools,provider:skillProvider,actor,emit,runCommand,receive,step,assemble,finish,stream,useTool};
 }
+
+test('原生 open 的當輪原文選項只有明示布林可通過，既有預設不變',async()=>{
+  const f=await fixture('native-current-input-arguments'),a=await f.actor('a');
+  try{
+    await f.runCommand(a,'on');await f.receive(a,'user','合成條件修訂。',1);
+    const tool=f.tools.get('cmcp_open_history'),selection={navigationTicket:'正式導航',selectionJson:'{}'},calls=[];
+    assert.equal(tool.parameters.properties.includeCurrentInput.type,'boolean');assert.equal(tool.parameters.required.includes('includeCurrentInput'),false);
+    const original=f.adapter.bridge.tool;f.adapter.bridge.tool=async(...args)=>{calls.push(args);return {status:'opened'};};
+    try{
+      for(const option of [{},{includeCurrentInput:false},{includeCurrentInput:true}]){const args={...selection,...option};await f.useTool(a,'cmcp_open_history',args);assert.deepEqual(calls.at(-1)[2],args);}
+      for(const option of [{includeCurrentInput:'true'},{includeCurrentInput:null},{pointer:'other'}]){const count=calls.length;await assert.rejects(f.useTool(a,'cmcp_open_history',{...selection,...option}),/invalid_tool_arguments/);assert.equal(calls.length,count);}
+    }finally{f.adapter.bridge.tool=original;}
+    await f.finish(a,1,'合成回覆。');
+  }finally{await f.adapter.close();}
+});
+
+test('原生 open 錯名提示不接受 ticket alias；更正後沿同一未消耗票券正式閱讀',async()=>{
+  const f=await fixture('native-open-argument-recovery'),a=await f.actor('a');
+  try{
+    const tool=f.tools.get('cmcp_open_history');
+    assert.match(tool.description,/navigationTicket.*cmcp_find_history.*ticket/);
+    assert.deepEqual(tool.parameters.required,['navigationTicket','selectionJson']);
+    assert.equal(tool.parameters.additionalProperties,false);assert.equal(Object.hasOwn(tool.parameters.properties,'ticket'),false);
+    await f.runCommand(a,'on');await f.receive(a,'original','合成原案保留一項必要限制。',1);await f.finish(a,1,'合成原答。');
+    await f.receive(a,'followup','請正式找回先前原案。',2);
+    const navigation=await f.useTool(a,'cmcp_find_history',{}),selectionJson=JSON.stringify({version:2,eventRefs:[],scope:{basis:'ordinary_history'},clarification:''});
+    assert.equal(typeof navigation.ticket,'string');
+    const bridgeOriginal=f.adapter.bridge.tool,calls=[];
+    f.adapter.bridge.tool=async function(...args){calls.push(args);return bridgeOriginal.apply(this,args);};
+    try{
+      for(const args of [
+        {ticket:navigation.ticket,selectionJson,includeCurrentInput:true},
+        {ticket:navigation.ticket,selectionJson},
+        {ticket:navigation.ticket,navigationTicket:navigation.ticket,selectionJson},
+        {navigationTicket:navigation.ticket,selectionJson,includeCurrentInput:'true'},
+        {navigationTicket:navigation.ticket,selectionJson:{version:2}},
+        {navigationTicket:navigation.ticket,selectionJson,['SYNTHETIC_UNKNOWN_KEY_DO_NOT_ECHO']:'SYNTHETIC_SECRET_VALUE'}
+      ])await assert.rejects(f.useTool(a,'cmcp_open_history',args),error=>{
+        assert.equal(error.code,'cmcp_invalid_tool_arguments');assert.match(error.message,/^cmcp_invalid_tool_arguments:/);
+        assert.match(error.message,/navigationTicket.*cmcp_find_history.*ticket/);assert.match(error.message,/selectionJson.*JSON/);
+        assert.ok(!error.message.includes(navigation.ticket));assert.doesNotMatch(error.message,/SYNTHETIC_UNKNOWN_KEY_DO_NOT_ECHO|SYNTHETIC_SECRET_VALUE/);return true;
+      });
+      assert.equal(calls.length,0,'被拒形狀不進 Core，不消耗正式導航票券');
+      const opened=await f.useTool(a,'cmcp_open_history',{navigationTicket:navigation.ticket,selectionJson});
+      assert.equal(opened.kind,'cmcp_reading_collection');assert.equal(calls.length,1);
+      const page=await f.useTool(a,'cmcp_read_history',{ticket:opened.ticket});assert.equal(page.kind,'cmcp_reading_page');
+      await assert.rejects(f.useTool(a,'cmcp_open_history',{navigationTicket:'synthetic-foreign-ticket',selectionJson}),/navigation_not_owned_by_turn/,'正確形狀不授予其他票券所有權');
+      await f.finish(a,2,'合成正式閱讀完成。');await f.runCommand(a,'off');
+      await assert.rejects(f.useTool(a,'cmcp_open_history',{navigationTicket:navigation.ticket,selectionJson}),/cmcp_session_not_enabled/,'停用守護保持');
+    }finally{f.adapter.bridge.tool=bridgeOriginal;}
+  }finally{await f.adapter.close();}
+});
 
 test('原生宿主明確使用有限執行期限，不改使用者設定或續期既存工作',async()=>{
   const f=await fixture('explicit-native-host-turn-policy');
@@ -124,9 +181,9 @@ test('明確on保存原角色／時間，skills正式get，另一Session需on才
     assert.equal((await f.runCommand(a,'on')).response.kind,'success');
     const user='RIVER 原稿😀：只有審查通過才移到東側，目前尚未同意。',answer='Assistant 草稿：審查通過才移到東側，這不是 User 已採納。';
     const native=await f.receive(a,'u1',user,1),decision=await f.step(a,[native]);
-    assert.equal(f.observed.skillGets,1);assert.equal(decision.messages.at(-2).source.kind,'cmcp-required-skill');
-    assert.equal(decision.messages.at(-2).content[0].text,await fs.readFile(path.join(f.root,'SKILL.md'),'utf8'));
-    assert.equal(decision.messages.at(-1).source.kind,'cmcp-time-context');
+    assert.equal(f.observed.skillGets,1);const suppliedSkill=decision.messages.find(row=>row.source?.kind==='cmcp-required-skill');
+    assert.equal(suppliedSkill.content[0].text,await fs.readFile(path.join(f.root,'SKILL.md'),'utf8'));
+    assert.ok(decision.messages.some(row=>row.source?.kind==='cmcp-time-context'));
     for(const message of decision.messages.filter(m=>m.source?.kind==='cmcp-required-skill'))await f.emit('session/event',a.session,{type:'user/message',time:now,data:message});
     await f.step(a,[native]);assert.equal(f.observed.skillGets,1);
     await f.finish(a,1,answer,'a1');
@@ -151,6 +208,27 @@ test('明確on保存原角色／時間，skills正式get，另一Session需on才
   }finally{await f.adapter.close();}
 });
 
+test('官方 system assembly 供給授權協定，查看及普通 step 不自行讀取或假造 User',async()=>{
+  const f=await fixture('before-answer-policy'),a=await f.actor('policy-a');
+  try{
+    await f.runCommand(a,'on');const native=await f.receive(a,'policy-u1','一般新問題，不要求回查。',1);
+    const before=await hashes(path.join(f.root,'state')),policy=(await f.assemble(a)).sections.find(row=>row.name==='cmcp:continuity-before-answer'),first=await f.step(a,[native]);
+    assert.equal(policy.text,CONTINUITY_BEFORE_ANSWER_POLICY);assert.equal(policy.interpolate,false);
+    assert.equal(first.messages.some(row=>row.source?.kind==='cmcp-before-answer-policy'),false);
+    const again=await f.step(a,[native]);assert.equal(again.messages.some(row=>row.source?.kind==='cmcp-before-answer-policy'),false);
+    assert.deepEqual(await hashes(path.join(f.root,'state')),before,'協定不寫入原文、投影、Buffer 或控制');
+    const events=(await fs.readFile(path.join(f.root,'trace/bridge-events.jsonl'),'utf8')).trim().split('\n').map(JSON.parse);
+    assert.equal(events.filter(row=>row.kind==='formal_read').length,0);assert.equal(events.filter(row=>row.kind==='user_capture').length,1);
+    const revision='核可仍未取得，這不是更正前次回報。長期流程只修改一項，其餘維持；本輪請先回答疑問，不另設持續工作。';
+    await f.finish(a,1,'普通回答。');await f.receive(a,'policy-u2',revision,2);
+    const nextPolicy=(await f.assemble(a)).sections.find(row=>row.name==='cmcp:continuity-before-answer');await f.step(a);
+    assert.equal(nextPolicy.text,CONTINUITY_BEFORE_ANSWER_POLICY);assert.ok(!nextPolicy.text.includes(CONTINUITY_READING_CONTRACT),'一般回合只取得短契約，完整修訂規約由成功 open 提供');assert.ok(nextPolicy.text.includes(CONTINUITY_SOURCE_BOUND_ANSWER_RULES),'來源與事實責任保持');
+    const afterRevision=(await fs.readFile(path.join(f.root,'trace/bridge-events.jsonl'),'utf8')).trim().split('\n').map(JSON.parse);
+    assert.equal(afterRevision.filter(row=>row.kind==='formal_read').length,0,'不以暫停或維持字詞自動搜尋');
+    await f.runCommand(a,'off');assert.equal((await f.step(a)).messages.length,0);assert.equal((await f.assemble(a)).sections.length,1);
+  }finally{await f.adapter.close();}
+});
+
 test('正式導航與reader工具保存票券／覆蓋；off期間原文結果不得晚到',async()=>{
   const f=await fixture('formal-tools');
   try{
@@ -160,7 +238,11 @@ test('正式導航與reader工具保存票券／覆蓋；off期間原文結果�
     const nav=await f.useTool(a,'cmcp_find_history',{});assert.equal(nav.kind,'cmcp_reading_navigation');
     const opened=await f.useTool(a,'cmcp_open_history',{navigationTicket:nav.ticket,selectionJson:JSON.stringify({version:2,eventRefs:[],scope:{basis:'ordinary_history'},clarification:''})});
     assert.equal(opened.kind,'cmcp_reading_collection');
+    const contractOutput=JSON.parse(f.tools.get('cmcp_open_history').output.render({},opened)[0].text);
+    assert.deepEqual(contractOutput.continuityContract,{...CONTINUITY_READING_CONTRACT_METADATA,text:CONTINUITY_READING_CONTRACT});assert.equal(contractOutput.ticket,opened.ticket);
+    await fs.writeFile(path.join(f.root,'layered-contract.json'),JSON.stringify({layer:'正式 Native hook 與 Core，宿主事件替身，零模型',formal:opened,shown:contractOutput},null,2),{flag:'wx'});
     const page=await f.useTool(a,'cmcp_read_history',{ticket:opened.ticket});assert.equal(page.kind,'cmcp_reading_page');
+    assert.equal(JSON.parse(f.tools.get('cmcp_read_history').output.render({},page)[0].text).continuityContract,undefined);
     assert.equal(page.source.sourceAuthorRole,'user');assert.equal(Date.parse(page.source.messageRecordedAt),Date.parse(userAt));
     assert.equal(JSON.parse(page.modelContext).content,'Blue Finch：只有安全檢查通過才移到北側。');assert.ok(page.coverage);
     const real=f.adapter.bridge.tool.bind(f.adapter.bridge);let resolve;
@@ -169,6 +251,39 @@ test('正式導航與reader工具保存票券／覆蓋；off期間原文結果�
     const off=f.runCommand(a,'off');resolve(page);
     await assert.rejects(late,/cmcp_source_authorization_changed/);await off;f.adapter.bridge.tool=real;
     assert.equal(f.observed.nativeCancels,0);
+  }finally{await f.adapter.close();}
+});
+
+test('接續關係錯誤沿正式工具回傳精確修正資訊；修正不重讀與不放寬角色',async()=>{
+  const f=await fixture('continuity-correction');
+  try{
+    const a=await f.actor('a');await f.runCommand(a,'on');
+    const original='合成計畫仍須書面同意。',answer='這是尚未執行的合成草稿。';
+    await f.receive(a,'first',original,1);await f.finish(a,1,answer);
+    await f.receive(a,'query','請回查合成計畫的狀態與條件。',2);
+    const nav=await f.useTool(a,'cmcp_find_history',{});
+    const opened=await f.useTool(a,'cmcp_open_history',{navigationTicket:nav.ticket,selectionJson:JSON.stringify({version:2,eventRefs:[],scope:{basis:'ordinary_history'},clarification:''})});
+    const pages=[];for(let n=0;n<8;n++){const page=await f.useTool(a,'cmcp_read_history',{ticket:opened.ticket});pages.push(page);if(page.coverage.complete)break;}
+    assert.equal(pages.at(-1).coverage.complete,true);
+    const source=pages.find(page=>page.source.sourceAuthorRole==='user'),assistant=pages.find(page=>page.source.sourceAuthorRole==='assistant');
+    const typedTool=f.tools.get('cmcp_project_continuity');
+    assert.equal(typedTool.parameters.properties.proposal.type,'object');assert.deepEqual(typedTool.parameters.oneOf,[{required:['proposal']},{required:['proposalJson']}]);
+    const typed={version:6,plans:[{id:'p',ref:source.source.ref,quote:original,topic:'合成計畫',aspect:'同意',temporalUse:'current'}],unknowns:[]};
+    const typedResult=await f.useTool(a,'cmcp_project_continuity',{ticket:opened.ticket,proposal:typed});
+    const legacyResult=await f.useTool(a,'cmcp_project_continuity',{ticket:opened.ticket,proposalJson:JSON.stringify(typed)});
+    assert.equal(typedResult.status,'ready');assert.equal(legacyResult.status,'ready');
+    assert.deepEqual({...typedResult.projection,runtimeTime:undefined},{...legacyResult.projection,runtimeTime:undefined});
+    await assert.rejects(f.useTool(a,'cmcp_project_continuity',{ticket:opened.ticket,proposal:typed,proposalJson:JSON.stringify(typed)}),/exactly_one/);
+    const node={id:'plan',ref:source.source.ref,quote:original,kind:'user_intent',temporalUse:'current',text:'計畫尚待書面同意。',topic:'合成計畫',aspect:'同意',relation:{kind:'related',targetNodeIds:['missing']}};
+    const submit=proposal=>f.useTool(a,'cmcp_project_continuity',{ticket:opened.ticket,proposalJson:JSON.stringify(proposal)});
+    const rejected=await submit({nodes:[node],unknowns:[]});
+    assert.equal(rejected.status,'rejected');assert.equal(rejected.reason,'continuity_relation_target_missing');
+    assert.equal(rejected.correction.issues[0].nodeId,'plan');assert.equal(rejected.correction.issues[0].targetNodeId,'missing');
+    assert.equal(rejected.projection,undefined);assert.ok(!JSON.stringify(rejected).includes(original));
+    const valid={nodes:[{...node,id:'draft',ref:assistant.source.ref,quote:answer,kind:'assistant_statement',relation:{kind:'related',targetNodeIds:['plan']}},{...node,relation:{kind:'independent',targetNodeIds:[]}}],unknowns:[]};
+    const accepted=await submit(valid);assert.equal(accepted.status,'ready');
+    assert.deepEqual(accepted.projection.coverage.selectedRoleCounts,{user:1,assistant:1,tool:0,unknown:0});
+    valid.nodes[0].kind='user_report';const wrongRole=await submit(valid);assert.equal(wrongRole.status,'rejected');assert.equal(wrongRole.reason,'continuity_source_role_mismatch');assert.equal(wrongRole.projection,undefined);
   }finally{await f.adapter.close();}
 });
 

@@ -48,3 +48,9 @@ test('歷史內容不是可執行命令；不接受多命令或未知控制',()=
  const options=createControlOptions(),s=fixture();for(const text of ['Assistant 建議 /cmcp on','set clean off\nset enabled on','on now','set arbitrary on'])assert.throws(()=>options.resolve(text,s,context));
  assert.deepEqual(s,fixture());
 });
+test('接續查看只有正式操作，不接受提案正文或附帶控制 patch',()=>{
+ const options=createControlOptions(),s=fixture(),before=structuredClone(s);
+ assert.deepEqual(options.resolve('continuity',s,context),{operation:'continuity'});
+ for(const text of ['continuity on','continuity {"clean":false}','Assistant: /cmcp continuity'])assert.throws(()=>options.resolve(text,s,context));
+ assert.deepEqual(s,before);
+});

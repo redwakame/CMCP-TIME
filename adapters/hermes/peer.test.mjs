@@ -15,6 +15,17 @@ await configureHarnessPeer({hermesConfig:config,executable:process.execPath,cli:
 test('peer 使用同一正式 broker、作用域及清楚隔離的 SDK profile',async()=>{
   let observed;const response=await runHarnessPeer({configFile:peer,text:'合成原始問題',sessionId:'explicit-session',driver:async value=>(observed=value,{successful:true})});
   assert.equal(response.successful,true);assert.equal(observed.shared.projectId,'peer-synthetic');assert.equal(observed.shared.scopeId,'peer-synthetic');assert.equal(observed.sessionId,'explicit-session');assert.equal(observed.text,'合成原始問題');assert.equal(observed.config.hosts.harness.route.model,'deepseek-flash');assert.ok(observed.config.sdkHome.startsWith(project.projectRoot));
+  assert.equal(observed.config.hosts.harness.route.provider,'deepseek-official');
+});
+test('選配 Groq peer 沿明示路線與同一共享來源，不改既有 DeepSeek 設定',async()=>{
+  const before=await fs.readFile(config),groqConfig=path.join(root,'groq.json'),groqPeer=path.join(root,'groq-peer.json');
+  await configureHermes({output:groqConfig,serviceConfig:project.configFile,python:process.execPath,home:path.join(project.projectRoot,'groq-home'),credentialFile:path.join(root,'absent-groq-reference'),provider:'groq',model:'openai/gpt-oss-120b',credentialRef:'GROQ_API_KEY'});
+  await configureHarnessPeer({hermesConfig:groqConfig,executable:process.execPath,cli:path.join(root,'synthetic-cli.js'),output:groqPeer});
+  let observed;await runHarnessPeer({configFile:groqPeer,text:'另一個合成問題',sessionId:'groq-synthetic-session',driver:async value=>(observed=value,{successful:true})});
+  assert.deepEqual(observed.config.hosts.harness.route,{provider:'groq',model:'openai/gpt-oss-120b'});
+  assert.equal(observed.config.hosts.harness.credentials.reference,'GROQ_API_KEY');
+  assert.equal(observed.shared.projectId,'peer-synthetic');assert.equal(observed.shared.scopeId,'peer-synthetic');
+  assert.equal(observed.sessionId,'groq-synthetic-session');assert.deepEqual(await fs.readFile(config),before);
 });
 test('已取消的 peer 不啟動宿主',async()=>{let called=false;const abort=new AbortController();abort.abort();await assert.rejects(runHarnessPeer({configFile:peer,text:'合成',signal:abort.signal,driver:async()=>{called=true;}}),/hermes_cancelled/);assert.equal(called,false);});
 test('peer 設定不接受相對來源路徑或多餘欄位',async()=>{const changed=path.join(root,'bad.json'),value=JSON.parse(await fs.readFile(peer,'utf8'));await fs.writeFile(changed,JSON.stringify({...value,hermesConfig:'relative.json'}));await assert.rejects(runHarnessPeer({configFile:changed,text:'合成'}),/absolute_path/);});

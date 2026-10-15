@@ -7,13 +7,20 @@ import {callSharedProject} from '../shared-project/client.mjs';
 
 const safe=error=>/^[a-z][a-z0-9_]+$/.test(error?.message??'')?error.message:'project_entry_harness_failed';
 const textOf=message=>(message?.content??[]).filter(block=>block.type==='text').map(block=>block.text).join('');
+/** 僅設定官方 dsh-base 已掛載的供應商；憑證只使用參照，不讀取或複製正文。 */
+export function buildHarnessProviderPatch({route,credentials}){
+  if(route?.provider!=='groq')return [];
+  const reference=credentials?.reference;
+  if(typeof reference!=='string'||!/^[A-Z][A-Z0-9_]{1,127}$/.test(reference)||reference==='DEEPSEEK_API_KEY')throw Error('project_entry_groq_credential_reference_required');
+  return [{id:'llm-pi-ai',config:{providers:{groq:{apiKeyEnv:reference}}}}];
+}
 /** The installed SDK exposes initialize, session/prompt and shutdown. No invented cancel/approval RPC. */
 export async function runHarnessTurn({config,shared,text,signal,onEvent=()=>{},spawnProcess=spawn,call=callSharedProject,sessionId='cmcp-session-'+randomUUID()}){
   const check=()=>{if(signal?.aborted)throw Error('project_entry_stopped');};check();
   const settings=config.hosts.harness,artifactRoot=path.join(config.evidenceRoot,'harness-'+randomUUID());await noAlias(artifactRoot);await fs.mkdir(artifactRoot,{recursive:true});await fs.mkdir(config.sdkHome,{recursive:true});check();
   const folder=path.join(productRoot,'adapters/deepseek-harness/shared-project'),host={kind:'cmcp_shared_harness_config',version:1,projectId:shared.projectId,hostId:'harness',agentId:shared.hosts.harness.agentId,profileName:config.profileName,workspaceRoot:shared.hosts.harness.workspace,artifactRoot,skillPath:path.join(folder,'SKILL.md'),sessionIds:[sessionId],route:settings.route,connection:{pipe:shared.pipe,controlAuthFile:shared.hosts.harness.controlAuthFile,readAuthFile:shared.hosts.harness.readAuthFile}};
   const preflightFile=path.join(artifactRoot,'credential-reference.json'),overlayPath=path.join(artifactRoot,'sdk-overlay.json');
-  await writeNewJSON(overlayPath,[{id:'credentials',config:{path:settings.credentials.path,watch:false}},{id:'deepseek-account',disabled:true},{id:'llm-deepseek-account',disabled:true},{id:'sdk-jsonrpc-server',config:{maxTokensAsSuccess:false}},{insert:[{id:'cmcp-shared-harness',name:path.join(folder,'host.mjs'),config:host},{id:'cmcp-project-entry-preflight',name:path.join(productRoot,'adapters/project-entry/harness-preflight.mjs'),config:{outputFile:preflightFile,credentialRef:settings.credentials.reference}}]}]);
+  await writeNewJSON(overlayPath,[{id:'credentials',config:{path:settings.credentials.path,watch:false}},...buildHarnessProviderPatch(settings),{id:'deepseek-account',disabled:true},{id:'llm-deepseek-account',disabled:true},{id:'sdk-jsonrpc-server',config:{maxTokensAsSuccess:false}},{insert:[{id:'cmcp-shared-harness',name:path.join(folder,'host.mjs'),config:host},{id:'cmcp-project-entry-preflight',name:path.join(productRoot,'adapters/project-entry/harness-preflight.mjs'),config:{outputFile:preflightFile,credentialRef:settings.credentials.reference}}]}]);
   const exists=await fs.access(path.join(config.sdkHome,'profiles',config.profileName,'package.json')).then(()=>true,()=>false);check();
   const args=['--expose-internals',settings.cli,'--profile',config.profileName,...exists?[]:['--from-default-profile','sdk'],'--patch',overlayPath];
   const child=spawnProcess(settings.executable,args,{cwd:host.workspaceRoot,env:{...process.env,ELECTRON_RUN_AS_NODE:'1',DSH_HOME:config.sdkHome,DSH_TELEMETRY_DISABLED:'1'},windowsHide:true,stdio:['pipe','pipe','pipe']});

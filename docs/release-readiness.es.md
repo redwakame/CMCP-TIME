@@ -1,8 +1,10 @@
-# CMCP-TIME 0.1.0: guía de uso
+# CMCP-TIME 0.1.1: guía de uso
 
 [English](release-readiness.en.md) · [繁體中文](release-readiness.zh-TW.md) · [Español](release-readiness.es.md) · [日本語](release-readiness.ja.md)
 
-Esta guía describe **0.1.0**; conserva el nombre del archivo para no romper enlaces existentes. La versión exacta, el tag y `PUBLIC-FILES.json` identifican la fuente entregada; los canales modificables no sustituyen esa identidad. Autor original: redwakame; Apache-2.0. Conserva LICENSE y NOTICE.
+Esta guía describe **0.1.1**; conserva el nombre del archivo para no romper enlaces existentes. La versión exacta, el tag y `PUBLIC-FILES.json` identifican la fuente entregada; los canales modificables no sustituyen esa identidad. Autor original: redwakame; Apache-2.0. Conserva LICENSE y NOTICE.
+
+Instala **0.1.1 desde [GitHub Release v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1)** mediante el `.tgz` fijo de abajo. npm conserva 0.1.0 en esta publicación; no sustituyas la URL por el nombre del registro ni por `latest`/`next` si quieres 0.1.1. Comprueba los hashes del Release y `--version` tras instalar. [Cambios y límites de evidencia](release-0.1.1.md).
 
 ## Prefijo persistente y espacio independiente
 
@@ -12,7 +14,8 @@ Prepara Node.js >=22.16.0 y npm. El último incremento se ejecutó en Windows No
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
+$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
+npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
@@ -21,6 +24,18 @@ npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0
 `setup` pregunta por guardado, idioma, zona horaria y conexión opcional de Codex. No instala el host, importa datos privados, concede llamadas de pago ni activa avisos. En POSIX usa `<prefix>/bin/cmcp-time`; en Windows `<prefix>/cmcp-time.cmd`. Sustituye `cmcp-time` por ese ejecutable completo en los ejemplos; no se presupone un cambio de PATH. Desde fuentes usa `node bin/cmcp-time.mjs` y antes `npm ci` para las dependencias MCP bloqueadas. Consulta [instalación](npm-installation.md).
 
 Para hooks locales de Codex, revisa el proyecto generado y su aprobación nativa. Harness Desktop oficial es otro host: npm setup no crea automáticamente su despliegue. En uno ya configurado, usa el profile y las operaciones inspeccionadas que se detallan abajo. Copiar el programa no equivale a configurar su integración.
+
+### Mantenimiento de 0.1.1: terminal y Codex opcional
+
+Estas correcciones forman parte de GitHub 0.1.1; el paquete npm 0.1.0 publicado permanece intacto. Sin `--answers`, `setup`/`update` requiere un terminal (TTY) y respuestas una por una. Los lotes por tubería y stdin vacío se rechazan antes de escribir la configuración; EOF cancela y nunca implica consentimiento. Para automatizar, completa las opciones explícitas a partir de `examples/setup-host.json` y ejecuta `cmcp-time setup --workspace <espacio-existente> --answers <answers.json-dentro-del-espacio>`. Elige `attachCodex: false` si no quieres Codex; no hace falta instalarlo ni iniciarlo.
+
+`setup --status` conserva `state` y `cmcp_codex_binding` por compatibilidad; `stateScope=managed_codex_hook_binding` limita su significado a esa conexión. Consulta por separado `layers.configuration`, `layers.hostConnection`, `layers.runtime` y `layers.sources`: configuración, conexión del host, controles efectivos, originales guardados y elegibilidad del lector formal son estados distintos. Otros hosts muestran `not_inspected` hasta su comprobación independiente; elegibilidad no prueba recepción por el modelo. `disable` desconecta Codex administrado y conserva controles Runtime e History. Las entradas sin Codex siguen necesitando autorización válida propia.
+
+### Mantenimiento de 0.1.1: estado actual bajo demanda
+
+En una conversación autorizada, pide de forma natural organizar el estado actual; el host usa las herramientas formales existentes y no necesitas escribir JSON. Si `partial` devuelve un finding sobre el uso de una fuente, el host debe revisar el mensaje original completo y seguir el `finding.requiredResolutionKind` actual y el `finding.report.source.ref` formal; `nodeId` no sustituye a `reportRef`. Si hay páginas, continúa mediante `delivery.nextPage` de esa misma entrega hasta `complete`, sin reenviar la propuesta como si fuera la página siguiente. Fuentes ausentes o ambigüedad real conservan `partial`; `ready` estructural y de fuentes no significa aceptación semántica ni permiso de ejecución.
+
+La comprobación H4 separó correctamente los tres informes explícitos de las instrucciones de pausa y entregó todas las páginas de las proyecciones resultantes. El host normal seleccionó cláusulas exactas; las resoluciones explícitas de uso de fuente se comprobaron aparte con originales fijos. Entregar toda la proyección no prueba que cada original seleccionado llegara al modelo: una respuesta larga adicional del Assistant quedó sin leer y la cobertura global conservó correctamente `partial`. Dos casos anteriores de gran volumen C27 aún superan 65.536 bytes; son límites conocidos, no pruebas de capacidad completa superadas. Consulta [los límites de evidencia de 0.1.1](release-0.1.1.md).
 
 ## Primera conexión con Desktop oficial
 
@@ -140,9 +155,11 @@ Para seguimiento, lista `/cmcp sources`, elige el número vigente y usa `/cmcp p
 
 Buffer dura 12 horas por defecto (6–48 configurables); caducar/Clear conserva History y Pins independientes. OFF, Clean, detener guardado y desconectar no son equivalentes. Cambiar vista, consultar catálogo/estado o abrir una vista formal no renueva tiempos User, TTL ni entrega; la lectura puede crear su recibo normal. Controles compartidos y autorización de Session permanecen separados.
 
+Setup conserva por compatibilidad `loopTiming`: 600000/60000/600000 ms para TTL/inactividad/ventana de actividad. Runtime usa el despachador común con `externalDispatch:true`; su temporizador local de inactividad está desactivado. **60 segundos sin actividad no garantizan un mensaje.** Solo se programan candidatos elegibles por `dueAt` de Pin o vencimiento original de Buffer, con controles vigentes, DND, fuentes, cancelación, deduplicación y destino autorizado disponible. El puente oficial Harness admite únicamente Pins explícitos. Proactividad empieza en OFF. El estado distingue configuración, ejecutor, observación actual y límites de entrega; no observar un ejecutor no demuestra que esté detenido. Véase [configuración](configuration.md#timing-values-and-the-effective-proactive-executor).
+
 `/cmcp ui minimized`, `row`, `hidden` solo cambian presentación; `/cmcp help` sigue disponible oculto. El estado separa guardado, registro pendiente/fallido, acceso formal y estado de evaluación entre hosts. Los metadatos de almacenamiento no evalúan por sí solos la transferencia al receptor; consulta por separado la lectura formal y los recibos del host. Usa el reintento explícito protegido cuando corresponda; consultar no reintenta ni amplía capacidad.
 
-## Actualizar npm y retirar hooks locales
+## Actualizar el programa y retirar hooks locales
 
 Detén normalmente el writer del ámbito elegido antes de reemplazar código. Conserva prefijo y espacio de trabajo. Instala la versión revisada en el mismo prefijo, verifica `--version` y ejecuta `cmcp-time update --workspace <workspace>` para conexiones Codex administradas por setup. `update` no descarga software de npm. Desktop usa `desktop upgrade`, explicado abajo.
 

@@ -6,6 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {Readable} from 'node:stream';
 import {createCodexSharedAdapter,makeTicket,readTool,validateBinding,dynamicTools} from './adapter.mjs';
 import {runReadCli} from './read-cli.mjs';
+import {CONTINUITY_READING_CONTRACT,CONTINUITY_READING_CONTRACT_METADATA} from '../../continuity-policy.mjs';
 
 const repo=fileURLToPath(new URL('../../../',import.meta.url));
 const fixtures=path.resolve(process.env.CMCP_TEST_OUTPUT_ROOT??path.join(repo,'logs/tests/codex-shared'));
@@ -42,6 +43,20 @@ test('model read is queued behind pending admission and uses only read credentia
 test('wrong session and absent User admission never call broker',async()=>{
   const {adapter,calls}=await setup();await assert.rejects(adapter.handleItemCompleted(user({threadId:'another-session'})),/session_mismatch/);
   await assert.rejects(adapter.handleItemCompleted(answer()),/user_not_admitted/);assert.equal(calls.length,0);
+});
+
+test('Codex 正式模型 open 與無 UI reader 同源提供契約，拒絕與每頁不提供',async()=>{
+ const formal={kind:'cmcp_reading_collection',status:'ready',ticket:'formal-ticket',manifestHash:'a'.repeat(64),collection:{sources:[{ref:'r1'}]},readSources:0};
+ const calls=[];let deny=false;
+ const call=async value=>{calls.push(value);if(deny)throw Error('cmcp_source_authorization_changed');return value.request.operation==='open'?structuredClone(formal):{kind:'cmcp_reading_page',ticket:'formal-ticket',status:'complete'};};
+ const args={navigationTicket:'nav',selectionJson:'{}'},result=await readTool({binding:reader,ticket,operation:'open',args,call});
+ assert.deepEqual(result.continuityContract,{...CONTINUITY_READING_CONTRACT_METADATA,text:CONTINUITY_READING_CONTRACT});
+ const {continuityContract,...raw}=result;assert.deepEqual(raw,formal);assert.equal(calls[0].role,'model_read');assert.deepEqual(calls[0].request.args,args);
+ const page=await readTool({binding:reader,ticket,operation:'read',args:{ticket:formal.ticket},call});assert.equal(page.continuityContract,undefined);
+ const {adapter,evidence}=await setup({call});await adapter.handleItemCompleted(user());
+ const value=await adapter.tool({threadId:ticket.sessionId,turnId:'turn-1',callId:'contract-call',namespace:null,tool:'cmcp_open_history',arguments:args});assert.deepEqual(value,result);assert.deepEqual(evidence.at(-1).result,result);
+ await fs.writeFile(path.join(workspace,'layered-contract.json'),JSON.stringify({layer:'正式 Codex readTool／生命週期接點，broker 合成替身，零模型',formal,result,lifecycle:value},null,2),{flag:'wx'});
+ deny=true;await assert.rejects(readTool({binding:reader,ticket,operation:'open',args,call}),/authorization_changed/);
 });
 test('same official item with changed body rejects; exact retry preserves requestId and time',async()=>{
   const {adapter,calls}=await setup();await adapter.handleItemCompleted(user());await adapter.handleItemCompleted(answer());await adapter.handleItemCompleted(answer());
@@ -128,6 +143,23 @@ test('Hook Stop saves only last_assistant_message with explicit weaker coverage'
 test('CLI rejects config flags before loading any binding',async()=>{
   let error='';const code=await runReadCli({bindingFile:'missing',ticketFile:'missing',argv:['find','--config','other'],stdin:Readable.from([]),stdout:{write:()=>assert.fail()},stderr:{write:value=>{error+=value;}}});assert.equal(code,1);assert.equal(error,'codex_shared_read_usage\n');
 });
-test('dynamic tool surface contains only the four formal read functions',()=>{
-  assert.equal(dynamicTools.length,4);for(const tool of dynamicTools){assert.equal(tool.type,'function');assert.equal(tool.inputSchema.additionalProperties,false);}
+test('正式閱讀加上來源核對投影，仍不提供控制或原文保存工具',()=>{
+  assert.equal(dynamicTools.length,6);assert.ok(dynamicTools.some(tool=>tool.name==='cmcp_project_continuity'));for(const tool of dynamicTools){assert.equal(tool.type,'function');assert.equal(tool.inputSchema.additionalProperties,false);}
+});
+
+test('open 的當輪原文選項由 stdin 正式入口傳遞；預設不注入且錯型別與未知鍵拒絕',async()=>{
+  const calls=[],bindingFile=path.join(workspace,'reader-binding.json'),ticketFile=path.join(workspace,'reader-ticket.json');
+  await fs.writeFile(bindingFile,JSON.stringify(reader));await fs.writeFile(ticketFile,JSON.stringify(ticket));
+  const selection={navigationTicket:'正式導航',selectionJson:'{"version":2}'};
+  const tool=dynamicTools.find(value=>value.name==='cmcp_open_history');
+  assert.equal(tool.inputSchema.properties.includeCurrentInput.type,'boolean');assert.equal(tool.inputSchema.required.includes('includeCurrentInput'),false);
+  for(const option of [{},{includeCurrentInput:false},{includeCurrentInput:true}]){
+    let stdout='',stderr='';const args={...selection,...option};
+    assert.equal(await runReadCli({bindingFile,ticketFile,argv:['open'],stdin:Readable.from([JSON.stringify(args)]),stdout:{write:x=>stdout+=x},stderr:{write:x=>stderr+=x},call:async request=>{calls.push(request);return {status:'opened'};}}),0,stderr);
+    assert.equal(JSON.parse(stdout).status,'opened');assert.deepEqual(calls.at(-1).request.args,args);
+  }
+  for(const invalid of [{includeCurrentInput:'true'},{includeCurrentInput:null},{includeCurrentInput:1},{pointer:'other'},{selectionJson:undefined}]){
+    const count=calls.length;let error='';assert.equal(await runReadCli({bindingFile,ticketFile,argv:['open'],stdin:Readable.from([JSON.stringify({...selection,...invalid})]),stdout:{write:()=>assert.fail()},stderr:{write:value=>error+=value},call:async value=>calls.push(value)}),1);
+    assert.match(error,/invalid_(schema|tool_arguments)/);assert.equal(calls.length,count);
+  }
 });

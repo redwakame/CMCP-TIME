@@ -1,3 +1,4 @@
+import {CONTINUITY_TOOL_DESCRIPTION,OPEN_HISTORY_TOOL_DESCRIPTION,CONTINUITY_TOOL_PARAMETERS,readContinuityProposal,modelToolArgumentsError} from '../../shared-project/client.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -5,11 +6,13 @@ import {createHash,randomUUID} from 'node:crypto';
 import {CmcpHarnessBridge,projectHarnessToolResult,projectHarnessTimeContext,within} from '../runtime-bridge.mjs';
 import {createPinHost} from '../pin-host.mjs';
 import {installPromptOriginalCapture} from './prompt-originals.mjs';
+import {installContinuitySystemPolicy,observeContinuitySystemPolicy} from '../continuity-system-policy.mjs';
+import {CONTINUITY_PAGE_PARAMETERS,CONTINUITY_PAGE_DESCRIPTION} from '../../continuity-delivery.mjs';
 import {installMediaRpc} from './media-rpc.mjs';
 import {createControlOptions,controlMenu,CONTROL_CONTRACT_VERSION} from '../../control/contract.mjs';
 
 export const name='cmcp-desktop-native';
-export const inject=['agents','tools','sessions','skills','commands','llm','attachments','sessionController','typert'];
+export const inject=['agents','tools','sessions','skills','commands','llm','attachments','sessionController','typert','systemPrompt'];
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const textOf=message=>(message?.content??[]).filter(block=>block.type==='text').map(block=>block.text).join('');
 const key=(sessionId,messageId)=>JSON.stringify([sessionId,messageId]);
@@ -115,6 +118,19 @@ export function apply(ctx,config){
   };
   const stampValid=async(state,stamp)=>{const current=await enhancementStamp(state);
     return !!stamp&&!!current&&current.epoch===stamp.epoch&&current.generation===stamp.generation;};
+  installContinuitySystemPolicy(ctx,{
+    resolveAgent:agent=>{const state=liveState(agent?.id);return state?.agent===agent?state:null;},
+    authorized:async state=>{
+      if(pinHost?.isPinTurn(state.agent.id))return null;
+      await queues.get(state.agent.id);const stamp=await enhancementStamp(state),binding=state.binding;
+      if(!stamp||!binding||binding.activationEpoch!==state.epoch)return null;
+      return {metadata:{userMessageId:binding.userMessageId,harnessTurn:binding.harnessTurn,activationEpoch:stamp.epoch},
+        valid:async()=>{const current=await stampValid(state,stamp);
+          return current&&liveState(state.agent.id)===state&&state.binding===binding;}};
+    },
+    onProvided:(state,metadata)=>bridge.note(state.agent.id,'before_answer_policy_provided',metadata),
+    onError:(state,error)=>report(state,error)
+  });
   const queue=(state,operation)=>{const next=(queues.get(state.agent.id)??Promise.resolve()).then(operation);
     queues.set(state.agent.id,next.catch(error=>report(state,error)));return next;};
   const schedule=(state,operation)=>{void queue(state,operation).catch(()=>{});};
@@ -157,13 +173,19 @@ export function apply(ctx,config){
       return await queue(state,async()=>{
         checkSignal(signal);
         const currentSnapshot=await bridge.status(),controlContext={scopeId:config.scopeId,sessionId:agent.id,capabilities:{ui:true,pinCreate:pinReady,pinChange:pinReady}};
-        if(['sources','time','buffer','pins','read','original','media-list','pin','pin-time','pin-cancel','pin-complete'].includes(operation)&&!active(state))throw Error('cmcp_session_not_enabled');
-        if(['sources','time','buffer','pins','read','original','media-list','pin','pin-time','pin-cancel','pin-complete'].includes(operation)
+        if(['sources','time','buffer','pins','read','original','media-list','pin','pin-time','pin-cancel','pin-complete','continuity'].includes(operation)&&!active(state))throw Error('cmcp_session_not_enabled');
+        if(['sources','time','buffer','pins','read','original','media-list','pin','pin-time','pin-cancel','pin-complete','continuity'].includes(operation)
           &&(!currentSnapshot.controlConfiguration.effective.enabled||currentSnapshot.controlConfiguration.effective.clean))throw Error('cmcp_shared_protection');
         const prepared=state.controlOptions.resolve(input,currentSnapshot,controlContext);operation=prepared.operation;
         parsed=[input,operation,prepared.payload?JSON.stringify(prepared.payload):undefined];
         if(['help','menu'].includes(operation))return result('success',await status(state,operation,{menu:controlMenu(controlContext)}));
         if(operation==='ui')return result('success',await status(state,operation,{uiPreference:prepared.uiPreference}));
+        if(operation==='continuity'){
+          const epoch=state.epoch,continuity=await bridge.continuityStatus(agent.id);
+          const final=await status(state,operation);checkSignal(signal);
+          if(!active(state)||state.epoch!==epoch||!final.enabled||final.snapshot.controlConfiguration.generation!==currentSnapshot.controlConfiguration.generation)throw Error('cmcp_source_authorization_changed');
+          return result('success',{...final,continuity});
+        }
         if(['sources','pins','buffer','time'].includes(operation)){
           const final=await status(state,operation);checkSignal(signal);
           if(!final.enabled||final.snapshot.controlConfiguration.generation!==currentSnapshot.controlConfiguration.generation){
@@ -285,22 +307,27 @@ export function apply(ctx,config){
       return {name:candidate.name,description:candidate.description,invocation:candidate.invocation,provider:candidate.provider,
         source:candidate.source,resourceBase:candidate.resourceBase,content};}};
   ctx.skills.registerProvider(control=>{invalidateSkills=control.invalidate;return provider;});
-  const toolNames=['cmcp_find_history','cmcp_open_history','cmcp_read_history'];
+  const toolNames=['cmcp_find_history','cmcp_open_history','cmcp_read_history','cmcp_project_continuity'];
   const tools=[
     {name:toolNames[0],description:'取得已授權歷史的有界導航與選取協定；導航不是已讀原文。',parameters:object()},
-    {name:toolNames[1],description:'依正式導航協定凍結必要來源集合，再沿正式 reader 分頁閱讀。',parameters:object({navigationTicket:string,selectionJson:string},['navigationTicket','selectionJson'])},
-    {name:toolNames[2],description:'正式閱讀集合的下一頁，保留原角色、時間、版本與覆蓋。',parameters:object({ticket:string},['ticket'])}
+    {name:toolNames[1],description:OPEN_HISTORY_TOOL_DESCRIPTION,parameters:object({navigationTicket:string,selectionJson:string,includeCurrentInput:{type:'boolean'}},['navigationTicket','selectionJson'])},
+    {name:toolNames[2],description:'正式閱讀集合的下一頁，保留原角色、時間、版本與覆蓋。',parameters:object({ticket:string},['ticket'])},
+    {name:toolNames[3],description:CONTINUITY_TOOL_DESCRIPTION,parameters:CONTINUITY_TOOL_PARAMETERS},
+    {name:'cmcp_read_continuity',description:CONTINUITY_PAGE_DESCRIPTION,parameters:CONTINUITY_PAGE_PARAMETERS}
   ];
   for(const tool of tools)ctx.effect(()=>ctx.tools.register({...tool,
     output:{schema:{type:'object',additionalProperties:true},render:(_args,value)=>[{type:'text',text:JSON.stringify(projectHarnessToolResult(value,publishedProtocols))}]},
     async execute(args,exec){const state=stateFor(exec.agent);if(!active(state))throw Error('cmcp_session_not_enabled');
-      if(!args||typeof args!=='object'||Array.isArray(args)||Object.keys(args).some(k=>!Object.hasOwn(tool.parameters.properties,k))
-        ||tool.parameters.required.some(k=>typeof args[k]!=='string'))throw Error('cmcp_invalid_tool_arguments');
+      if(tool.name==='cmcp_project_continuity')readContinuityProposal(args);
+      else if(!args||typeof args!=='object'||Array.isArray(args)||Object.keys(args).some(k=>!Object.hasOwn(tool.parameters.properties,k))
+        ||tool.parameters.required.some(k=>typeof args[k]!=='string')||Object.entries(args).some(([key,value])=>typeof value!==tool.parameters.properties[key].type))throw modelToolArgumentsError('cmcp_invalid_tool_arguments',tool.name);
       const epoch=state.epoch;checkSignal(exec.signal);await queues.get(exec.agent.id);
       if(!active(state)||state.epoch!==epoch)throw Error('cmcp_source_authorization_changed');
-      try{const value=await bridge.tool(exec.agent.id,tool.name,args,exec.signal);checkSignal(exec.signal);
+      let value;try{value=await bridge.tool(exec.agent.id,tool.name,args,exec.signal);checkSignal(exec.signal);
+        if(tool.name==='cmcp_project_continuity')value=await bridge.prepareContinuityDelivery(exec.agent.id,value);
+        checkSignal(exec.signal);
         if(!active(state)||state.epoch!==epoch)throw Error('cmcp_source_authorization_changed');return value;
-      }catch(error){await report(state,error);throw error;}}}));
+      }catch(error){if(value?.kind==='cmcp_continuity_delivery_page')await bridge.rejectContinuityDeliveryPage(exec.agent.id,value);await report(state,error);throw error;}}}));
 
   for(const tool of [
     {name:'cmcp_list_images',description:'先正式讀取 User 原文頁，使用該頁回傳的 mediaSourceRef 作為 sourceRef，再列出來源圖片原件與原時間；描述不代替圖片。',parameters:object({sourceRef:string},['sourceRef'])},
@@ -349,7 +376,7 @@ export function apply(ctx,config){
     if(pinHost?.isPinTurn(agent.id))return next();
     await queues.get(agent.id);const stamp=await enhancementStamp(state);if(!stamp)return next();
     const decision=await next();if(decision.kind!=='enter'||!active(state)||signal?.aborted)return decision;
-    const epoch=state.epoch,contexts=[];
+    const epoch=state.epoch,binding=state.binding,contexts=[];
     try{
       if(!state.binding||state.binding.activationEpoch!==epoch)throw Error('cmcp_no_authorized_current_input');
       await bridge.validate(agent.id);
@@ -365,9 +392,9 @@ export function apply(ctx,config){
       }
       const context=projectHarnessTimeContext(full,publishedContexts.has(full.contextId));
       contexts.push({id:randomUUID(),role:'user',source:{kind:'cmcp-time-context',scopeId:config.scopeId,activationEpoch:epoch},content:[{type:'text',text:JSON.stringify(context)}]});
-      if(!active(state)||state.epoch!==epoch||!await stampValid(state,stamp))return decision;
+      if(!active(state)||state.epoch!==epoch||state.binding!==binding||!await stampValid(state,stamp))return decision;
       return {...decision,messages:[...decision.messages,...contexts]};
-    }catch(error){await report(state,error);if(!active(state)||state.epoch!==epoch||!await stampValid(state,stamp))return decision;
+    }catch(error){if(signal?.aborted)return decision;await report(state,error);if(!active(state)||state.epoch!==epoch||state.binding!==binding||!await stampValid(state,stamp))return decision;
       return {...decision,messages:[...decision.messages,
       {id:randomUUID(),role:'user',source:{kind:'cmcp-source-status',authority:'host_observation_not_user_decision'},
         content:[{type:'text',text:JSON.stringify({kind:'cmcp_source_unavailable',code:codeOf(error),
@@ -413,6 +440,7 @@ export function apply(ctx,config){
     if(active(state)&&await enhancementStamp(state))try{
       const serialized=JSON.stringify(request.messages);
       await bridge.note(request.sessionId,'model_input',{provider:request.provider,model:request.model,projectionHash:sha(serialized),projectionBytes:Buffer.byteLength(serialized),
+        systemPolicy:observeContinuitySystemPolicy(request.messages),
         messages:projectModelInputMetadata(request.messages),bodyRetention:'metadata_only'});
     }catch(error){await report(state,error);}
     yield* next();

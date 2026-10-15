@@ -16,6 +16,8 @@ const {createMcpProject,loadMcpConfig,readJSON,atomicJSON,digest}=await load('ad
 const {startMcpService,callManagement}=await load('adapters/mcp/server.mjs');
 const {identityRequest,createJwtVerifier}=await load('adapters/mcp/auth.mjs');
 const {callSharedProject}=await load('adapters/shared-project/client.mjs');
+const {CONTINUITY_READING_CONTRACT,CONTINUITY_READING_CONTRACT_METADATA}=await load('adapters/continuity-policy.mjs');
+const {projectContinuityModelView,restoreContinuityModelView}=await load('adapters/continuity-model-view.mjs');
 const {runMcp}=await load('adapters/mcp/cli.mjs');
 const {CmcpHarnessBridge}=await load('adapters/deepseek-harness/runtime-bridge.mjs');
 const {Client}=await import(pathToFileURL(require.resolve('@modelcontextprotocol/sdk/client/index.js')).href);
@@ -43,18 +45,107 @@ async function fixture(label,{bridgeFactory,limits}={}){
 }
 async function readAll(client){const nav=await client.callTool({name:'cmcp_find_history',arguments:{}});assert.equal(nav.isError,undefined,JSON.stringify(nav));
   const opened=await client.callTool({name:'cmcp_open_history',arguments:{navigationTicket:nav.structuredContent.ticket,selectionJson:JSON.stringify({version:2,eventRefs:[],scope:{basis:'ordinary_history'},clarification:''})}});assert.equal(opened.isError,undefined,JSON.stringify(opened));
-  const pages=[];for(let n=0;n<16;n++){const value=await client.callTool({name:'cmcp_read_history',arguments:{ticket:opened.structuredContent.ticket}});assert.equal(value.isError,undefined,JSON.stringify(value));pages.push(value.structuredContent);if(value.structuredContent.coverage?.complete||['complete','complete_with_gaps'].includes(value.structuredContent.status))return pages;}throw Error('test_read_did_not_complete');}
+  assert.deepEqual(opened.structuredContent.continuityContract,{...CONTINUITY_READING_CONTRACT_METADATA,text:CONTINUITY_READING_CONTRACT});
+  assert.deepEqual(JSON.parse(opened.content[0].text),opened.structuredContent);
+  await fs.writeFile(path.join(run,`layered-contract-${randomUUID()}.json`),JSON.stringify({layer:'官方 MCP client 與同機正式服務／Core，HTTP 或 stdio，零模型',formalOpen:opened.structuredContent},null,2),{flag:'wx'});
+  const pages=[];for(let n=0;n<16;n++){const value=await client.callTool({name:'cmcp_read_history',arguments:{ticket:opened.structuredContent.ticket}});assert.equal(value.isError,undefined,JSON.stringify(value));assert.equal(value.structuredContent.continuityContract,undefined);pages.push(value.structuredContent);if(value.structuredContent.coverage?.complete||['complete','complete_with_gaps'].includes(value.structuredContent.status))return pages;}throw Error('test_read_did_not_complete');}
 function png(){const crc=b=>{let c=0xffffffff;for(const x of b){c^=x;for(let n=0;n<8;n++)c=c&1?0xedb88320^(c>>>1):c>>>1;}return (c^0xffffffff)>>>0;};const chunk=(name,data)=>{const b=Buffer.alloc(data.length+12);b.writeUInt32BE(data.length);b.write(name,4);data.copy(b,8);b.writeUInt32BE(crc(b.subarray(4,-4)),b.length-4);return b;};const h=Buffer.alloc(13);h.writeUInt32BE(1);h.writeUInt32BE(1,4);h[8]=8;h[9]=2;return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',h),chunk('IDAT',deflateSync(Buffer.from([0,250,30,60]))),chunk('IEND',Buffer.alloc(0))]);}
 
 test('SDK HTTP 與 stdio 真 client 走正式 reader；工具唯讀，原文角色時間與 host 保留',async()=>{
   const f=await fixture('read');const saved=await f.begin('合成紙雕展原稿：六人，場地尚待書面同意。');await f.finish();await f.begin();const auth=await f.authorize();
-  const {client}=await f.httpClient(auth);const names=(await client.listTools()).tools.map(x=>x.name);assert.equal(names.length,7);assert.equal(names.some(x=>/capture|control|write|join|retry/.test(x)),false);
+  const {client}=await f.httpClient(auth);const names=(await client.listTools()).tools.map(x=>x.name);assert.equal(names.length,9);assert.ok(names.includes('cmcp_project_continuity'));assert.equal(names.some(x=>/capture|control|write|join|retry/.test(x)),false);
   const pages=await readAll(client);assert.ok(JSON.stringify(pages).includes('合成紙雕展原稿'));assert.ok(pages.some(p=>p.source?.sourceAuthorRole==='user'&&p.source.messageRecordedAt===saved.v.receivedAt));assert.ok(pages.some(p=>p.sourceOrigins?.some(o=>o.origin?.hostId==='generic')));
   assert.equal((await client.callTool({name:'cmcp_capture_user',arguments:{role:'user',text:'模型不能冒充使用者'}})).isError,true);
   const stdio=new Client({name:'cmcp-stdio-test',version:'1'}),transport=new StdioClientTransport({command:process.execPath,args:[path.join(product,'adapters/mcp/stdio.mjs'),'--binding',auth.bindingFile],stderr:'pipe'});let stderr='';transport.stderr.on('data',v=>stderr+=v);await stdio.connect(transport);resources.add(stdio);
-  const state=await stdio.callTool({name:'cmcp_status',arguments:{}});assert.equal(state.isError,undefined,stderr);assert.equal(state.structuredContent.projectId,f.shared.projectId);await stdio.close();await client.close();
+  const state=await stdio.callTool({name:'cmcp_status',arguments:{}});assert.equal(state.isError,undefined,stderr);assert.equal(state.structuredContent.projectId,f.shared.projectId);assert.equal(state.structuredContent.continuityContract,undefined);
+  const stdioPages=await readAll(stdio);assert.ok(stdioPages.some(p=>p.source?.sourceAuthorRole==='user'));await stdio.close();await client.close();
   records.push({case:'read',formalPages:pages.length,originalSha256:hash(saved.v.text),roleTimeVerified:true,transports:['stdio','streamable-http'],productModelCalls:0});
 });
+test('MCP 真 client 正式閱讀歷史加當輪 User 原文，保留來源身分與分離覆蓋',async()=>{
+  const f=await fixture('current-input-reader'),prior=await f.begin('合成露營名單原案：六人，出發仍須書面許可。');await f.finish();
+  const current=await f.begin('改為四人，其他條件維持。請依原案修訂名單。'),auth=await f.authorize(),{client}=await f.httpClient(auth);
+  const readings=[];
+  for(const includeCurrentInput of [false,true]){
+    const nav=await client.callTool({name:'cmcp_find_history',arguments:{}});assert.equal(nav.isError,undefined);
+    const opened=await client.callTool({name:'cmcp_open_history',arguments:{navigationTicket:nav.structuredContent.ticket,
+      selectionJson:JSON.stringify({version:2,eventRefs:[],scope:{basis:'ordinary_history'},clarification:''}),...(includeCurrentInput?{includeCurrentInput:true}:{})}});
+    assert.equal(opened.isError,undefined,JSON.stringify(opened));const pages=[];
+    for(let n=0;n<12;n++){
+      const page=await client.callTool({name:'cmcp_read_history',arguments:{ticket:opened.structuredContent.ticket}});
+      assert.equal(page.isError,undefined,JSON.stringify(page));pages.push(page.structuredContent);if(page.structuredContent.coverage?.complete)break;
+    }
+    await fs.writeFile(path.join(f.root,`formal-${includeCurrentInput?'with-current':'default'}-pages.json`),JSON.stringify({opening:opened.structuredContent,pages},null,2),{flag:'wx'});
+    const originalText=page=>page.modelContext?JSON.parse(page.modelContext).content:null;
+    assert.equal(pages.at(-1).coverage.complete,true);assert.ok(pages.some(p=>originalText(p)===prior.v.text&&p.source.sourceAuthorRole==='user'&&p.source.messageRecordedAt===prior.v.receivedAt));
+    const currentPages=pages.filter(p=>originalText(p)===current.v.text);assert.equal(currentPages.length,includeCurrentInput?1:0);
+    if(includeCurrentInput){
+      const p=currentPages[0],scope=opened.structuredContent.collection.scopeDescriptor;
+      assert.equal(p.source.sourceAuthorRole,'user');assert.equal(p.source.messageRecordedAt,current.v.receivedAt);assert.ok(p.modelContext);
+      assert.equal(scope.kind,'authorized_history_with_current_input');assert.equal(scope.historyScope.kind,'authorized_history_inventory');assert.equal(scope.currentInput.ref,p.source.ref);
+      assert.equal(Object.hasOwn(scope.currentInput,'pointer'),false);assert.equal(Object.hasOwn(scope.currentInput,'evidenceHash'),false);
+      assert.ok(p.sourceOrigins.some(o=>o.origin?.hostId==='generic'&&o.origin?.sessionId===f.grant.sessionId&&o.origin?.messageId===current.v.messageId&&o.origin?.role==='user'));
+    }
+    readings.push({includeCurrentInput,opening:opened.structuredContent,pages});
+  }
+  await fs.writeFile(path.join(f.root,'formal-current-input-evidence.json'),JSON.stringify({layer:'MCP SDK HTTP 同機真服務／正式 Core，未呼叫模型',original:{prior,current},readings,productModelCalls:0},null,2),{flag:'wx'});
+  records.push({case:'current-input-reader',originalSha256:hash(current.v.text),currentSourceId:current.v.messageId,originalTime:current.v.receivedAt,defaultExcludesCurrent:true,optInFormalOriginal:true,scopeSeparated:true,productModelCalls:0});
+  await client.close();await f.finish();
+});
+test('MCP 型別投影物件與舊字串在真 client／正式 Core 等價，來源與二擇一守護保留',async()=>{
+ const f=await fixture('typed-continuity-input'),original='我打算籌辦合成石雕展示；入場仍須取得書面許可。';
+ await f.begin(original);await f.finish();await f.begin('請核對先前原案與尚待書面許可的條件。');
+ const auth=await f.authorize(),{client}=await f.httpClient(auth),listed=(await client.listTools()).tools.find(t=>t.name==='cmcp_project_continuity');
+ assert.equal(listed.inputSchema.properties.proposal.type,'object');assert.deepEqual(listed.inputSchema.oneOf,[{required:['proposal']},{required:['proposalJson']}]);
+ const pages=await readAll(client),user=pages.find(p=>p.source.sourceAuthorRole==='user'),assistant=pages.find(p=>p.source.sourceAuthorRole==='assistant');
+ const body=p=>typeof p.modelContext==='string'?JSON.parse(p.modelContext).content:p.modelContext.content;
+ const ticket=user.ticket,proposal={version:6,plans:[{id:'p',ref:user.source.ref,quote:body(user),topic:'合成展示',aspect:'計畫',temporalUse:'current'}],unknowns:[]};
+ const projected=[];for(const args of [{ticket,proposal},{ticket,proposalJson:JSON.stringify(proposal)}]){
+  const value=await client.callTool({name:'cmcp_project_continuity',arguments:args});assert.equal(value.isError,undefined,JSON.stringify(value));assert.equal(value.structuredContent.status,'ready');projected.push(value.structuredContent);
+ }
+ const sameProjection=(a,b)=>{for(const value of [a,b])assert.ok(Number.isFinite(Date.parse(value.runtimeTime.now)));assert.equal(a.runtimeTime.timezone,b.runtimeTime.timezone);
+  assert.deepEqual({...a,runtimeTime:undefined},{...b,runtimeTime:undefined});};
+ // SDK 實際 HTTP／stdio 回傳消重後封套；精確還原來源、角色、時間與身分補充。
+ for(const wire of projected){const full=restoreContinuityModelView(wire);assert.ok(wire.projectionCapacity);assert.deepEqual(projectContinuityModelView(full),wire);
+  assert.equal(full.projectionHash,createHash('sha256').update(JSON.stringify(full.projection)).digest('hex'));
+  assert.deepEqual(projectContinuityModelView(wire),wire);assert.deepEqual(wire.sourceOrigins,full.sourceOrigins);}
+ // 兩次正式呼叫的查核現在時間本來不同；只排除 runtimeTime，不排除任何原來源時間或內容。
+ sameProjection(projected[0].projection,projected[1].projection);
+ for(const key of ['inputVersion','compilation','sourceOrigins'])assert.deepEqual(projected[0][key],projected[1][key],key);
+ const double=await client.callTool({name:'cmcp_project_continuity',arguments:{ticket,proposal,proposalJson:JSON.stringify(proposal)}});assert.equal(double.isError,true);
+ const wrongRole=structuredClone(proposal);wrongRole.plans[0].ref=assistant.source.ref;wrongRole.plans[0].quote=body(assistant);
+ const wrongQuote=structuredClone(proposal);wrongQuote.plans[0].quote='正式原文沒有這一段。';
+ const rejected=[];for(const p of [wrongRole,wrongQuote])for(const args of [{ticket,proposal:p},{ticket,proposalJson:JSON.stringify(p)}]){
+  const value=await client.callTool({name:'cmcp_project_continuity',arguments:args});assert.equal(value.isError,undefined);assert.equal(value.structuredContent.status,'rejected');rejected.push(value.structuredContent.reason);
+ }
+ assert.deepEqual(rejected,['continuity_source_role_mismatch','continuity_source_role_mismatch','continuity_quote_absent','continuity_quote_absent']);
+ const big=structuredClone(proposal);big.plans=Array.from({length:24},(_,i)=>({...structuredClone(proposal.plans[0]),id:'p'+i,reasons:[{id:'reason'+i,ref:user.source.ref,quote:body(user)}]}));
+ const elements=value=>value&&typeof value==='object'?Object.values(value).reduce((sum,v)=>sum+1+elements(v),0):0;
+ assert.ok(elements({ticket,proposal:big})>256);assert.ok(Buffer.byteLength(JSON.stringify(big))<=24576);
+ // 同面向重複宣告沒有交代關係，應由 Core 拒絕；只驗傳輸不因改用物件而縮小原有輸入範圍。
+ const bigResults=[];for(const args of [{ticket,proposal:big},{ticket,proposalJson:JSON.stringify(big)}]){
+  const value=await client.callTool({name:'cmcp_project_continuity',arguments:args});assert.equal(value.isError,undefined,JSON.stringify(value));bigResults.push(value.structuredContent);
+ }
+ for(const value of bigResults){assert.equal(value.status,'rejected');assert.equal(value.reason,'continuity_plan_relation_required');}
+ const stdio=new Client({name:'cmcp-typed-stdio-test',version:'1'}),transport=new StdioClientTransport({command:process.execPath,args:[path.join(product,'adapters/mcp/stdio.mjs'),'--binding',auth.bindingFile],stderr:'pipe'});transport.stderr.on('data',()=>{});await stdio.connect(transport);resources.add(stdio);
+ const stdioSchema=(await stdio.listTools()).tools.find(t=>t.name==='cmcp_project_continuity');assert.deepEqual(stdioSchema.inputSchema,listed.inputSchema);
+ const fromStdio=await stdio.callTool({name:'cmcp_project_continuity',arguments:{ticket,proposal}});assert.equal(fromStdio.isError,undefined);assert.equal(fromStdio.structuredContent.status,'ready');sameProjection(fromStdio.structuredContent.projection,projected[0].projection);
+ assert.ok(fromStdio.structuredContent.projectionCapacity);const restoredStdio=restoreContinuityModelView(fromStdio.structuredContent);
+ assert.equal(restoredStdio.projectionHash,createHash('sha256').update(JSON.stringify(restoredStdio.projection)).digest('hex'));
+ assert.deepEqual(projectContinuityModelView(restoredStdio),fromStdio.structuredContent);
+ await fs.writeFile(path.join(f.root,'typed-input-evidence.json'),JSON.stringify({layer:'正式 MCP SDK HTTP／stdio 同機 client 與正式 Core；不是真模型語意驗收',listed,proposal,projected,rejected,big:{elements:elements({ticket,proposal:big}),bytes:Buffer.byteLength(JSON.stringify(big)),results:bigResults},stdioSchema,fromStdio,modelCalls:0},null,2)+'\n',{flag:'wx'});
+ await stdio.close();await client.close();await f.finish();
+});
+
+test('MCP 正式客戶端的 open 保持當輪原文選配布林與嚴格範圍，不接受模型指定 pointer',async()=>{
+  const forwarded=[],f=await fixture('current-input-schema',{bridgeFactory:options=>{const bridge=new CmcpHarnessBridge(options),original=bridge.tool.bind(bridge);bridge.tool=async(...args)=>{if(args[1]==='cmcp_open_history'){forwarded.push(args);return {status:'opened'};}return original(...args);};return bridge;}});
+  await f.begin();const auth=await f.authorize(),{client}=await f.httpClient(auth),tool=(await client.listTools()).tools.find(t=>t.name==='cmcp_open_history');
+  assert.equal(tool.inputSchema.properties.includeCurrentInput.type,'boolean');assert.equal(tool.inputSchema.required.includes('includeCurrentInput'),false);
+  const selection={navigationTicket:'正式導航',selectionJson:'{}'};
+  for(const option of [{},{includeCurrentInput:false},{includeCurrentInput:true}]){const args={...selection,...option},result=await client.callTool({name:tool.name,arguments:args});assert.equal(result.isError,undefined,JSON.stringify(result));assert.deepEqual(forwarded.at(-1)[2],args);}
+  for(const option of [{includeCurrentInput:'true'},{includeCurrentInput:null},{pointer:'other'}]){const count=forwarded.length,result=await client.callTool({name:tool.name,arguments:{...selection,...option}});assert.equal(result.isError,true);assert.equal(forwarded.length,count);}
+  await client.close();await f.finish();
+});
+
 test('模型讀者不能控制／未加入、未開始回合不能發讀取授權；單一 writer 與作用範圍守護',async()=>{
   const f=await fixture('scope');await assert.rejects(f.authorize(),/active_authorized_host_turn_required/);await f.begin();
   await assert.rejects(f.send('control',{text:'set clean off'},f.grant,'model_read'),/role_forbidden/);

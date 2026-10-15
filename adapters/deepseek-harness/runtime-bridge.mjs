@@ -6,6 +6,11 @@ import {randomUUID,createHash} from 'node:crypto';
 import {createCmcpRuntimeSession,normalizeCmcpHostTurnPolicy} from '../../src/cmcp-guard/cmcp-runtime-session.js';
 import {createCmcpMediaOriginals} from './media-originals.mjs';
 import {cmcpSourcePointerKey} from '../../src/cmcp-guard/cmcp-source-pointer.js';
+import {getCmcpContinuityCorrection} from '../../src/cmcp-guard/cmcp-continuity-projection.js';
+import {readContinuityProposal} from '../continuity-input.mjs';
+import {projectContinuityModelView} from '../continuity-model-view.mjs';
+import {createContinuityDelivery,continuityDeliveryPage,commitContinuityDeliveryPage,rejectContinuityDeliveryPage} from '../continuity-delivery.mjs';
+import {withContinuityReadingContract} from '../continuity-contract-view.mjs';
 
 const hash=value=>createHash('sha256').update(typeof value==='string'?value:JSON.stringify(value)).digest('hex');
 const plain=value=>JSON.parse(JSON.stringify(value));
@@ -13,8 +18,9 @@ const assistantSaveSummary=turn=>{const committed=[...(turn.assistantMessages?.v
   return {committedMessages:committed.length,committedTextBytes:turn.assistantBytes??0,savedMessages:saved.length,savedBytes:saved.reduce((total,row)=>total+row.bytes,0)};};
 /** 只折疊正式 host 結果中完全相同的欄位；原文、否定、來源及覆蓋不裁切。 */
 export function projectHarnessToolResult(value,publishedProtocols=new Set()){
+  if(value?.kind==='cmcp_continuity_projection')return projectContinuityModelView(value);
   if(value?.kind==='cmcp_reading_navigation'&&value.question===value.selection?.input?.question){const projected={...value};delete projected.question;return projected;}
-  if(value?.kind==='cmcp_reading_collection'&&Array.isArray(value.collection?.sources))return {...value,collection:{...value.collection,sources:value.collection.sources.map(source=>({ref:source.ref})),sourceMetadata:'provided_with_each_formal_page'}};
+  if(value?.kind==='cmcp_reading_collection'&&Array.isArray(value.collection?.sources))return withContinuityReadingContract({...value,collection:{...value.collection,sources:value.collection.sources.map(source=>({ref:source.ref})),sourceMetadata:'provided_with_each_formal_page'}});
   if(value?.kind!=='cmcp_reading_page'||typeof value.modelContext!=='string')return value;
   let context;try{context=JSON.parse(value.modelContext);}catch{return value;}
   if(context?.kind!=='cmcp_reading_page_context')return value;
@@ -36,8 +42,10 @@ export function projectHarnessToolResult(value,publishedProtocols=new Set()){
   if(!publishedProtocols.has(id))projected.pageProtocol={id,merge:'fields_are_shared_at_the_same_object_paths_on_every_page_with_this_ref',fields};
   return projected;
 }
-export function projectHarnessTimeContext(context,published){return !context||!published?context:{kind:'cmcp_model_request_time',contextId:context.contextId,modelRequestTime:context.modelRequestTime};}
-export const READING_LIMITS=Object.freeze({maxSources:64,maxTotalBytes:65536,maxPageBytes:2400,maxPages:64,maxProjectionBytes:16384});
+export function projectHarnessTimeContext(context,published){return !context||!published?context:{kind:'cmcp_model_request_time',contextId:context.contextId,modelRequestTime:context.modelRequestTime,
+  ...(context.readerIdentity?{readerIdentity:context.readerIdentity}:{})};}
+// 減少一般原答被拆成多次模型工具回合；總原文與投影額度保持有界。
+export const READING_LIMITS=Object.freeze({maxSources:64,maxTotalBytes:65536,maxPageBytes:4096,maxPages:64,maxProjectionBytes:16384});
 // 每筆仍受正式 History 原有容量限制；本界線只限制單一宿主回合的逐筆保存數量／總量。
 export const HOST_ASSISTANT_LIMITS=Object.freeze({maxMessages:64,maxTotalBytes:524288});
 export function within(root,value){const full=path.resolve(value),relative=path.relative(root,full);if(!relative||relative.startsWith('..')||path.isAbsolute(relative))throw Error('deployment_path_outside_root');return full;}
@@ -164,6 +172,19 @@ export class CmcpHarnessBridge {
   async discard(sessionId,messageId){return this.enqueue(async()=>{const input=this.inputs.get(this.inputKey(sessionId,messageId));if(input?.state==='queued'){input.state='discarded';await this.note(sessionId,'queued_input_discarded',{messageId,receivedAt:input.receivedAt});}});}
   async turn(sessionId){const turn=this.turns.get(sessionId);if(!turn||turn.state!=='running')throw Error('no_active_cmcp_host_turn');const runtime=await this.runtime(sessionId);if(turn.capture.hostTurn)await runtime.validateHostTurn(turn.capture.hostTurn);return {turn,runtime};}
   async validate(sessionId){const turn=this.turns.get(sessionId);if(!turn)return;if(turn.capture.hostTurn)await this.current.runtime.validateHostTurn(turn.capture.hostTurn);}
+  async prepareContinuityDelivery(sessionId,result){return this.enqueue(async()=>{
+    const {turn,runtime}=await this.turn(sessionId);if(!turn.enhanced)throw Error('cmcp_disabled');
+    const delivery=createContinuityDelivery(result);turn.continuityDelivery=null;
+    if(delivery.inline&&!['ready','partial'].includes(result.status))return delivery.inline;
+    const current=await runtime.continuityStatus();
+    if(!['ready','partial'].includes(current.status)||current.ticket!==result.ticket||current.projectionHash!==result.projectionHash||hash(result.projection)!==current.projectionHash)throw Error('continuity_delivery_source_changed');
+    await this.validate(sessionId);if(delivery.inline)return delivery.inline;turn.continuityDelivery=delivery;
+    return commitContinuityDeliveryPage(delivery,continuityDeliveryPage(delivery,0));
+  });}
+  async rejectContinuityDeliveryPage(sessionId,result){return this.enqueue(async()=>{
+    const turn=this.turns.get(sessionId);if(!turn?.continuityDelivery)return false;
+    return rejectContinuityDeliveryPage(turn.continuityDelivery,result);
+  });}
   async requestContext(sessionId){return this.enqueue(async()=>{const {turn,runtime}=await this.turn(sessionId);if(!turn.enhanced)return null;
     const fresh=await runtime.timeCard({timeContext:{now:new Date().toISOString(),timezone:runtime.config.input.timezone},
       excludePointers:turn.capture.sourcePointer?[turn.capture.sourcePointer]:[]});
@@ -181,12 +202,31 @@ export class CmcpHarnessBridge {
     }else if(name==='cmcp_open_history'){
       if(!turn.navigation.has(args.navigationTicket))throw Error('navigation_not_owned_by_turn');
       result=await runtime.readingOpen({navigationTicket:args.navigationTicket,selection:JSON.parse(args.selectionJson),mode:'all',limits:READING_LIMITS,signal,
+        ...(args.includeCurrentInput===undefined?{}:{includeCurrentInput:args.includeCurrentInput}),
         ...(turn.capture.sourcePointer?{}:{queryText:turn.text})});
       if(result.host?.ticket)turn.readings.add(result.host.ticket);result=result.host;
     }else if(name==='cmcp_read_history'){
       if(!turn.readings.has(args.ticket))throw Error('reading_not_owned_by_turn');
       const page=await runtime.readingPage({ticket:args.ticket,project:true,signal});
       result=page.host;formalRanges=page.internal?.readRanges??[];
+    }else if(name==='cmcp_read_continuity'){
+      if(!args||Object.keys(args).some(key=>!['ticket','deliveryId','page'].includes(key))||typeof args.ticket!=='string'||typeof args.deliveryId!=='string'||typeof args.page!=='string'||!/^\d{1,2}$/.test(args.page))throw Error('continuity_delivery_arguments_invalid');
+      const delivery=turn.continuityDelivery;
+      if(!turn.readings.has(args.ticket)||!delivery||delivery.ticket!==args.ticket||delivery.deliveryId!==args.deliveryId)throw Error('continuity_delivery_not_owned_by_turn');
+      const current=await runtime.continuityStatus();
+      if(!['ready','partial'].includes(current.status)||current.ticket!==delivery.ticket||current.projectionHash!==delivery.projectionHash)throw Error('continuity_delivery_source_changed');
+      await this.validate(sessionId);if(signal?.aborted)throw Error('host_tool_cancelled');
+      result=continuityDeliveryPage(delivery,Number(args.page));
+    }else if(name==='cmcp_project_continuity'){
+      turn.continuityDelivery=null;
+      if(!turn.readings.has(args.ticket))throw Error('reading_not_owned_by_turn');
+      try{
+        const projected=await runtime.readingContinuity({ticket:args.ticket,proposal:readContinuityProposal(args),signal});
+        result=Object.fromEntries(['kind','status','reason','ticket','scopeId','projection','projectionHash','projectionCapacity','presentation','publication','bodyRetention','modelCoverageComplete','modelCalls','inputVersion','compilation'].filter(key=>projected[key]!==undefined).map(key=>[key,projected[key]]));
+      }catch(error){
+        const correction=getCmcpContinuityCorrection(error);if(!correction)throw error;
+        result={kind:'cmcp_continuity_projection',status:'rejected',reason:correction.code,ticket:args.ticket,correction,modelCalls:0};
+      }
     }else throw Error('unknown_cmcp_tool');
     await this.validate(sessionId);if(signal?.aborted)throw Error('host_tool_cancelled');
     if(result?.source?.ref&&result.source.sourceAuthorRole==='user'&&result.modelContext){
@@ -200,6 +240,10 @@ export class CmcpHarnessBridge {
       result={...result,mediaSourceRef};
     }
     await this.note(sessionId,'formal_read',{tool:name,harnessTurn:turn.harnessTurn,messageId:turn.messageId,ticket:result?.ticket??null,status:result?.status??null,source:result?.source??null,sourceBindings:formalRanges.filter(row=>row.status==='found').map(row=>({ref:row.ref,pointer:row.pointer,evidenceHash:row.evidenceHash})),mediaSourceRef:result?.mediaSourceRef??null,range:result?.range??null,coverage:result?.coverage??null,limits:result?.limits??null,projectionHash:result?.modelContext?hash(result.modelContext):null,projectionBytes:result?.modelContext?Buffer.byteLength(typeof result.modelContext==='string'?result.modelContext:JSON.stringify(result.modelContext)):0});
+    if(name==='cmcp_read_continuity'){
+      await this.validate(sessionId);if(signal?.aborted)throw Error('host_tool_cancelled');
+      commitContinuityDeliveryPage(turn.continuityDelivery,result);
+    }
     return plain(result);});}
   appendAssistant(sessionId,messageId,text,receivedAt=new Date().toISOString(),expected,sessionGuard=()=>true){return this.saveAssistant(sessionId,messageId,text,receivedAt,expected,false,sessionGuard);}
   complete(sessionId,messageId,text,receivedAt=new Date().toISOString(),expected,sessionGuard=()=>true){return this.saveAssistant(sessionId,messageId,text,receivedAt,expected,true,sessionGuard);}
@@ -273,7 +317,9 @@ export class CmcpHarnessBridge {
     const observation={kind:'cmcp_harness_observation',at:new Date().toISOString(),modelCalls:0,
     scopeId:full.dataScope.scopeId,area:this.options.areaInfo??{id:'legacy',label:'原合成驗收區',kind:'acceptance'},sessions:this.host?.sessions()??[],destinations:Object.fromEntries(await this.destinations()),
     controls:full.controls,controlConfiguration:full.controlConfiguration,sourceAuthorization:full.sourceAuthorization,timeCard:await runtime.timeCard(),localReadProgress:full.localReadProgress,
-    registration,storageStatus:{...full.storageStatus,retry:{...full.storageStatus?.retry,available:true,reason:'authenticated_controller_action_required'}},buffer,pins:full.pins,proactive:mayRead?{...full.proactiveExecutor,liveDispatch:liveDispatch??null}:{readOnly:true,reason:'material_controls_disabled'},dispatchObservation:full.dispatchObservation,trace:await this.traceObservation(full),
+    registration,storageStatus:{...full.storageStatus,retry:{...full.storageStatus?.retry,available:true,reason:'authenticated_controller_action_required'}},buffer,pins:full.pins,proactive:{...(mayRead?{...full.proactiveExecutor,liveDispatch:liveDispatch??null}:{readOnly:true,reason:'material_controls_disabled'}),
+      execution:{...full.proactiveExecutor.execution,delivery:{...full.proactiveExecutor.execution.delivery,routes:['pin'],
+        basis:'harness_explicit_pin_destination_guard',hostAttached:!!this.host,targetAvailability:'per_pin_check_required'}}},dispatchObservation:full.dispatchObservation,trace:await this.traceObservation(full),
     work:full.work.map(({workId,mode,state,source,terminal})=>({workId,mode,state,source,terminal})),
     turns:[...this.turns.values()].map(turn=>{const {sessionId,messageId,harnessTurn,state,capture,receipt}=turn;
       return {sessionId,messageId,harnessTurn,state,sourcePointer:capture.sourcePointer,receipt,assistantSave:{...assistantSaveSummary(turn),failure:turn.assistantSaveFailure??null}};}),
@@ -317,6 +363,10 @@ export class CmcpHarnessBridge {
     throw Error('unknown_media_tool');
   }
   async readingStatus(ticket){return this.readOnly(runtime=>runtime.readingStatus(ticket));}
+  async continuityStatus(sessionId,{projectWide=false}={}){
+    const runtime=await createCmcpRuntimeSession({config:await this.config(),repoRoot:this.root,sessionId,readOnly:true});
+    try{return await runtime.continuityStatus({projectWide});}finally{await runtime.close();}
+  }
   async releaseSession(sessionId){return this.enqueue(async()=>{
     if(this.current?.sessionId!==sessionId)return;
     const current=this.current,turn=this.turns.get(sessionId);let primary;

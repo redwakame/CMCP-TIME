@@ -6,21 +6,21 @@
 
 **Una skill de continuidad temporal para agentes de IA:** retoma una conversación mediante palabras, imágenes, roles y tiempos originales, manteniendo tu host y modelo habituales.
 
-**0.1.0 · Apache-2.0 · Autor original: [redwakame](https://github.com/redwakame)**
+**0.1.1 · Apache-2.0 · Autor original: [redwakame](https://github.com/redwakame)**
 
 ## Recupera el original correcto
 
 Ayer redactaste un plan; hoy cambias un detalle. En una conversación nueva, CMCP ayuda a recuperar ambas versiones y distinguir una decisión del User de una propuesta del Assistant. Cada imagen revisada conserva su archivo original y su relación con la fuente, no solo una descripción.
 
-![Ejemplo de original, revisión y lectura formal entre conversaciones](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/continuity-source-flow.png)
+![Ejemplo de original, revisión y lectura formal entre conversaciones](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/continuity-source-flow.png)
 
 Σ representa el concepto de resumen derivado; el diagrama no anuncia una función nueva de resumen.
 
 El diagrama explica un uso; no reproduce una respuesta medida. CMCP aporta fuentes, sin sustituir el razonamiento del host ni reescribir su respuesta final. El modelo aún puede interpretar mal una fuente correcta.
 
-## Instala 0.1.0
+## Instala 0.1.1 desde GitHub
 
-Paquete: [`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0). Fuente fija: [v0.1.0](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0); `main` puede contener cambios posteriores. Usa la versión exacta: `latest` y `next` son canales modificables, no identidades de versión.
+Obtén el paquete formal de [GitHub Release v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1) y la fuente fija del [tag v0.1.1](https://github.com/redwakame/CMCP-TIME/tree/v0.1.1). **Esta publicación no actualiza npm:** el registro conserva [`@redwakame-skill/cmcp-time@0.1.0`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0). Instalar por nombre o por etiquetas modificables no actualiza a 0.1.1. El comando siguiente usa la URL exacta del `.tgz` de GitHub.
 
 Prepara Node.js **22.16.0 o superior** y npm. Elige dos directorios persistentes: programa y datos autorizados del espacio de trabajo. Ejemplo PowerShell sin permisos de administrador ni cambios globales de PATH:
 
@@ -28,7 +28,8 @@ Prepara Node.js **22.16.0 o superior** y npm. Elige dos directorios persistentes
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
+$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
+npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
@@ -38,9 +39,11 @@ El asistente configura el modo local y la conexión administrada de Codex. Harne
 
 [POSIX, paquete local y actualizaciones](docs/npm-installation.md) · [Inicio rápido](docs/quick-start.md)
 
+**En 0.1.1:** planes actuales, hechos declarados, alcance de revisión y motivos mantienen sus fuentes y funciones distintas. La configuración local funciona sin Codex; la interacción requiere TTY y la automatización usa `--answers` explícitos. El estado bajo demanda conserva ambigüedad real y cobertura limitada; un `ready` estructural no certifica semántica ni permite ejecutar acciones. Consulta [cambios y límites de 0.1.1](docs/release-0.1.1.md).
+
 ## Elige una ruta con evidencia
 
-![Un almacén autorizado de originales y conexiones opcionales de hosts y MCP](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/host-interoperability.png)
+![Un almacén autorizado de originales y conexiones opcionales de hosts y MCP](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/host-interoperability.png)
 
 Dos rutas secuenciales demostradas por separado: Codex ↔ Harness y Hermes ↔ Harness. No es una prueba concurrente de tres hosts; MCP discontinuo es opcional y comparte Core.
 
@@ -55,7 +58,7 @@ OpenClaw, dots, Grok Bot y Muse tienen requisitos distintos: consulta la [matriz
 
 ## Utiliza, inspecciona y detén
 
-![Entrada mínima, detalle bajo demanda y controles separados de permiso y guardado](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/controls-modes.png)
+![Entrada mínima, detalle bajo demanda y controles separados de permiso y guardado](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/controls-modes.png)
 
 Esquemas conceptuales, no capturas GUI reales: 1 minimizado, 2 una fila, 3 oculto.
 
@@ -72,7 +75,7 @@ History, Buffer y Pin tienen responsabilidades diferentes. Buffer dura 12 horas 
 
 **Guardado no significa recuperable.** El estado separa originales guardados, registro pendiente/fallido, acceso formal y estado de evaluación entre hosts. Los metadatos de almacenamiento no evalúan por sí solos la transferencia al receptor; consulta por separado la lectura formal y los recibos del host. Consultar o cambiar la UI no renueva tiempos/TTL, crea permisos ni envía avisos. Originales ausentes, versiones obsoletas o fuentes revocadas se rechazan.
 
-Antes de actualizar, consulta [copia, restauración y actualización](docs/release-readiness.es.md). Programa, History, historial nativo del host y credenciales tienen responsabilidades separadas. Desconectar conserva originales; no borra el historial nativo ni constituye una política completa de eliminación. 0.1.0 no entrega vectores, audio/vídeo, sincronización en la nube ni writers concurrentes multiusuario.
+Antes de actualizar, consulta [copia, restauración y actualización](docs/release-readiness.es.md). Programa, History, historial nativo del host y credenciales tienen responsabilidades separadas. Desconectar conserva originales; no borra el historial nativo ni constituye una política completa de eliminación. 0.1.1 no entrega vectores, audio/vídeo, sincronización en la nube ni writers concurrentes multiusuario.
 
 ## Documentación y proyecto
 
@@ -89,4 +92,4 @@ Las ideas, incidencias reproducibles, evaluaciones independientes y propuestas d
 
 Autor original y mantenedor: **redwakame**. Distribución actual bajo [Apache-2.0](LICENSE), con [NOTICE](NOTICE) y [procedencia de licencias](docs/license-provenance-v0.1.md). No se revocan permisos anteriores ni se añade una obligación publicitaria por cada uso. El identificador interno sigue siendo `cmcp`; el nombre público es **CMCP-TIME**. [CITATION.cff](CITATION.cff) facilita su cita.
 
-[0.1.0](docs/release-0.1.0.md) · [Pruebas reproducibles](docs/testing.md)
+[Cambios y límites de 0.1.1](docs/release-0.1.1.md) · [Historial de 0.1.0](docs/release-0.1.0.md) · [Pruebas reproducibles](docs/testing.md)

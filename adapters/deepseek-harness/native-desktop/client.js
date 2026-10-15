@@ -100,6 +100,46 @@ return {MEDIA_RPC_PACKAGE,MEDIA_RPC_NAMESPACE,MEDIA_RPC_METHOD,MEDIA_RPC_DESCRIP
   const errorText=error=>error instanceof Error?error.message:String(error);
   const pointerKey=pointer=>!pointer?null:JSON.stringify(['version','providerNamespace','scopeId','itemId','sessionId','revisionId','partId'].map(key=>pointer[key]??null));
   const roles={user:'使用者',assistant:'助手',system:'系統',tool:'工具'};
+  // 只呈現正式回執已有的具名理由撤回；不猜其他條件是否生效，不改原文。
+  const renderPlanText=(value,node)=>{
+    const presentation=value.presentation;
+    const unavailable=()=>h('span',{},node.text,h('em',{},'〔此投影未提供精確理由註記，請另查正式理由關係。〕'));
+    if(!presentation)return unavailable();
+    const invalid=()=>h('span',{},node.text,h('em',{},'〔理由註記未能與目前投影核對，請查正式原文與理由關係。〕'));
+    if(presentation.kind!=='cmcp_continuity_presentation'||presentation.version!==1
+      ||typeof value.scopeId!=='string'||presentation.scopeId!==value.scopeId
+      ||typeof value.projectionHash!=='string'||presentation.projectionHash!==value.projectionHash
+      ||!Array.isArray(presentation.plans))return invalid();
+    if(presentation.status==='not_available')return unavailable();
+    if(presentation.status!=='available')return invalid();
+    const matches=presentation.plans.filter(row=>row.nodeId===node.nodeId);
+    if(!matches.length)return node.text;
+    const row=matches[0],points=[...node.text];
+    if(matches.length!==1||row.planVersion!==node.planVersion||!Array.isArray(row.annotations))return invalid();
+    const ranges=[];
+    for(const annotation of row.annotations){const range=annotation.range;
+      if(annotation.kind!=='withdrawn_reason_source_text'||range?.unit!=='unicode_code_points'
+        ||!Number.isSafeInteger(range.start)||!Number.isSafeInteger(range.end)||range.start<0||range.end<=range.start||range.end>points.length
+        ||points.slice(range.start,range.end).join('')!==range.text)return invalid();
+      ranges.push([range.start,range.end]);
+    }
+    ranges.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const merged=[];
+    for(const range of ranges){const last=merged.at(-1);if(last&&range[0]<=last[1])last[1]=Math.max(last[1],range[1]);else merged.push([...range]);}
+    if(!merged.length)return node.text;
+    const children=[];let from=0;
+    for(const [start,end]of merged){children.push(points.slice(from,start).join(''));
+      children.push(h('mark',{key:start,title:'依具名理由撤回來源標註；保留歷史字句，不代表撤回其他條件。'},points.slice(start,end).join(''),h('small',{},'〔已撤回理由的原文，保留歷史〕')));from=end;}
+    children.push(points.slice(from).join(''));return h('span',{},...children);
+  };
+  const renderChangeReasonStatus=(continuity,change)=>{
+    const rows=continuity?.projection?.reasonBindings;
+    const named=Array.isArray(rows)?rows.filter(reason=>typeof reason.reasonId==='string'&&reason.reasonId&&reason.binding?.kind==='plan_change'&&
+      typeof change.targetNodeId==='string'&&reason.binding.nodeId===change.targetNodeId&&typeof change.id==='string'&&reason.binding.changeId===change.id&&
+      typeof change.priorVersion==='string'&&reason.binding.priorVersion===change.priorVersion&&typeof change.planVersion==='string'&&reason.binding.planVersion===change.planVersion):[];
+    if(named.length)return h('p',{},'本次修改已分列具名理由：',named.map(reason=>reason.reasonId).join('、'),'；引文、原時間與各自效力見具名理由明細。');
+    if(change.reasonStatus==='provided_by_binding')return h('p',{},'本次修改回執標示已附具名理由，但尚未取得同對象／版本的理由明細；不能判為未附理由。');
+    return change.reasonStatus==='not_provided'?h('p',{},'本次修改未附理由關係；不代表原文沒有理由，也不沿用舊理由當作本次原因。'):null;
+  };
   const reasons={session_not_enabled:'本對話尚未加入',shared_enhancement_off:'工作區增強為 OFF',shared_clean:'工作區 Clean 保護中',
     active:'有效',expired:'已到期',cleared:'已 Clear',source_unavailable:'來源目前不可用',not_current_focus:'不是目前焦點',
     buffer_disabled:'Buffer 已停用',disabled:'控制未開啟',deduplicated:'相同進度已處理',source_pending:'來源待處理',
@@ -128,12 +168,16 @@ return {MEDIA_RPC_PACKAGE,MEDIA_RPC_NAMESPACE,MEDIA_RPC_METHOD,MEDIA_RPC_DESCRIP
     const [receipt,setReceipt]=React.useState(null),[selected,setSelected]=React.useState([]),[destination,setDestination]=React.useState(''),[due,setDue]=React.useState(''),[pinDates,setPinDates]=React.useState({});
     const [dndStart,setDndStart]=React.useState('22:00'),[dndEnd,setDndEnd]=React.useState('08:00');
     const [tab,setTab]=React.useState('summary');
+    const [continuity,setContinuity]=React.useState(null);
     const [mediaList,setMediaList]=React.useState(null),[mediaOriginal,setMediaOriginal]=React.useState(null),[mediaContext,setMediaContext]=React.useState(null);
     const mediaRequest=React.useRef(null),mediaProof=React.useRef(state);mediaProof.current=state;
     const [displayMode,setDisplayMode]=React.useState('minimized'),[preferenceError,setPreferenceError]=React.useState('');
     const preferenceScope=React.useRef(null),acceptCommand=React.useRef(null);
     React.useEffect(()=>()=>mediaRequest.current?.abort(),[readMedia]);
     const accept=data=>{
+      // 每次正式回應都使舊投影失效；重新查看沿來源／控制重驗，不沿前端快取冒稱仍有效。
+      setContinuity(data.operation==='continuity'&&!data.error&&data.enabled?data.continuity??null:null);
+      if(data.operation==='continuity'&&!data.error){setTab('continuity');setOpen(true);}
       if(data.operation==='media-list'&&!data.error){const proof=mediaProof.current,effective=proof?.snapshot?.controlConfiguration?.effective;
         if(data.enabled!==true||data.sessionId!==proof?.sessionId||proof?.enabled!==true||effective?.historyRecall!==true||effective?.answerHistory!==true)throw Error('cmcp_media_source_controls_disabled');
         setMediaList(data.mediaList??null);setMediaOriginal(null);return;}
@@ -145,7 +189,7 @@ return {MEDIA_RPC_PACKAGE,MEDIA_RPC_NAMESPACE,MEDIA_RPC_METHOD,MEDIA_RPC_DESCRIP
         try{if(!window.localStorage)throw Error('storage_unavailable');window.localStorage.setItem(key,data.uiPreference);}catch{setPreferenceError('顯示已套用，但無法保存；重新開啟時將使用原顯示偏好。');}
         if(data.uiPreference==='hidden')setOpen(false);
       }
-      const {mediaOriginal:preview,...safeState}=data;setState(safeState);if(['original','read'].includes(data.operation)&&!data.error){setOriginal(data.original??data.result);setTab('sources');}
+      const {mediaOriginal:preview,continuity:continuityView,...safeState}=data;setState(safeState);if(['original','read'].includes(data.operation)&&!data.error){setOriginal(data.original??data.result);setTab('sources');}
       if(!data.error&&['help','menu'].includes(data.operation)){setTab('summary');setOpen(true);}
       if(data.operation==='media-read'&&!data.error)setMediaOriginal(preview??null);
       const effective=data.snapshot?.controlConfiguration?.effective;
@@ -230,7 +274,7 @@ return {MEDIA_RPC_PACKAGE,MEDIA_RPC_NAMESPACE,MEDIA_RPC_METHOD,MEDIA_RPC_DESCRIP
     const recentLabel=recent?(recentKinds[recent.kind]??recent.kind??recent.operation??'正式來源操作')+' '+(recent.at??recent.receivedAt??'原時間尚未提供'):'尚無來源操作證據';
     const count=(available,items)=>state?.enabled&&available?String(items.length):'未知';
     const compactSummary='本工作區授權對話｜保存 '+(typeof c.saveUser==='boolean'&&typeof c.saveAssistant==='boolean'?(c.saveUser?'User':'')+(c.saveUser&&c.saveAssistant?'/':'')+(c.saveAssistant?'Assistant':'')||'OFF':'未知')+'｜來源 '+count(Array.isArray(registration?.sources),sources)+'｜Buffer '+count(bufferData,buffer)+'｜Pin '+count(pinData,pins)+'｜原件核驗 '+storageCount('originalStored')+'／待登錄 '+storageCount('registrationPending')+'｜共用 '+bool(c.enabled)+(c.clean===true?'／Clean':'')+'｜主動 '+bool(c.proactive)+'／Pin '+bool(c.pins)+'｜'+recentLabel;
-    const tabs=[['summary','摘要與控制'],['sources','來源與原件'],['buffer','Buffer'],['pins','Pin'],['receipts','回查與回執']];
+    const tabs=[['summary','摘要與控制'],['continuity','接續狀態'],['sources','來源與原件'],['buffer','Buffer'],['pins','Pin'],['receipts','回查與回執']];
     const panel=(name,...children)=>h('section',{hidden:tab!==name,'aria-label':tabs.find(item=>item[0]===name)?.[1]},...children);
     const displayButtonStyle={flex:'0 0 auto',whiteSpace:'nowrap',margin:0,padding:'2px 6px',fontSize:12,color:'inherit',background:'transparent',border:'1px solid var(--dsw-alias-border-l2, #c6d0da)',borderRadius:6};
     return h(React.Fragment,{},displayMode!=='hidden'&&h('section',{style:displayMode==='row'?{...box,width:640}:box,'aria-label':'CMCP 原生接入狀態','data-display-mode':displayMode},
@@ -238,9 +282,9 @@ return {MEDIA_RPC_PACKAGE,MEDIA_RPC_NAMESPACE,MEDIA_RPC_METHOD,MEDIA_RPC_DESCRIP
       displayMode==='row'&&
       h('span',{style:{flex:'1 1 0%',width:0,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'},title:(state?.saveScope??'保存範圍尚未讀回')+'；工作區：'+(state?.workspaceRoot??'核對中')+'；'+compactSummary},compactSummary),
       h('button',{type:'button',onClick:()=>setOpen(true),'aria-label':'查看 CMCP 狀態','aria-haspopup':'dialog','aria-expanded':open,style:displayButtonStyle},displayMode==='minimized'?'CMCP '+statusLabel+(error?' !':' ▾'):error?'狀態（有錯誤）':'查看狀態')),
-      h(Modal,{open,onClose:()=>{mediaRequest.current?.abort();setMediaOriginal(null);setOpen(false);},title:'CMCP｜目前對話與工作區',closeLabel:'關閉 CMCP 狀態',description:'查看與切換分頁不改控制、時間或 TTL，也不呼叫模型。'},
+      h(Modal,{open,onClose:()=>{mediaRequest.current?.abort();setMediaOriginal(null);setContinuity(null);setOpen(false);},title:'CMCP｜目前對話與工作區',closeLabel:'關閉 CMCP 狀態',description:'查看與切換分頁不改控制、時間或 TTL，也不呼叫模型。'},
       open&&h('div',{style:{width:'min(720px, calc(100vw - 72px))',maxWidth:'100%',maxHeight:'calc(100vh - 230px)',overflowY:'auto',fontSize:13,overflowWrap:'anywhere'}},
-        h('div',{role:'tablist','aria-label':'CMCP 詳細資料',style:{display:'flex',gap:4,flexWrap:'wrap',position:'sticky',top:0,background:'var(--color-surface, #f8fafc)',zIndex:1,paddingBottom:8}},tabs.map(([name,label])=>h('button',{key:name,type:'button',role:'tab','aria-selected':tab===name,onClick:()=>setTab(name),style:{...buttonStyle,fontWeight:tab===name?700:400}},label))),
+        h('div',{role:'tablist','aria-label':'CMCP 詳細資料',style:{display:'flex',gap:4,flexWrap:'wrap',position:'sticky',top:0,background:'var(--color-surface, #f8fafc)',zIndex:1,paddingBottom:8}},tabs.map(([name,label])=>h('button',{key:name,type:'button',role:'tab','aria-selected':tab===name,onClick:()=>{setTab(name);setContinuity(null);},style:{...buttonStyle,fontWeight:tab===name?700:400}},label))),
         error&&h('p',{role:'alert',style:{color:'#a31212'}},'CMCP 操作未完成：',error),
         state?.lastError&&h('p',{},'先前錯誤紀錄：',state.lastError.code??show(state.lastError),state.lastError.at?'（'+state.lastError.at+'）':''),
         h('div',{'aria-label':'CMCP 顯示偏好',style:{display:'flex',gap:4,alignItems:'center',flexWrap:'wrap'}},h('span',{},'入口顯示：'),[['minimized','最小入口'],['row','單列摘要'],['hidden','隱藏入口']].map(([mode,label])=>h('button',{key:mode,type:'button','aria-pressed':displayMode===mode,disabled:busy,onClick:()=>run('ui '+mode),style:buttonStyle},label))),
@@ -271,6 +315,78 @@ return {MEDIA_RPC_PACKAGE,MEDIA_RPC_NAMESPACE,MEDIA_RPC_METHOD,MEDIA_RPC_DESCRIP
         state?.enabled&&h(React.Fragment,{},
           panel('summary',h('p',{},'目前時間：',time?.nowLocal??time?.now??'尚無證據','；時區：',time?.timezone??'尚無證據','；前次交流：',previous?.recordedAtLocal??previous?.recordedAt??'尚無紀錄'),
           h('p',{},'最近來源操作：',recentLabel),detail('時間正式欄位（刷新不改原時間）',s?.timeCard)),
+          panel('continuity',
+            h('h3',{},'本對話最近的有來源接續投影'),
+            h('p',{},'按需查看宿主依正式已讀原文提出的整理。來源核對不代表語意已認證；計畫不等於已執行，使用者回報不等於工具核實。'),
+            btn('讀取並核對目前接續投影',()=>'continuity',!mayRead),
+            !continuity&&h('p',{},'尚未讀回投影；不是沒有 History，也不是事件已完成。'),
+            continuity&&h('p',{},'狀態：',({ready:'來源已重驗的衍生整理',partial:'部分材料尚未提供給宿主，不能當作完整現況',not_found:'本對話尚無接續投影',not_retained:'依保存控制未保留投影',unavailable:'目前不可提供',disabled:'控制阻擋'})[continuity.status]??continuity.status??'未知','；原因：',continuity.reason??'請核對下列來源與覆蓋'),
+            continuity?.projection&&h('p',{},'驗證層級：結構 ',continuity.projection.validation?.structure??'舊版未分列','；來源 ',continuity.projection.validation?.source??'依正式回執核對','；語意 ',continuity.projection.validation?.semantics==='not_performed'?'尚未認證':continuity.projection.validation?.semantics??'尚未認證','；執行授權 ',continuity.projection.validation?.executionAuthority==='none'?'未授予':continuity.projection.validation?.executionAuthority??'未授予'),
+            continuity?.projection&&h('div',{},h('h4',{},'目前計畫（不代表已執行）'),
+              !Array.isArray(continuity.projection.currentPlans)?h('p',{},'這份舊版投影未分列目前計畫；不能推論為沒有計畫。'):
+              continuity.projection.currentPlans.length===0?h('p',{},'這份投影沒有可確定的目前計畫；另見歧義與已讀範圍。'):
+              continuity.projection.currentPlans.map(node=>h('div',{key:node.nodeId,style:rowStyle},
+                node.applicability&&h('p',{},'適用對象：',node.applicability.scopeLabel??'尚未提供','；條件依此對象分別保存，不將共用原句套用至其他對象。',detail('對象、條件與來源版本',node.applicability)),
+                h('p',{},node.objectId??node.topic,'／',node.aspect,'：',node.conditionState==='explicitly_withdrawn'?'已明示撤回全部條件':renderPlanText(continuity,node),'；計畫狀態：',({planned:'規劃中',paused:'暫停',cancelled:'取消'})[node.planStatus]??'未分列'),
+                node.textAuthority==='concatenated_formal_fragments_not_a_new_user_message'&&h('p',{},'內容由正式原文片段組成，不是新的一則 User 原話；保留文字不代表歷史理由仍適用，狀態、條件與理由效力分開核對。'),
+                Array.isArray(node.sourceFragments)&&h('details',{},h('summary',{},'查看保留的原文片段與原時間（理由效力依正式關係核對）'),
+                  node.sourceFragments.length===0&&h('p',{},'此計畫已沒有保留片段；撤回依據見修改回執。'),
+                  node.sourceFragments.map((part,index)=>h('div',{key:index},h('blockquote',{style:{whiteSpace:'pre-wrap'}},part.citation.text),
+                    h('p',{},'來源 ',part.ref,'；原角色：',roles[part.sourceAuthorRole]??part.sourceAuthorRole,'；原時間：',part.messageRecordedAt??'未知'),
+                    (continuity.sourceLinks??[]).filter(source=>source.ref===part.ref).map(source=>h('span',{key:source.ref},readButton(source))),detail('原文片段位置與版本',part)))),
+                node.statusSource&&h('div',{},h('p',{},'狀態修改原話：',node.statusSource.citation.text,'；原時間：',node.statusSource.messageRecordedAt??'未知')),
+                node.planVersion&&detail('條件版本與最後修改',{planVersion:node.planVersion,changeId:node.changeId,conditionState:node.conditionState}))),
+              (continuity.projection.unresolvedPlans??[]).map((node,index)=>{
+                if(node.reason==='plan_currentness_not_established'){
+                  const valid=node.candidateSource?.collection==='planBasis'&&node.candidateSource?.key==='nodeId'&&Array.isArray(node.nodeIds);
+                  return h('div',{key:index},h('p',{},'目前效力尚未確立：',valid?node.nodeIds.length:'未知',' 項。以下分列各自來源，不表示同一案件，也不是目前已定計畫。'),
+                    !valid?h('p',{},'候選引用未提供或格式不符，不能判定為空集合。'):
+                    node.nodeIds.map(id=>{const base=continuity.projection.planBasis?.find(row=>row.nodeId===id);
+                      return h('div',{key:id,style:rowStyle},!base?h('p',{},'尚未取得對應基底：',id):
+                        h(React.Fragment,{},(base.candidates??[]).map((candidate,i)=>h('p',{key:i},candidate.objectId??'身分未提供','／',candidate.aspect??'面向未提供','：',candidate.text,'；候選狀態：',({planned:'規劃中',paused:'暫停',cancelled:'取消'})[candidate.planStatus]??'未分列')),
+                          detail('未確立候選的正式原文、時間與版本',base),
+                          (continuity.sourceLinks??[]).filter(source=>base.candidates?.some(candidate=>candidate.sourceFragments?.some(part=>part.ref===source.ref)||candidate.statusSource?.ref===source.ref)).map(source=>h('span',{key:source.ref},readButton(source)))));
+                    }));
+                }
+                return h('div',{key:index},h('p',{},'待釐清計畫：',node.objectId??node.topic,'／',node.aspect,'；',node.reason==='competing_explicit_plan_change_branches'?'同一基底有未決修改分支，未依先後自行選定。':node.reason),node.candidates&&detail('尚未選定的修改分支',node.candidates));
+              })),
+            continuity?.projection?.planEvidence?.length>0&&h('details',{},h('summary',{},'修改與理由的原文證據（不是獨立待執行計畫）'),
+              continuity.projection.planEvidence.map(node=>h('div',{key:node.nodeId,style:rowStyle},
+                h('p',{},node.objectId,'／',node.aspect,'；明示對象：',node.targetNodeIds.join('、')),
+                h('blockquote',{style:{whiteSpace:'pre-wrap'}},node.source.citation.text),
+                h('p',{},'原角色：',roles[node.source.sourceAuthorRole]??node.source.sourceAuthorRole,'；原時間：',node.source.messageRecordedAt??'未知'),
+                (continuity.sourceLinks??[]).filter(source=>source.ref===node.source.ref).map(source=>h('span',{key:source.ref},readButton(source))),detail('正式用途與關係',node.uses)))),
+            continuity?.projection?.planChanges?.length>0&&h('details',{},h('summary',{},'查看有來源的修改範圍'),
+              continuity.projection.planChanges.map(change=>h('div',{key:change.id},h('p',{},'修改 ',change.id,'：',change.kind==='status'?'只改狀態，原條件保留':change.kind==='reason'?'只整理理由，條件與狀態保留':'依明示片段保留、替換或撤回','；依據：',change.source.citation.text),change.reason&&h('div',{},h('p',{},'本次修改明說的理由（',roles[change.reason.sourceAuthorRole]??change.reason.sourceAuthorRole,'）：',change.reason.citation.text,'；類型：',({adds:'新增考量',prioritizes:'優先考量',accepts_tradeoff:'接受取捨'})[change.reason.kind]??'未另分列','；',change.reason.standing==='withdrawn_by_explicit_user_source'?'已有明示撤回來源':'未提供明示撤回；適用性仍依來源判斷','；原時間：',change.reason.messageRecordedAt??'未知'),(continuity.sourceLinks??[]).filter(source=>source.ref===change.reason.ref).map(source=>h('span',{key:source.ref},readButton(source)))),renderChangeReasonStatus(continuity,change),detail('修改前後版本與範圍回執',change)))),
+            continuity?.projection&&h('div',{},h('h4',{},'目前回報／觀察（證據層級依原角色）'),
+              (continuity.projection.currentClaims??[]).length===0?h('p',{},'這份投影未列目前回報／觀察；不等於全部歷史沒有發生。'):
+              continuity.projection.currentClaims.map(node=>h('p',{key:node.nodeId},node.objectId??node.topic,'／',node.aspect,'：',node.text))),
+            continuity?.projection?.retentions?.length>0&&h('div',{},h('h4',{},'明示維持的範圍'),
+              continuity.projection.retentions.map((row,index)=>h('div',{key:index},h('p',{},'原話：',row.citation.text),
+                ...(row.targets??[]).map(target=>h('p',{key:target.nodeId},'條件 ',target.nodeId,'：',({current_plan:'目前計畫',revised_by_explicit_plan_relation:'之後已明確修訂，不復活舊條件',not_resolved_as_current:'目前效力仍待釐清'})[target.status]??target.status))))),
+            Array.isArray(continuity?.projection?.reasonBindings)&&h('details',{},h('summary',{},'具名理由與各自效力｜',continuity.projection.reasonBindings.length,' 筆'),
+              continuity.projection.reasonBindings.length===0&&h('p',{},'此投影未分列具名理由；不代表原文沒有理由。'),
+              continuity.projection.reasonBindings.map((reason,index)=>h('div',{key:reason.reasonId??index,role:'group','aria-label':'具名理由 '+(reason.reasonId??'身分未提供'),style:rowStyle},
+                h('p',{},'理由 ',reason.reasonId??'身分未提供','；',({not_explicitly_withdrawn:'未提供明示撤回；目前適用性仍依來源判斷',withdrawn_by_explicit_user_source:'已有明示撤回來源'})[reason.standing]??'理由效力未知，不能判為仍有效或已撤回'),
+                h('blockquote',{style:{whiteSpace:'pre-wrap'}},reason.citation?.text??'尚未提供正式引文'),
+                h('p',{},'來源 ',reason.ref??'未知','；原角色：',roles[reason.sourceAuthorRole]??reason.sourceAuthorRole??'未知','；原時間：',reason.messageRecordedAt??'未知',reason.eventOccurredAt?'；事件時間：'+reason.eventOccurredAt:''),
+                h('p',{style:{overflowWrap:'anywhere'}},reason.binding?.kind==='plan_basis'?'歸屬原計畫基底：'+(reason.binding.nodeId??'未知')+'；基底版本：'+(reason.binding.basisVersion??'未知'):
+                  reason.binding?.kind==='plan_change'?'歸屬計畫：'+(reason.binding.nodeId??'未知')+'；修改：'+(reason.binding.changeId??'未知')+'；修改前版本：'+(reason.binding.priorVersion??'未知')+'；修改後版本：'+(reason.binding.planVersion??'未知'):'理由的歸屬與版本尚未提供',
+                  '；理由版本：',reason.reasonVersion??'未知'),
+                reason.kind&&h('p',{},'理由關係類型：',({adds:'新增考量',prioritizes:'優先考量',accepts_tradeoff:'接受取捨'})[reason.kind]??reason.kind),
+                h('p',{},'理由關係由宿主依來源提出；來源核對不代表語意已認證，也不授予執行權。'),
+                (continuity.sourceLinks??[]).filter(source=>source.ref===reason.ref).map(source=>h('span',{key:source.ref},readButton(source))),detail('理由的正式來源、歸屬與版本',reason)))),
+            continuity?.projection?.reasonRelations?.length>0&&h('div',{},h('h4',{},'理由與取捨的明示關係'),
+              continuity.projection.reasonRelations.map((row,index)=>h('p',{key:index},({adds:'新增理由',withdraws:'明示撤回',prioritizes:'優先考量',accepts_tradeoff:'接受取捨',unresolved:'關係待釐清'})[row.kind]??row.kind,'：',row.citation.text,'；涉及 ',Array.isArray(row.targetReasonIds)?'具名理由 '+row.targetReasonIds.join('、'):Array.isArray(row.targetChangeIds)?'修改理由 '+row.targetChangeIds.join('、'):Array.isArray(row.targetNodeIds)?row.targetNodeIds.join('、'):'對象尚未提供'))),
+            continuity?.projection?.knownEvolution?.map(node=>h('div',{key:node.nodeId,style:rowStyle},
+              h('strong',{},node.topic??node.objectId,'／',node.aspect),node.planRole==='evidence'&&h('p',{},'此節點為修改或理由證據，不另成立獨立計畫。'),h('p',{},node.interpretation.text),
+              h('p',{},'原角色：',roles[node.source.sourceAuthorRole]??node.source.sourceAuthorRole,'；原時間：',node.time.messageRecordedAt??'未知','；解讀：',node.interpretation.kind,'／',node.interpretation.temporalUse),
+              h('blockquote',{style:{whiteSpace:'pre-wrap'}},node.source.citation.text),
+              ...(continuity.projection.reasons??[]).filter(reason=>reason.nodeId===node.nodeId).map((reason,index)=>h('div',{key:index},h('p',{},'理由引文（',roles[reason.sourceAuthorRole]??reason.sourceAuthorRole,'）：',reason.citation.text,'；',reason.standing==='withdrawn_by_explicit_user_source'?'已有明示撤回來源':'未提供明示撤回；目前適用性仍依來源判斷',reason.binding?.kind==='plan_basis'?'；歸屬原計畫基底，不自動成為後續修改原因。':''),reason.binding&&detail('理由的原始對象與版本',reason.binding))),
+              (continuity.sourceLinks??[]).filter(source=>source.ref===node.source.ref).map(source=>h('span',{key:source.ref},readButton(source),detail('正式來源身分與版本',source))),
+              detail('明確關係與語意限制',node.effectiveRelation))),
+            continuity?.projection&&h('p',{},'未知／未定：',(continuity.projection.unknowns??[]).join('；')||'宿主沒有另外列出；不代表已確認全部條件。'),
+            continuity&&detail('投影、覆蓋與來源核對回執',continuity)),
           panel('sources',
           storageView(),
           h('div',{style:rowStyle},h('strong',{},'正式來源清冊｜',Array.isArray(registration?.sources)?sources.length+' 筆':'尚未提供'),

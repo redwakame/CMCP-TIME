@@ -7,6 +7,7 @@ import {defaultPlaygroundConfig,playgroundReadingLimits,playgroundPath} from './
 import {normalizeCmcpRuntimeConfig,createCmcpRuntimeSession} from './cmcp-runtime-session.js';
 import {CMCP_FEATURE_CONTROL_DEFAULTS,normalizeCmcpFeatureControlPatch} from './cmcp-feature-controls.js';
 import {requireCmcpNodeVersion} from './cmcp-node-version.js';
+import {describeCmcpProactiveExecution} from './cmcp-proactive-description.js';
 
 const digest=value=>createHash('sha256').update(value).digest('hex');
 const json=value=>JSON.stringify(value,null,2)+'\n';
@@ -17,13 +18,15 @@ const within=async(root,value)=>playgroundPath(root,value);
 const installedPackageRoot=fileURLToPath(new URL('../../',import.meta.url));
 
 /** Inspection never authenticates, installs, opens a model thread or reads credentials. */
-export function inspectCmcpSetupEnvironment({nodeVersion=process.versions.node,probe=spawnSync}={}){
+export function inspectCmcpSetupEnvironment({nodeVersion=process.versions.node,probe=spawnSync,inspectCodex=true}={}){
   requireCmcpNodeVersion(nodeVersion);
+  if(!inspectCodex)return {node:nodeVersion,nodeSupported:true,codex:{checked:false,available:null,version:null,reason:'not_requested'},
+    authorizationChecked:false,modelCalls:0,adminRequired:false};
   const command=process.platform==='win32'?'cmd.exe':'codex';
   const args=process.platform==='win32'?['/d','/s','/c','codex.cmd --version']:['--version'];
   const result=probe(command,args,{encoding:'utf8',windowsHide:true,timeout:5000});
   const version=/codex-cli\s+([^\s]+)/.exec(result.stdout??'')?.[1]??null;
-  return {node:nodeVersion,nodeSupported:true,codex:{available:result.status===0&&version!==null,version},
+  return {node:nodeVersion,nodeSupported:true,codex:{checked:true,available:result.status===0&&version!==null,version},
     authorizationChecked:false,modelCalls:0,adminRequired:false};
 }
 
@@ -88,7 +91,7 @@ export async function configureCmcpInstallation({projectRoot,packageRoot=install
   if(previous&&(previous.hostWorkspace!==hostWorkspace||previous.choices.scopeId!==selected.scopeId))throw Error('installation_scope_or_workspace_change_requires_new_root');
   if(previous&&(previous.choices.skillName??'cmcp-context')!==(selected.skillName??'cmcp-context'))throw Error('installation_skill_name_change_requires_new_root');
   if(previous&&JSON.stringify(previous.choices.events)!==JSON.stringify(selected.events))throw Error('installation_event_scope_change_requires_new_root');
-  const environment=inspect();
+  const environment=inspect({inspectCodex:['setup','update'].includes(action)&&selected.attachCodex});
   if(['setup','update'].includes(action)&&selected.attachCodex&&!environment.codex.available)throw Error('codex_not_available');
   await fs.mkdir(root,{recursive:true});await fs.mkdir(hostWorkspace,{recursive:true});
   const configFile=path.join(root,'config.json'),profileFile=path.join(root,'playground.json'),bindingFile=path.join(root,'host-binding.json');
@@ -165,16 +168,39 @@ export async function configureCmcpInstallation({projectRoot,packageRoot=install
   const config=JSON.parse(await fs.readFile(configFile,'utf8'));
   const managedFiles=installing?await Promise.all(ownedSkillFiles.map(async file=>({file,hash:digest(await fs.readFile(file))}))):previous?.managedFiles??[];
   const result={kind:'cmcp_installation',version:1,projectRoot,packageRoot,root,hostWorkspace,runtimeId:config.runtimeId,choices:selected,
-    state:installing?'enabled':action==='uninstall'?'uninstalled':'disabled',managedCommands:installing?[command]:[],managedFiles,
+    state:installing?'enabled':action==='uninstall'?'uninstalled':'disabled',stateScope:'managed_codex_hook_binding',managedCommands:installing?[command]:[],managedFiles,
     environment,updatedAt:new Date().toISOString(),configFile,profileFile,bindingFile,backup,
     grantCreated:false,paidAuthorization:'separate_finite_runtime_grant_required',dataPreserved:true,modelCalls:0};
   if(action==='disable'||action==='uninstall')Object.assign(result,{disabledScope:'managed_codex_hook_binding',runtimeControlsUnchanged:true,
     manualSkill:action==='uninstall'?'removed_if_unchanged':'remains_available',grantPreserved:true});
+  result.layers=await inspectCmcpSetupLayers(result,config);
   await write(manifestFile,json(result));await fs.writeFile(path.join(backup,'changes.json'),json(mutations),{flag:'wx'});
   return result;
 }
 
+/** Retain the legacy Codex manifest without treating it as CMCP's effective status. */
+async function inspectCmcpSetupLayers(saved,config){
+  let runtime;
+  const layers={configuration:{status:'configured',configFile:saved.configFile,scopeId:config.input.scopeId,dataRoot:config.input.root},
+    hostConnection:{codex:{selected:saved.choices.attachCodex,managedBinding:saved.state,enabled:saved.state==='enabled'},otherHosts:'not_inspected'}};
+  try{
+    runtime=await createCmcpRuntimeSession({config,repoRoot:saved.projectRoot,readOnly:true,
+      readCredential:async()=>{throw Error('setup_never_reads_credentials');},fetchImpl:async()=>{throw Error('setup_never_calls_models');}});
+    const status=await runtime.status(),effective=status.controlConfiguration.effective;
+    layers.runtime={status:'observed',scopeId:status.dataScope.scopeId,enabled:effective.enabled,clean:effective.clean,
+      sourceSaving:{user:effective.saveUser,assistant:effective.saveAssistant},observation:'read_only_no_host_session_started'};
+    layers.sources=status.storageStatus;
+    layers.proactiveExecution=describeCmcpProactiveExecution({loopTiming:config.input.loopTiming,controls:effective,observation:'runtime',readOnly:true});
+  }catch(error){layers.runtime={status:'unknown',reason:error.message};layers.sources={status:'unknown',reason:'runtime_inspection_unavailable'};}
+  finally{await runtime?.close();}
+  return layers;
+}
+
 export async function inspectCmcpInstallation({projectRoot,root}){
-  root=await within(projectRoot,root);const saved=JSON.parse(await fs.readFile(path.join(root,'installation.json'),'utf8'));
-  return {...saved,inspection:{modelCalls:0,mutated:false,environment:inspectCmcpSetupEnvironment()}};
+  projectRoot=await fs.realpath(projectRoot);root=await within(projectRoot,root);
+  const saved=JSON.parse(await fs.readFile(path.join(root,'installation.json'),'utf8'));
+  if(saved.kind!=='cmcp_installation'||saved.version!==1||saved.projectRoot!==projectRoot)throw Error('installation_identity_mismatch');
+  const config=JSON.parse(await fs.readFile(await within(projectRoot,saved.configFile),'utf8'));
+  return {...saved,stateScope:'managed_codex_hook_binding',layers:await inspectCmcpSetupLayers(saved,config),
+    inspection:{modelCalls:0,mutated:false,environment:inspectCmcpSetupEnvironment({inspectCodex:saved.choices.attachCodex&&saved.state==='enabled'})}};
 }

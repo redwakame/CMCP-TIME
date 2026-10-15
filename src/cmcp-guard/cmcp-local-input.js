@@ -28,6 +28,7 @@ import {selectCmcpReadingCalendarCollection,selectCmcpReadingAuthorizedCollectio
 import {createCmcpHistoryQueryRuntime} from './cmcp-history-query-runtime.js';
 import {prepareCmcpAnswerMaterialSelection,selectCmcpAnswerMaterial} from './cmcp-answer-material-selection.js';
 import {createCmcpEphemeralReadingQuery,validateCmcpEphemeralReadingQuery,assertCmcpEphemeralQueryText,resolveCmcpReadingQuery,cmcpReadingQueryKey} from './cmcp-reading-query-authorization.js';
+import {projectCmcpReadingContinuity,validateCmcpContinuityPublication,hasCmcpContinuityPreview,validateCmcpContinuityCorrectionPublication} from './cmcp-continuity-projection.js';
 
 const copy=value=>structuredClone(value);
 const jsonBytes=value=>Buffer.byteLength(JSON.stringify(value));
@@ -804,9 +805,11 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
       selection:{input:request.input,instructions:request.instructions,schema:request.schema},modelCalls:0,
       coverage:'frozen_authorized_registered_navigation_not_read_evidence',modelContext:null},internal};
   }
-  async function readingOpen({text,mode='read',ticket,limits:readingLimits,timeContext,discussion,calendarRange,naturalTime,inventory,savedQueryPointer,queryAuthorization,navigationResult,selection:hostSelection,queryText,operationValid=async()=>true}){
+  async function readingOpen({text,mode='read',ticket,limits:readingLimits,timeContext,discussion,calendarRange,naturalTime,inventory,savedQueryPointer,queryAuthorization,navigationResult,selection:hostSelection,queryText,includeCurrentInput=false,operationValid=async()=>true}){
     const generation=bufferGeneration,readingBufferTtlMs=activationTtlMs;
     if(typeof operationValid!=='function')throw Error('invalid_reading_operation_valid');
+    if(typeof includeCurrentInput!=='boolean')throw Error('invalid_current_input_reading_option');
+    if(includeCurrentInput&&!navigationResult)throw Error('current_input_requires_navigation_ticket');
     if(!enabled||clean||!features.historyRecall)return {reader:{kind:'cmcp_reading_collection',ticket:null,mode,status:'disabled',collection:null},modelContext:null,internal:{modelCalls:0}};
     if(readOnly||!['read','all'].includes(mode))throw Error('invalid_or_read_only_reading');
     readingLimits=normalizeCmcpReadingLimits(readingLimits);
@@ -838,6 +841,19 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
       else selected=selectCmcpReadingAuthorizedCollection({entries:internal.registered,scopeId,event:events.find(event=>event.key===chosen.eventKey)?.event});
       if(!await valid())throw Error('reading_cancelled');
       if(selected.status!=='selected')return {reader:{kind:'cmcp_reading_collection',ticket,mode,status:selected.status,reason:selected.reason??'no_source_in_selected_scope',collection:null,historyAbsence:'not_established'},modelContext:null,internal:outputInternal};
+      if(includeCurrentInput){
+        // 當輪來源由受綁定的正式票券取得；模型不能指定 Pointer、角色或時間。
+        if(!internal.queryPointer||internal.queryAuthorization)throw Error('current_input_not_saved');
+        const query=await resolveCmcpReadingQuery({history,scopeId,binding:internal});
+        const matches=(await catalog.list()).filter(entry=>cmcpSourcePointerKey(entry.pointer)===cmcpSourcePointerKey(query.pointer));
+        if(matches.length!==1||matches[0].evidenceHash!==internal.queryHash||matches[0].sourceAuthorRole!=='user'
+          ||matches[0].messageRecordedAt!==internal.queryTime)throw Error('current_input_unregistered_or_changed');
+        if(selected.entries.some(entry=>cmcpSourcePointerKey(entry.pointer)===cmcpSourcePointerKey(query.pointer)))throw Error('current_input_already_in_history_selection');
+        selected={...selected,entries:[...selected.entries,copy(matches[0])],descriptor:{kind:'authorized_history_with_current_input',
+          scopeCoverage:'frozen_authorized_history_selection_plus_bound_current_input',historyScope:copy(selected.descriptor),historySourceCount:selected.entries.length,
+          currentInput:{pointer:copy(query.pointer),evidenceHash:internal.queryHash,sourceAuthorRole:'user',messageRecordedAt:internal.queryTime},
+          historyCompleteness:'unchanged_from_history_scope',semanticRelation:'not_inferred',newSourceSave:false}};
+      }
       const sourceMap=selected.entries.map((entry,index)=>({ref:'c'+(index+1),id:entry.id,pointer:copy(entry.pointer),evidenceHash:entry.evidenceHash}));
       const result=await openCmcpReadingCollection({stores,catalog,events,candidates:{host:{ticket,question:internal.question},internal:{...outputInternal,sourceMap}},
         selection:{status:'selected',refs:sourceMap.map(row=>row.ref),clarification:''},mode,limits:readingLimits,timeContext:temporal,
@@ -1049,6 +1065,31 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
       bufferGeneration:generation,ttlMs:loopTiming.ttlMs,valid,activateBuffer:features.buffer});
     result.internal.queryPointer=manifest.queryPointer;if(manifest.queryAuthorization)result.internal.queryAuthorization=copy(manifest.queryAuthorization);return result;
   }
+  async function validateReadingContinuity({openingResult,previousPages=[],result,operationValid=async()=>true}){
+    if(!enabled||clean||!features.historyRecall||!features.answerHistory)throw Error('continuity_disabled');
+    const manifest=openingResult?.internal?.manifest,temporal=temporalFor(),generation=bufferGeneration;
+    if(!manifest||manifest.bufferGeneration!==generation)throw Error('buffer_receipt_stale');
+    const readingValid=readingValidity({generation,queryTime:manifest.queryTime,temporal,ticket:manifest.ticket});
+    return validateCmcpContinuityPublication({stores,catalog,reading:openingResult,previousPages,result,timeContext:temporal,bufferGeneration:generation,
+      valid:async()=>features.answerHistory&&await readingValid()&&await operationValid()});
+  }
+  async function readingContinuity({openingResult,previousPages=[],proposal,operationValid=async()=>true}){
+    if(readOnly)throw Error('read_only_continuity_projection');
+    if(!enabled||clean||!features.historyRecall||!features.answerHistory)throw Error('continuity_disabled');
+    let result;
+    try{result=projectCmcpReadingContinuity({reading:openingResult,previousPages,scopeId,proposal,timeContext:temporalFor()});}
+    catch(error){if(hasCmcpContinuityPreview(error))await validateReadingContinuityCorrection({openingResult,previousPages,error,operationValid});throw error;}
+    result.publication=await validateReadingContinuity({openingResult,previousPages,result,operationValid});return result;
+  }
+  async function validateReadingContinuityCorrection({openingResult,previousPages=[],error,operationValid=async()=>true}){
+    if(!hasCmcpContinuityPreview(error))return {status:'not_required'};
+    if(!enabled||clean||!features.historyRecall||!features.answerHistory)throw Error('continuity_disabled');
+    const manifest=openingResult?.internal?.manifest,temporal=temporalFor(),generation=bufferGeneration;
+    if(!manifest||manifest.bufferGeneration!==generation)throw Error('buffer_receipt_stale');
+    const readingValid=readingValidity({generation,queryTime:manifest.queryTime,temporal,ticket:manifest.ticket});
+    return validateCmcpContinuityCorrectionPublication({stores,catalog,reading:openingResult,previousPages,error,timeContext:temporal,bufferGeneration:generation,
+      valid:async()=>features.answerHistory&&await readingValid()&&await operationValid()});
+  }
   const historyQueries=createCmcpHistoryQueryRuntime({scopeId,journal,historyProvider:history,readingOpen,readingPage,adapter,remainingWorkMs,
     getReplyBindings:async()=>(await (journal.readIncremental?.()??journal.read())).map(row=>row.record)
       .filter(row=>row.kind==='assistant_reply_binding').map(row=>row.value),
@@ -1082,7 +1123,7 @@ export async function createCmcpLocalInput({root,scopeId,events,limits,timezone,
     },
     historyQuery:input=>historyQueries.run(input),resumeHistoryQuery:input=>historyQueries.resume(input),historyQueryStatus:id=>historyQueries.status(id),
     timeCard:options=>interactionTime.project({timeContext:temporalFor(options?.timeContext),excludePointers:options?.excludePointers??[]}),
-    readingNavigate,readingOpen,readingPage,readingOutline,readingRevoked,revokeReading,
+    readingNavigate,readingOpen,readingPage,readingOutline,readingContinuity,validateReadingContinuity,validateReadingContinuityCorrection,readingRevoked,revokeReading,
     async correctDialogueControl({eventKey,...correction}){
       if(readOnly||busy||!enabled||clean)throw Error('dialogue_correction_unavailable');
       const selected=events.find(item=>item.key===eventKey);if(!selected)throw Error('event_outside_authorized_collection');

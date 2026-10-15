@@ -1,8 +1,10 @@
-# CMCP-TIME 0.1.0：操作ガイド
+# CMCP-TIME 0.1.1：操作ガイド
 
 [English](release-readiness.en.md) · [繁體中文](release-readiness.zh-TW.md) · [Español](release-readiness.es.md) · [日本語](release-readiness.ja.md)
 
-本書は **0.1.0** の操作を説明します。既存リンクのためファイル名を維持しています。完全な版番号、公開 tag、`PUBLIC-FILES.json` で配布元を識別し、変更可能なチャネルをその代わりにしません。原作者 redwakame、Apache-2.0。LICENSE と NOTICE を保持してください。
+本書は **0.1.1** の操作を説明します。既存リンクのためファイル名を維持しています。完全な版番号、公開 tag、`PUBLIC-FILES.json` で配布元を識別し、変更可能なチャネルをその代わりにしません。原作者 redwakame、Apache-2.0。LICENSE と NOTICE を保持してください。
+
+**0.1.1 は [GitHub Release v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1)** の固定 `.tgz` から導入します。今回は npm が 0.1.0 のままなので、0.1.1 を使うときはレジストリ名や `latest`／`next` に置き換えないでください。Release のハッシュと導入後の `--version` を確認します。[変更と証拠の範囲](release-0.1.1.md)。
 
 ## 永続 prefix と独立した作業領域
 
@@ -12,7 +14,8 @@ Node.js >=22.16.0 と npm を用意します。最新増分は Windows Node 24.1
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
+$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
+npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
@@ -21,6 +24,18 @@ npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0
 `setup` は保存範囲、言語、タイムゾーン、任意の Codex 接続を確認します。ホストの導入、私的履歴の取込、有料呼出の許可、自動通知は行いません。POSIX は `<prefix>/bin/cmcp-time`、Windows は `<prefix>/cmcp-time.cmd` を使い、以下の `cmcp-time` をその完全パスに置き換えます。PATH 変更は前提にしません。ソース利用時は `npm ci` で任意 MCP の固定依存を導入してから `node bin/cmcp-time.mjs` を使います。[インストール](npm-installation.md)も参照してください。
 
 Codex のローカル Hook は生成されたプロジェクトとネイティブ承認を確認します。公式 Harness Desktop は別ホストであり、npm setup が自動配備するわけではありません。既存の CMCP Desktop 配備には、以下の profile 確認とライフサイクル操作を使います。プログラムをコピーしただけでは設定済み接続になりません。
+
+### 0.1.1 の保守：端末入力と任意の Codex
+
+以下の修正は GitHub 0.1.1 に含まれます。公開済み npm 0.1.0 パッケージは変更しません。`--answers` なしの `setup`／`update` は端末（TTY）で一問ずつ回答します。パイプによる一括入力や空の stdin は設定を書き込む前に拒否し、途中の EOF は中止します。未回答を同意とみなしません。自動化では `examples/setup-host.json` に沿って選択を明示し、`cmcp-time setup --workspace <既存作業領域> --answers <作業領域内の answers.json>` を使います。Codex 不要なら `attachCodex: false` を選び、Codex の導入・起動は不要です。
+
+`setup --status` は互換性のため `state` と `cmcp_codex_binding` を保持し、`stateScope=managed_codex_hook_binding` で対象を明示します。`layers.configuration`、`layers.hostConnection`、`layers.runtime`、`layers.sources` を別々に確認してください。設定、ホスト接続、実効制御、原本保存、正式 reader の利用資格は異なる状態です。他ホストは個別確認前なら `not_inspected`、reader の利用資格はモデル取得の証拠ではありません。`disable` は管理対象 Codex 接続だけを無効にし、Runtime 制御と History を保持します。Codex 以外の入口には引き続き個別の有効な権限が必要です。
+
+### 0.1.1 の保守：必要時の現状整理
+
+許可済みの会話で自然に現状の整理を頼めば、ホストが既存の正式ツールを使います。利用者が JSON を書く必要はありません。`partial` に原文の用途に関する finding がある場合、ホストは元のメッセージ全文を確認し、現在の `finding.requiredResolutionKind` と正式な `finding.report.source.ref` に従って処理します。`reportRef` の代わりに `nodeId` を使うことはできません。分割結果は同じ配信の `delivery.nextPage` で `complete` まで読み進め、proposal の再送を次ページ扱いにしません。原文の欠落や本当の曖昧さは `partial` のままです。構造と原文参照が有効な `ready` は、意味内容の検証合格でも実行許可でもありません。
+
+H4 の保守検証では、明示された三つの報告と一時停止の指示を区別し、生成された投影の全ページを供給しました。通常ホストは正確な引用区間を選び、原文の用途を明示的に解決する分岐は固定原本の正負例で別途確認しています。投影の完全配信は選択した全原文のモデル取得を意味しません。追加選択された Assistant の長い回答が未読だったため、全体の取得範囲は正しく `partial` のままです。以前の C27 大容量例二件はなお 65,536 bytes を超える既知の制限であり、全容量の合格とはしていません。[0.1.1 の証拠の範囲](release-0.1.1.md)を参照してください。
 
 ## 公式 Desktop への初回接続
 
@@ -140,9 +155,11 @@ Desktop データは明示した配備の `state/history`、原本メディア�
 
 Buffer は既定 12 時間（6–48 時間で設定）、期限切れ/Clear でも History と独立 Pin を保持します。OFF、Clean、保存停止、接続解除は別です。表示変更、一覧/状態確認、正式プレビューは User 原時刻、TTL、配信資格を更新せず、正式読取には通常の読取記録が残る場合があります。共有制御と Session 権限を分けます。
 
+Setup は互換性のため `loopTiming` の TTL／無操作／活動期間に 600000／60000／600000 ミリ秒を保持します。正式 Runtime は `externalDispatch:true` で共通ディスパッチャーを使い、従来のローカル無操作タイマーは無効です。**60 秒間操作しないと必ず送信される、という意味ではありません。** 対象 Pin の `dueAt` または対応 Buffer の元の有効期限に加え、現在の制御、DND、原文、取消、重複排除、有効な配信先を確認します。現在の公式 Harness 接続は明示的な Pin のみ対応し、主動制御の初期値は OFF です。状態表示では設定、実行器、実際の観測、宿主の配信制限を分けます。未観測は停止確認ではありません。[設定説明](configuration.md#timing-values-and-the-effective-proactive-executor)も参照してください。
+
 `/cmcp ui minimized`、`row`、`hidden` は表示だけを変更し、非表示でも `/cmcp help` を使えます。保存、登録待ち/失敗、正式読取資格、ホスト間利用の評価状態を分けて表示します。保存メタデータだけでは受信側への引継ぎを評価していません。正式読取とホストの受領記録を別途確認してください。必要な再登録は明示した保護付き操作で行い、閲覧で自動再試行や容量拡大をしません。
 
-## npm 更新とローカル Hook の解除
+## プログラム更新とローカル Hook の解除
 
 コードを置換する前に、対象範囲の CMCP writer を正常停止します。prefix と作業領域を維持し、確認した版を同じ prefix に入れ、`--version` を確認してから `cmcp-time update --workspace <workspace>` で setup 管理の Codex 接続を更新します。`update` は npm からダウンロードしません。Desktop は以下の `desktop upgrade` を使います。
 

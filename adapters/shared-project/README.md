@@ -82,4 +82,4 @@ Session 用 project/host/agent/native Session 的完整 tuple 雜湊；message �
 驗證：在產品根執行 `node --test adapters/shared-project/shared-project.test.mjs`。測試只用獨立合成 state，原件留在明示的 `CMCP_TEST_OUTPUT_ROOT` 測試輸出目錄（見[測試方式](../../docs/testing.md)）；不啟動真實模型，不讀私人 Session。
 ## 宿主閱讀能力明示
 
-Codex 與 Harness 的既有共用文字 profile 為 `shared-text-v1`，保留 `find`、`open`、`read`、`progress` 四項正式工具。共用 `MODEL_TEXT_PROFILE` 列出已提供工具及未提供的 `reader-status`、`list-images`、`read-image`；Codex read CLI 的 `capabilities` 與 Harness 登錄資訊可讀回此靜態能力，不讀私人資料、不呼叫模型。通用 MCP 傳輸另有完整七項唯讀工具；新增 MCP 不等於既有文字宿主已驗圖片輸入。模型不能藉工具參數升格為 controller，未知操作仍拒絕。
+Codex 與 Harness 的候選共用文字 profile 為 `shared-text-continuity-v2`，保留 `find`、`open`、`read`、`progress`，新增 `continuity` 來源核對投影。共用 `MODEL_TEXT_PROFILE` 列出已提供工具及未提供的 `reader-status`、`list-images`、`read-image`；Codex read CLI 的 `capabilities` 與 Harness 登錄資訊可讀回此靜態能力，不讀私人資料、不呼叫模型。通用 MCP 傳輸提供八項工具；新增投影不等於既有文字宿主已驗圖片輸入。模型不能藉工具參數升格為 controller，未知操作仍拒絕。投影不是權威原文，依保存控制保留閱讀回執；詳見[按需接續契約](../../docs/daily-continuity.md)。

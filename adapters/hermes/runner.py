@@ -6,6 +6,12 @@ import os
 import sys
 from pathlib import Path
 
+def provider_agent_options(config):
+    # Groq 的已驗 GPT-OSS 路線不接受 Hermes 的 default effort；舊路線不加參數。
+    if config.get("provider")=="groq" and str(config.get("model","")).startswith("openai/gpt-oss-"):
+        return {"reasoning_config":{"effort":"medium"},"request_overrides":{"reasoning_effort":"medium"}}
+    return {}
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--config",required=True)
@@ -69,7 +75,7 @@ def main():
         from hermes_state import SessionDB
         database=SessionDB()
         history=database.get_messages_as_conversation(args.session)
-        agent=AIAgent(model=config["model"],provider="custom",base_url=config["baseUrl"],api_key=key,api_mode="chat_completions",max_iterations=24,enabled_toolsets=config["nativeToolsets"]+(["cmcp"] if args.authorize_session else []),save_trajectories=False,verbose_logging=False,quiet_mode=True,session_id=args.session,session_db=database,platform="cli",cwd=payload["workspace"],interim_assistant_callback=runtime.interim,skip_context_files=False,load_soul_identity=False,skip_memory=True,skip_background_review=True,run_budget_seconds=config["timeoutSeconds"],fallback_model=None,max_tokens=8192)
+        agent=AIAgent(model=config["model"],provider="custom",base_url=config["baseUrl"],api_key=key,api_mode="chat_completions",max_iterations=24,enabled_toolsets=config["nativeToolsets"]+(["cmcp"] if args.authorize_session else []),save_trajectories=False,verbose_logging=False,quiet_mode=True,session_id=args.session,session_db=database,platform="cli",cwd=payload["workspace"],interim_assistant_callback=runtime.interim,skip_context_files=False,load_soul_identity=False,skip_memory=True,skip_background_review=True,run_budget_seconds=config["timeoutSeconds"],fallback_model=None,max_tokens=8192,**provider_agent_options(config))
         key=None
         start_control_reader(runtime,agent,payload["requestId"])
         native_time=datetime.datetime.fromisoformat(runtime.received_at.replace("Z","+00:00")).timestamp()

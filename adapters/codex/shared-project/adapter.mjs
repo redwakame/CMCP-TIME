@@ -1,7 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {createHash, randomUUID} from 'node:crypto';
-import {callSharedProject, MODEL_OPERATIONS, MODEL_TEXT_PROFILE, validatePipe} from '../../shared-project/client.mjs';
+import {callSharedProject, MODEL_OPERATIONS, MODEL_TEXT_PROFILE, CONTINUITY_TOOL_DESCRIPTION, OPEN_HISTORY_TOOL_DESCRIPTION, CONTINUITY_TOOL_PARAMETERS, readContinuityProposal, validatePipe} from '../../shared-project/client.mjs';
+import {withContinuityReadingContract} from '../../continuity-contract-view.mjs';
+import {projectContinuityModelView} from '../../continuity-model-view.mjs';
+import {CONTINUITY_PAGE_DESCRIPTION} from '../../continuity-delivery.mjs';
 
 const hash = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const fail = code => { throw Error(code); };
@@ -35,23 +38,25 @@ export function makeRequest(binding, ticket, operation, args, requestId = random
   validateTicket(ticket,binding);
   return {projectId:binding.projectId,hostId:binding.hostId,agentId:binding.agentId,workspace:binding.workspace,sessionId:ticket.sessionId,epoch:ticket.epoch,requestId,operation,args};
 }
-const toolParameters = Object.freeze({find:[],open:['navigationTicket','selectionJson'],read:['ticket'],progress:['ticket']});
+const toolParameters = Object.freeze({find:[],open:['navigationTicket','selectionJson'],read:['ticket'],progress:['ticket'],continuity:['ticket','proposalJson'],'continuity-page':['ticket','deliveryId','page']});
 export const readCapabilities=MODEL_TEXT_PROFILE;
 if(Object.keys(toolParameters).length!==readCapabilities.operations.length||readCapabilities.operations.some(operation=>!Object.hasOwn(toolParameters,operation)||!Object.hasOwn(MODEL_OPERATIONS,operation)))fail('codex_shared_profile_schema_mismatch');
 export function validateRead(operation, args) {
   if (!Object.hasOwn(toolParameters,operation)) fail('codex_shared_read_operation_denied');
-  const keys = toolParameters[operation]; record(args,keys);
-  if (Object.keys(args).length !== keys.length) fail('codex_shared_invalid_tool_arguments');
+  if(operation==='continuity'){readContinuityProposal(args);return structuredClone(args);}
+  const keys = toolParameters[operation]; record(args,operation==='open'?[...keys,'includeCurrentInput']:keys);
+  if (keys.some(key=>!Object.hasOwn(args,key))||(Object.hasOwn(args,'includeCurrentInput')&&typeof args.includeCurrentInput!=='boolean')) fail('codex_shared_invalid_tool_arguments');
   for (const key of keys) if (typeof args[key] !== 'string' || !args[key] || Buffer.byteLength(args[key]) > 65536) fail('codex_shared_invalid_tool_arguments');
-  if (operation === 'open') { try { JSON.parse(args.selectionJson); } catch { fail('codex_shared_invalid_tool_arguments'); } }
+  if (operation === 'open'||operation==='continuity') { try { JSON.parse(operation==='open'?args.selectionJson:args.proposalJson); } catch { fail('codex_shared_invalid_tool_arguments'); } }
   return structuredClone(args);
 }
 export const dynamicTools = readCapabilities.operations.map(operation => ({type:'function',name:MODEL_OPERATIONS[operation],
-  description:({find:'Find shared project source history relevant to the current user request.',open:'Open a selection from a returned history navigation ticket.',read:'Read the next original source page from an open history ticket.',progress:'Check the reading coverage of an open history ticket.'})[operation],
-  inputSchema:{type:'object',properties:Object.fromEntries(toolParameters[operation].map(key=>[key,{type:'string'}])),required:toolParameters[operation],additionalProperties:false}}));
+  description:({find:'Find shared project source history relevant to the current user request.',open:OPEN_HISTORY_TOOL_DESCRIPTION,read:'Read the next original source page from an open history ticket.',progress:'Check the reading coverage of an open history ticket.',continuity:CONTINUITY_TOOL_DESCRIPTION,'continuity-page':CONTINUITY_PAGE_DESCRIPTION})[operation],
+  inputSchema:operation==='continuity'?CONTINUITY_TOOL_PARAMETERS:{type:'object',properties:{...Object.fromEntries(toolParameters[operation].map(key=>[key,{type:'string'}])),...(operation==='open'?{includeCurrentInput:{type:'boolean'}}:{})},required:toolParameters[operation],additionalProperties:false}}));
 export async function readTool({binding,ticket,operation,args,call = callSharedProject,requestId}) {
   const fixed = await validateBinding(binding,'model_read'); validateTicket(ticket,fixed);
-  return call({connection:fixed.connection,role:'model_read',request:makeRequest(fixed,ticket,operation,validateRead(operation,args),requestId)});
+  const value=await call({connection:fixed.connection,role:'model_read',request:makeRequest(fixed,ticket,operation,validateRead(operation,args),requestId)});
+  return operation==='open'?withContinuityReadingContract(value):operation==='continuity'?projectContinuityModelView(value):value;
 }
 
 /** The caller supplies only official events for this fixed, newly created thread. */

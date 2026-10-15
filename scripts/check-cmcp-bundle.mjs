@@ -28,6 +28,7 @@ const required=['bin/cmcp-time.mjs','docs/npm-installation.md','.agents/skills/c
  'src/cmcp-guard/cmcp-runtime-session.js','examples/setup-host.json','docs/commands.md',
  'docs/configuration.md','docs/installation-and-hosts.md','docs/read-operations-v0.1.md','LICENSE','NOTICE',
  'adapters/control/contract.mjs','adapters/project-entry/cli.mjs','adapters/shared-project/service.mjs',
+ 'adapters/continuity-delivery.mjs',
  'adapters/codex/shared-project/read-cli.mjs','adapters/deepseek-harness/native-desktop/host.mjs',
  'adapters/deepseek-harness/native-desktop/client.js','adapters/deepseek-harness/native-desktop/package.json','docs/local-delivery.zh-TW.md',
  'adapters/mcp/cli.mjs','adapters/mcp/auth.mjs','adapters/mcp/tools.mjs','adapters/hermes/cli.mjs',
@@ -57,7 +58,10 @@ for(const file of pkg.files){
  }
 }
 const manifest=read('PUBLIC-FILES.json');assert.equal(manifest.version,pkg.version);
-assert.equal(manifest.buildScope,'formal-release-source','此 gate 核對 0.1.0 正式來源；不代替遠端發布回執');
+if(manifest.buildScope==='local-s1-candidate'){
+ const candidate=read('LOCAL-CANDIDATE.json');assert.equal(pkg.private,true,'本機候選禁止意外發布');
+ assert.equal(candidate.version,pkg.version);assert.equal(candidate.published,false);assert.equal(candidate.baselineVersion,'0.1.0');
+}else assert.equal(manifest.buildScope,'formal-release-source','來源範圍須明示；不代替遠端發布回執');
 assert.equal(manifest.nodeCompatibility.declared,pkg.engines.node);
 assert.equal(manifest.nodeCompatibility.currentIncrementMinimumRuntimeTested,false,'本單不得預填最低 Node 已驗');
 assert.deepEqual(manifest.files.map(row=>row.path).sort(),pkg.files.filter(file=>file!=='PUBLIC-FILES.json').sort());

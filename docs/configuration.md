@@ -10,6 +10,14 @@ Use paths inside this extracted project. Runtime derives its project root from m
 
 The example Runtime JSON is explicitly synthetic and host-mode. Its IANA timezone is an example, not a global user default. Existing `input.loopTiming.ttlMs` is not the current Buffer retention policy; `bufferRetention.hours` controls new normal Buffer activations.
 
+### Timing values and the effective proactive executor
+
+Setup retains `input.loopTiming` defaults `ttlMs:600000`, `inactivityMs:60000`, and `activityWindowMs:600000` for compatibility. The formal Runtime sets `externalDispatch:true`, so its retained local inactivity timer is disabled. These values do **not** mean “send after 60 seconds of inactivity.” The shared dispatcher schedules eligible explicit Pins by `dueAt` and supported Buffer candidates by their original expiry. Current controls, DND, source validity, cancellation, deduplication and an available authorized delivery target still apply. The initial shared proactive switch remains OFF.
+
+Runtime status adds `proactiveExecutor.execution`: configured values, executor rules, callback registration, live dispatcher observation and delivery limits are separate. A read-only status process cannot infer that another writer is running; `dispatch:null` / `liveObserved:false` means unobserved, not confirmed stopped. Retained `timeLimits.proactiveInactivityMs` and `proactiveActivityWindowMs` are compatibility values; `proactiveTimingMeaning` identifies their scope. Help/status do not refresh eligibility or dispatch anything.
+
+The current official Harness bridge supports explicit Pin delivery only, with the original authorized destination still available; it does not provide general inactivity-based Buffer follow-up. A registered delivery callback is not proof of actual delivery. Empty data with proactive ON has no eligible scheduled candidate; ON without an explicit delivery callback is rejected by writable Runtime initialization. No new offline catch-up or automatic authorization policy is implied.
+
 ## Persistent and temporary controls
 
 After explicit source authorization, feature defaults are:

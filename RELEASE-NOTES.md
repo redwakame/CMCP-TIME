@@ -1,3 +1,9 @@
+# CMCP-TIME 0.1.1 — GitHub-only release
+
+Formal version notes in four languages: [0.1.1](docs/release-0.1.1.md). Fixed source tag: `v0.1.1`. Install the Release `.tgz`; npm is not updated by this release. The external Release mapping identifies the exact commit and archive.
+
+## Previous formal release (preserved)
+
 # CMCP-TIME 0.1.0
 
 Formal version notes in four languages: [0.1.0](docs/release-0.1.0.md). Source tag: v0.1.0. Public upload state and exact package hashes are recorded in the GitHub Release, not inferred from historical candidate records.

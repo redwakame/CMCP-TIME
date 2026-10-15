@@ -1,0 +1,25 @@
+{
+  "kind": "cmcp_github_release_identity",
+  "version": "0.1.1",
+  "channel": "github-only",
+  "tag": "v0.1.1",
+  "npm": {
+    "publishedByThisRelease": false,
+    "packagePrivate": true,
+    "unchangedBaselineVersion": "0.1.0"
+  },
+  "baselineCommit": "19be651efb8e0295dd6fa37b4948d0793fd17784",
+  "verifiedCandidate": {
+    "version": "0.1.1-s1r1.20261016.1",
+    "sha256": "f44058069cc94d7fba0e48a84e5243dac7e729542f9f4405eb47a05d2058310d"
+  },
+  "scope": "Cumulative S1/S1-R1 and four scoped maintenance items; runtime logic carried forward from the verified candidate.",
+  "historyOnly": [
+    "LOCAL-CANDIDATE.json",
+    "NPM-CANDIDATE.json",
+    "VERIFICATION.json",
+    "PUBLICATION-VERIFICATION.json"
+  ],
+  "releaseNotes": "docs/release-0.1.1.md",
+  "evidence": "Exact commit, tarball digest and public readback belong to external Release manifests; source metadata does not certify upload."
+}

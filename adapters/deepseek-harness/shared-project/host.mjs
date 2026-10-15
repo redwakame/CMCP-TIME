@@ -2,11 +2,13 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {createHash,randomUUID} from 'node:crypto';
-import {callSharedProject,MODEL_TEXT_PROFILE} from '../../shared-project/client.mjs';
+import {callSharedProject,MODEL_TEXT_PROFILE,CONTINUITY_TOOL_DESCRIPTION,OPEN_HISTORY_TOOL_DESCRIPTION,CONTINUITY_TOOL_PARAMETERS,readContinuityProposal,modelToolArgumentsError} from '../../shared-project/client.mjs';
 import {projectHarnessTimeContext,projectHarnessToolResult} from '../runtime-bridge.mjs';
+import {installContinuitySystemPolicy,observeContinuitySystemPolicy} from '../continuity-system-policy.mjs';
+import {CONTINUITY_PAGE_PARAMETERS,CONTINUITY_PAGE_DESCRIPTION} from '../../continuity-delivery.mjs';
 
 export const name='cmcp-shared-project-harness';
-export const inject=['agents','tools','sessions','skills','llm'];
+export const inject=['agents','tools','sessions','skills','llm','systemPrompt'];
 export const readCapabilities=MODEL_TEXT_PROFILE;
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const textOf=message=>(message?.content??[]).filter(block=>block.type==='text').map(block=>block.text).join('');
@@ -48,6 +50,20 @@ export function createSharedHarnessHost(ctx,rawConfig,{call=callSharedProject}={
   const fail=async(state,error)=>{state.error=codeOf(error);await note('operation_failed',{sessionId:state.agent.id,code:state.error});};
   const queue=(state,operation)=>{const next=state.tail.then(operation);state.tail=next.catch(error=>fail(state,error));return next;};
   const schedule=(state,operation)=>{void queue(state,operation).catch(()=>{});};
+  installContinuitySystemPolicy(ctx,{
+    resolveAgent:agent=>{const state=states.get(agent?.id);return state?.agent===agent&&active(state)?state:null;},
+    authorized:async state=>{
+      await state.tail;if(!active(state)||!state.binding||state.error)return null;
+      const epoch=state.epoch,binding=state.binding,value=await request(state,'reader-status',{},'model_read');
+      if(!active(state)||state.epoch!==epoch||state.binding!==binding||value.controls?.enabled!==true||value.controls?.clean!==false)return null;
+      return {metadata:{userMessageId:binding.userMessageId,harnessTurn:binding.harnessTurn},
+        valid:async()=>{if(!active(state)||state.epoch!==epoch||state.binding!==binding)return false;
+          const current=await request(state,'reader-status',{},'model_read');
+          return active(state)&&state.epoch===epoch&&state.binding===binding&&current.controls?.enabled===true&&current.controls?.clean===false;}};
+    },
+    onProvided:(state,metadata)=>note('before_answer_policy_provided',{sessionId:state.agent.id,...metadata}),
+    onError:(state,error)=>note('system_policy_unavailable',{sessionId:state?.agent.id??null,code:codeOf(error)})
+  });
   const closeState=async state=>{
     if(state.closeTask)return state.closeTask;
     state.closeTask=(async()=>{
@@ -82,26 +98,33 @@ export function createSharedHarnessHost(ctx,rawConfig,{call=callSharedProject}={
   ctx.skills.registerProvider(control=>{invalidateSkills=control.invalidate;return provider;});
   const definitions=[
     {name:'cmcp_find_history',operation:'find',description:'取得已授權原文的正式有界導航；導航不是已讀原文。',parameters:schema()},
-    {name:'cmcp_open_history',operation:'open',description:'沿正式導航選取並凍結閱讀集合。',parameters:schema({navigationTicket:string,selectionJson:string},['navigationTicket','selectionJson'])},
+    {name:'cmcp_open_history',operation:'open',description:OPEN_HISTORY_TOOL_DESCRIPTION,parameters:schema({navigationTicket:string,selectionJson:string,includeCurrentInput:{type:'boolean'}},['navigationTicket','selectionJson'])},
     {name:'cmcp_read_history',operation:'read',description:'逐頁正式閱讀，保留原角色、原時間、版本及覆蓋範圍。',parameters:schema({ticket:string},['ticket'])},
-    {name:'cmcp_reading_progress',operation:'progress',description:'查核正式閱讀集合的已讀覆蓋與剩餘範圍。',parameters:schema({ticket:string},['ticket'])}
+    {name:'cmcp_reading_progress',operation:'progress',description:'查核正式閱讀集合的已讀覆蓋與剩餘範圍。',parameters:schema({ticket:string},['ticket'])},
+    {name:'cmcp_project_continuity',operation:'continuity',description:CONTINUITY_TOOL_DESCRIPTION,parameters:CONTINUITY_TOOL_PARAMETERS},
+    {name:'cmcp_read_continuity',operation:'continuity-page',description:CONTINUITY_PAGE_DESCRIPTION,parameters:CONTINUITY_PAGE_PARAMETERS}
   ];
   if(definitions.length!==readCapabilities.operations.length||definitions.some((tool,index)=>tool.operation!==readCapabilities.operations[index]||tool.name!==readCapabilities.tools[index]))throw Error('shared_harness_profile_schema_mismatch');
   for(const tool of definitions)ctx.effect(()=>ctx.tools.register({name:tool.name,description:tool.description,parameters:tool.parameters,
     output:{schema:{type:'object',additionalProperties:true},render:(_args,value)=>[{type:'text',text:JSON.stringify(projectHarnessToolResult(value))}]},
     async execute(args,exec){const state=states.get(exec.agent?.id);if(!active(state))throw Error('shared_harness_session_not_authorized');
-      if(!args||typeof args!=='object'||Array.isArray(args)||Object.keys(args).some(key=>!Object.hasOwn(tool.parameters.properties,key))
-        ||tool.parameters.required.some(key=>typeof args[key]!=='string'))throw Error('shared_harness_invalid_tool_arguments');
-      await state.tail;checkSignal(exec.signal);if(!active(state)||!state.binding)throw Error('shared_harness_no_active_turn');
+      if(tool.operation==='continuity')readContinuityProposal(args);
+      else if(!args||typeof args!=='object'||Array.isArray(args)||Object.keys(args).some(key=>!Object.hasOwn(tool.parameters.properties,key))
+        ||tool.parameters.required.some(key=>typeof args[key]!=='string')||Object.entries(args).some(([key,value])=>typeof value!==tool.parameters.properties[key].type))throw modelToolArgumentsError('shared_harness_invalid_tool_arguments',tool.name);
+      await state.tail;checkSignal(exec.signal);if(state.error)throw Error(state.error);if(!active(state)||!state.binding)throw Error('shared_harness_no_active_turn');
       if(state.toolResults>=128)throw Error('shared_harness_tool_evidence_capacity_exceeded');
-      const epoch=state.epoch,result=await request(state,tool.operation,args,'model_read');checkSignal(exec.signal);
-      if(!active(state)||state.epoch!==epoch)throw Error('shared_harness_authorization_changed');
+      const epoch=state.epoch,binding=state.binding,result=await request(state,tool.operation,args,'model_read');checkSignal(exec.signal);
+      if(!active(state)||state.epoch!==epoch||state.binding!==binding)throw Error('shared_harness_authorization_changed');
       // 明列的合成 profile 每次只留一份實際投影；後續模型觀測仍只留雜湊。
       const projectedResult=projectHarnessToolResult(result),serialized=JSON.stringify(projectedResult),projectionBytes=Buffer.byteLength(serialized);
       if(projectionBytes>1048576||state.toolResultBytes+projectionBytes>8388608)throw Error('shared_harness_tool_evidence_capacity_exceeded');
       state.toolResults++;state.toolResultBytes+=projectionBytes;
-      await note('formal_tool',{sessionId:state.agent.id,tool:tool.name,status:result?.status??null,ticket:result?.ticket??null,
-        projectedResult,projectionHash:hash(serialized),projectionBytes});return result;}
+      try{await note('formal_tool',{sessionId:state.agent.id,tool:tool.name,status:result?.status??null,ticket:result?.ticket??null,
+        projectedResult,projectionHash:hash(serialized),projectionBytes});}
+      catch(error){state.error='shared_harness_formal_tool_evidence_failed';throw error;}
+      try{checkSignal(exec.signal);if(!active(state)||state.epoch!==epoch||state.binding!==binding)throw Error('shared_harness_authorization_changed');}
+      catch(error){state.error='shared_harness_formal_tool_delivery_failed';throw error;}
+      return result;}
   }));
   ctx.on('agent/created',async({agent})=>{
     if(!matches(agent))return;
@@ -143,14 +166,14 @@ export function createSharedHarnessHost(ctx,rawConfig,{call=callSharedProject}={
     const state=states.get(agent.id);if(!active(state))return next();
     await state.tail;const decision=await next();if(decision.kind!=='enter'||!active(state)||signal?.aborted)return decision;
     if(!state.binding||state.error)throw Error(state.error??'shared_harness_no_active_turn');
-    const epoch=state.epoch,full=await request(state,'request-context'),contexts=[];
+    const epoch=state.epoch,binding=state.binding,full=await request(state,'request-context'),contexts=[];
     if(!full)throw Error('shared_harness_context_unavailable');
     if(!state.skillPublished){const skill=await ctx.skills.get(candidate.name,{cwd:workspaceRoot,scope:agent,signal});
       if(skill?.provider!==name||typeof skill.content!=='string')throw Error('shared_harness_required_skill_missing');
       contexts.push({id:randomUUID(),role:'user',source:{kind:'cmcp-required-skill',name:candidate.name,authority:'workspace_host_skill_not_user_decision'},content:[{type:'text',text:skill.content}]});
       await note('skill_loaded',{sessionId:agent.id,name:candidate.name,origin:'official_skills_api',bodyHash:hash(skill.content),bytes:Buffer.byteLength(skill.content)});}
     contexts.push({id:randomUUID(),role:'user',source:{kind:'cmcp-time-context',authority:'host_observation_not_user_decision'},content:[{type:'text',text:JSON.stringify(projectHarnessTimeContext(full,false))}]});
-    checkSignal(signal);if(!active(state)||state.epoch!==epoch)throw Error('shared_harness_authorization_changed');
+    checkSignal(signal);if(!active(state)||state.epoch!==epoch||state.binding!==binding)throw Error('shared_harness_authorization_changed');
     return {...decision,messages:[...decision.messages,...contexts]};
   });
   ctx.on('session/event',(session,event)=>{
@@ -191,6 +214,7 @@ export function createSharedHarnessHost(ctx,rawConfig,{call=callSharedProject}={
     if(active(state)){
       if(request.provider!==config.route.provider||request.model!==config.route.model)throw Error('shared_harness_model_route_mismatch');
       await note('model_request_metadata',{sessionId:request.sessionId,provider:request.provider,model:request.model,
+        systemPolicy:observeContinuitySystemPolicy(request.messages),
         messages:request.messages.map(message=>({id:message.id,role:message.role,sourceKind:message.source?.kind??null,bodyHash:hash(textOf(message)),bytes:Buffer.byteLength(textOf(message))}))});
     }yield* next();
   });

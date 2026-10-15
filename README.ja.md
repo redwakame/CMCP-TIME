@@ -6,21 +6,21 @@
 
 **AI エージェントのための時間を考慮した継続スキル。** 原文・画像・役割・時刻を使って対話を再開し、普段のホストとモデルをそのまま利用します。
 
-**0.1.0 · Apache-2.0 · 原作者：[redwakame](https://github.com/redwakame)**
+**0.1.1 · Apache-2.0 · 原作者：[redwakame](https://github.com/redwakame)**
 
 ## 必要な原本に戻る
 
 昨日の草稿を、今日は一か所だけ変更する。新しい対話でも CMCP は元の案と修正版を探し、User の決定と Assistant の提案を区別するための材料を提供します。画像の改訂も説明文だけでなく、各原本と出典との関係を保存します。
 
-![原稿、改訂、対話をまたぐ正式な読取の利用例](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/continuity-source-flow.png)
+![原稿、改訂、対話をまたぐ正式な読取の利用例](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/continuity-source-flow.png)
 
 Σ は派生要約の概念を示し、新しい要約機能の追加を意味しません。
 
 図は用途の説明であり、実測したモデル回答ではありません。CMCP は出典を提供しますが、ホストの推論を置き換えたり最終回答を書き換えたりしません。正しい原文があってもモデルは誤解する場合があります。
 
-## 0.1.0 をインストール
+## GitHub から 0.1.1 をインストール
 
-パッケージ：[`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0)。固定ソース：[v0.1.0](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0)。`main` には後続変更が入る場合があります。以下では版を固定します。`latest` と `next` は変更可能な配布チャネルです。
+正式パッケージは [GitHub Release v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1)、固定ソースは [tag v0.1.1](https://github.com/redwakame/CMCP-TIME/tree/v0.1.1) から取得します。**今回は npm を更新しません。** レジストリの公開版は [`@redwakame-skill/cmcp-time@0.1.0`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0) のままです。パッケージ名や変更可能なタグでの導入は 0.1.1 への更新にはなりません。以下は GitHub の固定 `.tgz` URL を使用します。
 
 Node.js **22.16.0 以上**と npm を用意します。プログラムと許可した作業データを別々の永続ディレクトリに置きます。次の PowerShell 例は管理者権限やグローバル PATH の変更を必要としません。
 
@@ -28,7 +28,8 @@ Node.js **22.16.0 以上**と npm を用意します。プログラムと許可�
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
+$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
+npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
@@ -38,9 +39,11 @@ npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0
 
 [POSIX・ローカルパッケージ・更新](docs/npm-installation.md) · [クイックスタート](docs/quick-start.md)
 
+**0.1.1 の変更：**出典付きの現在の計画、報告された事実、変更範囲、理由を区別します。Codex なしでもローカル設定が可能です。対話設定には TTY、自動化には明示的な `--answers` を使います。必要時の状態整理は実際の曖昧さと取得範囲の上限を保持し、構造上の `ready` を意味内容の認証や実行許可とは扱いません。[0.1.1 の変更と制限](docs/release-0.1.1.md)を参照してください。
+
 ## 検証範囲に合う入口を選ぶ
 
-![一つの許可された原文ストアと任意のホスト・MCP 接続](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/host-interoperability.png)
+![一つの許可された原文ストアと任意のホスト・MCP 接続](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/host-interoperability.png)
 
 別々に検証した順次引継ぎ：Codex ↔ Harness、Hermes ↔ Harness。三ホスト並行・同一回の三者検証ではなく、点線 MCP は同一 Core を使う任意入口です。
 
@@ -55,7 +58,7 @@ OpenClaw、dots、Grok Bot、Muse の要件は[能力表](docs/interop-capabilit
 
 ## 使う・確認する・停止する
 
-![最小入口、必要時の詳細画面、権限と保存の独立制御](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/controls-modes.png)
+![最小入口、必要時の詳細画面、権限と保存の独立制御](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/controls-modes.png)
 
 概念図であり実 GUI のスクリーンショットではありません。1 最小、2 一行、3 非表示。
 
@@ -72,7 +75,7 @@ History、Buffer、Pin は別の責任を持ちます。Buffer は既定 12 時�
 
 **保存済みでも読取可能とは限りません。** 原本保存、登録待ち・失敗、正式読取資格、ホスト間利用の評価状態を分けて表示します。保存メタデータだけでは受信側への引継ぎを評価していません。正式読取とホストの受領記録を別途確認してください。閲覧や UI 切替では原時刻・TTL・権限・配信資格を更新しません。原本欠落、版変更、権限失効は拒否します。
 
-更新前に[バックアップ・復元・更新手順](docs/release-readiness.ja.md)を確認してください。プログラム、History、ホスト独自履歴、保護された資格情報は別管理です。CMCP の解除で原本は残りますが、ホスト履歴の消去や完全な削除管理は意味しません。0.1.0 はベクトル、音声・動画、クラウド同期、複数利用者の並行 writer を提供しません。
+更新前に[バックアップ・復元・更新手順](docs/release-readiness.ja.md)を確認してください。プログラム、History、ホスト独自履歴、保護された資格情報は別管理です。CMCP の解除で原本は残りますが、ホスト履歴の消去や完全な削除管理は意味しません。0.1.1 はベクトル、音声・動画、クラウド同期、複数利用者の並行 writer を提供しません。
 
 ## 文書とプロジェクト
 
@@ -89,4 +92,4 @@ CMCP-TIME に興味をお持ちの方は、ぜひアイデアや利用の感想�
 
 原作者・メンテナーは **redwakame**。現在の配布は [Apache-2.0](LICENSE) と [NOTICE](NOTICE)、[過去のライセンス情報](docs/license-provenance-v0.1.md)に従います。以前に許諾した権利は取り消しません。内部互換識別子は `cmcp`、公開名は **CMCP-TIME** です。[CITATION.cff](CITATION.cff) は引用を容易にするための情報であり、利用のたびに宣伝を義務付ける条項ではありません。
 
-[0.1.0](docs/release-0.1.0.md) · [再実行可能な検証](docs/testing.md)
+[0.1.1 の変更と制限](docs/release-0.1.1.md) · [0.1.0 の履歴](docs/release-0.1.0.md) · [再実行可能な検証](docs/testing.md)

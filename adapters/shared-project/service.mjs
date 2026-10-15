@@ -1,11 +1,13 @@
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
-import {CmcpHarnessBridge} from '../deepseek-harness/runtime-bridge.mjs';
+import {CmcpHarnessBridge,READING_LIMITS} from '../deepseek-harness/runtime-bridge.mjs';
 import {createLocalLoopJournal} from '../../src/cmcp-guard/cmcp-local-loop-journal.js';
 import {cmcpSourcePointerKey} from '../../src/cmcp-guard/cmcp-source-pointer.js';
 import {normalizeSharedProjectConfig,record,opaque,qualifiedSession,sourceIdentity,hash,copy} from './config.mjs';
-import {MODEL_OPERATIONS,MAX_FRAME_BYTES} from './client.mjs';
+import {MODEL_OPERATIONS,MAX_FRAME_BYTES,readContinuityProposal} from './client.mjs';
 import {createControlOptions,controlMenu,CONTROL_CONTRACT_VERSION} from '../control/contract.mjs';
+import {projectContinuityModelView} from '../continuity-model-view.mjs';
+import {attachSharedSourceProvenance,attachSharedReadAttribution} from './source-provenance-view.mjs';
 
 const controllerOps=new Set(['join','revoke','claim','handoff','receive','claim-turn','request-context','append-assistant','finish','cancel','status','control']);
 const mutationOps=new Set(['receive','claim-turn','append-assistant','finish','cancel','handoff','claim']);
@@ -48,6 +50,27 @@ export async function createSharedProjectService({config:input,bridgeFactory=opt
   async function controlsAllowed(){const value=await bridge.readOnly(r=>r.controlsSnapshot());if(!value.effective.enabled||value.effective.clean)throw Error('shared_project_controls_disabled');}
   function status(r){const s=sessions.get(keyOf(r));return {kind:'cmcp_shared_project_status',projectId:config.projectId,scopeId:config.scopeId,epoch,owner:exposed(owner),joined:s?.joined===true,
     activeTurn:!!owner?.active,activeTurnId:owner?.active?hash([owner.active.messageId,owner.active.harnessTurn]):null,queuedInputs:owner?.queued.size??0,closed,modelCalls:0};}
+  // 身分只來自已驗 host credential、專案設定及目前 owner/回合，不接受模型參數。
+  function readerIdentity(r,s){return {kind:'cmcp_reader_identity',version:1,projectId:config.projectId,scopeId:config.scopeId,
+    ...exposed(r),activeTurnId:hash([s.active.messageId,s.active.harnessTurn]),verification:'authenticated_active_host_turn',
+    meaning:'configured_host_agent_and_native_session_not_user_identity_or_model_personality'};}
+  function sourceOrigin(binding,reader,ticket){
+    const matches=[...sources.values()].filter(value=>value.sourcePointer&&samePointer(value.sourcePointer,binding.pointer)&&value.evidenceHash===binding.evidenceHash);
+    const value=matches.length===1?matches[0]:null;
+    if(!value||binding.sourceAuthorRole&&value.origin.role!==binding.sourceAuthorRole)return {ref:binding.ref,ticket,verification:'origin_unavailable',reason:matches.length>1?'ambiguous_source_binding':'verified_origin_not_found'};
+    const sameHost=value.origin.projectId===reader.projectId&&value.origin.hostId===reader.hostId;
+    const sameAgent=sameHost&&value.origin.agentId===reader.agentId,sameSession=sameAgent&&value.origin.sessionId===reader.sessionId;
+    return {ref:binding.ref,ticket,origin:copy(value.origin),qualifiedSessionId:value.sessionId,sourcePointer:copy(binding.pointer),evidenceHash:binding.evidenceHash,
+      verification:'formal_read_binding',readerComparison:{sameHost,sameAgent,sameSession,meaning:'identity_equality_only_not_adoption_or_execution'}};
+  }
+  function rememberRead(s,ticket,bindings){
+    // 只保留當輪正式讀取的中繼資料；界線沿既有 reader source 數，超出僅失去身分補充，不裁原文。
+    const tickets=s.active.formalOrigins??=new Map();let selected=tickets.get(ticket);
+    if(!selected){if(tickets.size>=READING_LIMITS.maxSources)return;selected=new Map();tickets.set(ticket,selected);}
+    for(const binding of bindings){const prior=selected.get(binding.ref);
+      if(prior&&(!samePointer(prior.pointer,binding.pointer)||prior.evidenceHash!==binding.evidenceHash))throw Error('shared_project_read_binding_changed');
+      if(prior||selected.size<READING_LIMITS.maxSources)selected.set(binding.ref,copy(binding));}
+  }
   function validText(args){if(typeof args.text!=='string'||!args.text.trim()||Buffer.byteLength(args.text)>524288||typeof args.receivedAt!=='string'||!Number.isFinite(Date.parse(args.receivedAt))||new Date(args.receivedAt).toISOString()!==args.receivedAt)throw Error('shared_project_invalid_source');}
   async function intent(r,args,role){
     validText(args);const id=sourceIdentity(config,r,args,role),prior=sources.get(id.messageId),value={...id,bodyHash:hash(args.text),bytes:Buffer.byteLength(args.text),receivedAt:args.receivedAt,...(args.attachments?.length?{mediaFingerprint:hash(args.attachments)}:{})};
@@ -92,6 +115,10 @@ export async function createSharedProjectService({config:input,bridgeFactory=opt
         if(!command.payload||command.payload.scopeId!==config.scopeId)throw Error('control_scope_required');
         value=await bridge.operate({...command.payload,action:operation==='controls'?'controls':operation==='retry-registration'?'recover':'clearBuffer',sessionGuard:guardFor(r,s)});
       }else if(operation==='original'){await controlsAllowed();value=await bridge.original(command.payload);}
+      else if(operation==='continuity'){
+        await controlsAllowed();value=await bridge.continuityStatus(s.qualifiedSessionId,{projectWide:true});
+        if(signal?.aborted)throw Error('shared_project_request_cancelled');
+      }
       else if(operation==='media-list'){await controlsAllowed();value=await bridge.mediaList(command.payload,()=>s.joined&&!closed&&r.epoch===epoch);}
       else if(['help','menu','status','sources','time','buffer','pins'].includes(operation)){
         if(['sources','time','buffer','pins'].includes(operation))await controlsAllowed();
@@ -99,11 +126,12 @@ export async function createSharedProjectService({config:input,bridgeFactory=opt
       }else if(['on','off'].includes(operation))throw Error('cmcp_use_project_enable_disable');
       else throw Error('cmcp_operation_unavailable_on_host');
       const finalSnapshot=await bridge.status();admitted(r,{needOwner:false});
-      if(['original','media-list','sources','time','buffer','pins'].includes(operation)
+      if(['original','media-list','sources','time','buffer','pins','continuity'].includes(operation)
         &&(finalSnapshot.controlConfiguration.generation!==snapshot.controlConfiguration.generation
           ||!finalSnapshot.controlConfiguration.effective.enabled||finalSnapshot.controlConfiguration.effective.clean)){
         s.controlOptions.clear();throw Error('cmcp_source_authorization_changed');
       }
+      if(operation==='continuity'&&signal?.aborted)throw Error('shared_project_request_cancelled');
       return {kind:'cmcp_control_result',contractVersion:CONTROL_CONTRACT_VERSION,operation,scope:{projectId:config.projectId,scopeId:config.scopeId,sessionId:r.sessionId},
         sessionAuthorization:{joined:s.joined,epoch},snapshot:finalSnapshot,menu:['help','menu'].includes(operation)?controlMenu(context):undefined,result:value,modelCalls:0};
     }
@@ -137,6 +165,7 @@ export async function createSharedProjectService({config:input,bridgeFactory=opt
       const value=await bridge.claim(id.sessionId,id.messageId,harnessTurn);if(!guard())throw Error('shared_project_authorization_changed');
       s.queued.delete(id.messageId);s.active={messageId:id.messageId,harnessTurn};result={...value,epoch};
     }else if(op==='request-context'){record(args,[]);if(!s.active)throw Error('shared_project_turn_mismatch');result=await bridge.requestContext(s.qualifiedSessionId);
+      if(result)result={...result,readerIdentity:readerIdentity(r,s)};
     }else if(op==='append-assistant'||op==='finish'){
       record(args,['messageId','revisionId','text','receivedAt','userMessageId','userRevisionId','harnessTurn'],['messageId','text','receivedAt','userMessageId']);
       const e=requireActive(s,args,r),id=await intent(r,args,'assistant');if(!guard())throw Error('shared_project_authorization_changed');
@@ -156,14 +185,36 @@ export async function createSharedProjectService({config:input,bridgeFactory=opt
           result=await bridge.mediaTool(s.qualifiedSessionId,MODEL_OPERATIONS[op],args,()=>guard()&&!abort.signal.aborted);
           if(op==='read-image'&&result.content){const {content,...metadata}=result;if(content.length>524288)throw Error('shared_project_media_response_too_large');result={...metadata,data:Buffer.from(content).toString('base64')};}
         }
-        else{record(args,op==='find'?[]:op==='open'?['navigationTicket','selectionJson']:['ticket']);latestRead=null;result=await bridge.tool(s.qualifiedSessionId,MODEL_OPERATIONS[op],args,abort.signal);
-          if(op==='read'&&latestRead?.sourceBindings?.length){const origins=latestRead.sourceBindings.map(binding=>{const v=[...sources.values()].find(value=>value.sourcePointer&&samePointer(value.sourcePointer,binding.pointer)&&value.evidenceHash===binding.evidenceHash);
-            return v?{ref:binding.ref,origin:copy(v.origin),qualifiedSessionId:v.sessionId,sourcePointer:binding.pointer,evidenceHash:binding.evidenceHash,verification:'formal_read_binding'}:{ref:binding.ref,verification:'origin_unavailable'};});result={...result,sourceOrigins:origins};}}
+        else{const required=op==='find'?[]:op==='open'?['navigationTicket','selectionJson']:['ticket'];
+          record(args,op==='open'?[...required,'includeCurrentInput']:op==='continuity'?['ticket','proposal','proposalJson']:op==='continuity-page'?['ticket','deliveryId','page']:required,op==='continuity-page'?['ticket','deliveryId','page']:required);
+          if(required.some(key=>typeof args[key]!=='string')||(op==='open'&&Object.hasOwn(args,'includeCurrentInput')&&typeof args.includeCurrentInput!=='boolean'))throw Error('shared_project_invalid_schema');
+          if(op==='continuity')readContinuityProposal(args);
+          latestRead=null;result=await bridge.tool(s.qualifiedSessionId,MODEL_OPERATIONS[op],args,abort.signal);
+          if(op==='read'&&result?.kind==='cmcp_reading_page'){
+            if(result.ticket!==args.ticket)throw Error('shared_project_read_binding_changed');
+            const reader=readerIdentity(r,s),bindings=latestRead?.ticket===args.ticket?latestRead.sourceBindings??[]:[];
+            rememberRead(s,args.ticket,bindings);result=attachSharedReadAttribution({...result,readerIdentity:reader,sourceOrigins:bindings.map(binding=>sourceOrigin(binding,reader,args.ticket))},config.scopeId);
+          }else if(op==='continuity'&&['ready','partial'].includes(result?.status)&&Array.isArray(result.projection?.sources)){
+            if(result.ticket!==args.ticket)throw Error('shared_project_read_binding_changed');
+            const reader=readerIdentity(r,s),selected=s.active.formalOrigins?.get(args.ticket);
+            const origins=result.projection.sources.map(source=>{const binding=selected?.get(source.ref);
+              if(!binding||binding.evidenceHash!==source.evidenceHash)return {ref:source.ref,ticket:args.ticket,verification:'origin_unavailable',reason:'matching_turn_ticket_read_binding_unavailable'};
+              return sourceOrigin({...binding,sourceAuthorRole:source.sourceAuthorRole},reader,args.ticket);});
+            result=attachSharedSourceProvenance({...result,readerIdentity:reader,sourceOrigins:origins});
+          }}
         if(abort.signal.aborted)throw Error('shared_project_request_cancelled');
+      }catch(error){if(result?.kind==='cmcp_continuity_delivery_page')await bridge.rejectContinuityDeliveryPage(s.qualifiedSessionId,result);throw error;
       }finally{controllers.delete(abort);signal?.removeEventListener('abort',cancelled);}
     }else throw Error('shared_project_unknown_operation');
+    try{
     if(!['claim','handoff'].includes(op)&&!guard())throw Error('shared_project_authorization_changed');if(signal?.aborted)throw Error('shared_project_request_cancelled');
+    // 來源身分補充完成後，模型出口才以同一可逆編碼序列化；人類控制維持完整查證視圖。
+    if(principal.role==='model_read'&&op==='continuity'){
+      result=await bridge.prepareContinuityDelivery(s.qualifiedSessionId,result);
+      if(!guard()||signal?.aborted)throw Error('shared_project_authorization_changed');
+    }
     if(mutationOps.has(op))requests.set(requestKey,{hash:requestHash,result:copy(result)});return copy(result);
+    }catch(error){if(result?.kind==='cmcp_continuity_delivery_page')await bridge.rejectContinuityDeliveryPage(s.qualifiedSessionId,result);throw error;}
   }
   function dispatch(request,principal,{signal}={}){
     let r;try{r=copy(request);identity(r,principal);

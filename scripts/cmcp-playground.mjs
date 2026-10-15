@@ -5,6 +5,7 @@ import {loadCmcpPlayground,createCmcpPlayground} from '../src/cmcp-guard/cmcp-pl
 import {resolveCmcpWorkspaceRoot} from '../src/cmcp-guard/cmcp-project-paths.js';
 import {createCmcpRuntimeSession,authorizeCmcpRuntime} from '../src/cmcp-guard/cmcp-runtime-session.js';
 import {parseCmcpQueryResumeCommand} from './cmcp-query-resume-command.mjs';
+import {formatCmcpProactiveDescription} from '../src/cmcp-guard/cmcp-proactive-description.js';
 
 const {values:args}=parseArgs({options:{workspace:{type:'string'},root:{type:'string'},session:{type:'string'},status:{type:'boolean'},init:{type:'boolean'},json:{type:'boolean'},
  authorize:{type:'string'},posts:{type:'string'},'authorized-by':{type:'string'},help:{type:'boolean'}}});
@@ -51,6 +52,7 @@ Enter text to chat in the current topic; general conversation is the default.
 /cancel                 Cancel current work; no refund or automatic resubmission
 /exit                   Close normally and retain data
 Initialization grants no model calls; status remains available without quota.
+Retained inactivityMs is not a send deadline. Runtime dispatch requires an eligible dueAt/expiry and a valid delivery target.
 Only --authorize ID --posts N --authorized-by reason adds explicit finite authorization.`;
 function display(row){if(args.json)return console.log(JSON.stringify(row));
  if(row.kind==='help')return console.log(help);
@@ -59,12 +61,13 @@ function display(row){if(args.json)return console.log(JSON.stringify(row));
  if(row.kind==='playground_ready')return console.log(`CMCP ready. Session: ${row.session.label}; /help lists operations. Proactive ${row.controls.proactive?'ON':'OFF'}.`);
  if(row.kind==='playground_closed')return console.log('Closed normally; data and remaining authorization are retained.');
  if(row.reader?.text!==undefined){console.log(JSON.stringify(row.reader,null,2));return;}
- if(row.kind==='playground_status'){const r=row.runtime,g=r.state.registration;return console.log(JSON.stringify({session:row.session,controls:r.controls,authorization:r.budget,dataScope:r.dataScope,
+ if(row.kind==='playground_status'){const r=row.runtime,g=r.state.registration;console.log(formatCmcpProactiveDescription(r.proactiveExecutor.execution));return console.log(JSON.stringify({session:row.session,controls:r.controls,authorization:r.budget,dataScope:r.dataScope,
   bufferRetention:r.bufferRetention,capacity:r.capacity,registration:{registered:g.registered,unregistered:g.unregistered.length,
    inventoryStatus:g.inventoryStatus,inventoryComplete:g.inventoryComplete,inventoryRecordCount:g.inventoryRecordCount,
    failures:g.failures,inventoryFailures:g.inventoryFailures,nextCursor:g.inventoryNextCursor},registrationRecovery:row.registrationRecovery,
   answerHistory:r.state.events.map(e=>({eventKey:e.key,...e.answerHistory})),pending:r.pending,discussionAssociation:r.discussionAssociation,proactive:r.proactiveExecutor},null,2));}
  if(row.reader)return console.log(JSON.stringify(row.reader,null,2));
+ if(row.kind==='cmcp_runtime_status')console.log(formatCmcpProactiveDescription(row.proactiveExecutor.execution));
  console.log(JSON.stringify(row,null,2));}
 let app,reader,ending=false,foreground=null,controller=null;const controls=new Set();
 const stop=()=>{ending=true;controller?.abort();reader?.close();process.stdin.destroy();};

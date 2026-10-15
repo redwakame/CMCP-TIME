@@ -37,6 +37,18 @@ cmcp-time hermes chat --config <hermes.json> --session <獨立原生對話> --na
 
 既有 DeepSeek 金鑰只由受控請求程序讀取目前指定的 `credentials-local v1` 參照 `DEEPSEEK_API_KEY`；不放環境變數給工具繼承，不輸出金鑰。此安排不是作業系統沙箱，不能宣稱同使用者任意原生檔案／終端工具與憑證已完全隔離；保持宿主現有權限與工具守護。
 
+### 選配 Groq 路線
+
+未指定供應商時仍使用既有 DeepSeek 路線。已明確授權 Groq 且已有獨立憑證參照時，可在新專案設定中追加：
+
+```text
+cmcp-time hermes configure --service <mcp-service.json> --python <隔離Python> --home <專案內新profile> --credential-file <既有憑證檔> --provider groq --model openai/gpt-oss-120b --credential-reference GROQ_API_KEY --output <新的hermes.json> --git-bash <Windows的bash.exe>
+```
+
+Groq 使用官方 `https://api.groq.com/openai/v1`；設定只保留參照名稱，不把金鑰寫進命令或設定範例。這不替換既有 DeepSeek 設定，也不自動匯入其對話。模型名稱可明確配置，實際支援能力仍須按版本與路線核對。
+
+同一專案的官方 Harness SDK peer 會使用所選路線；日常 Desktop 的供應商與金鑰仍由其官方設定管理，不由這個命令修改。模型目錄、零模型載入與真宿主語意是不同證據層，不將不同供應商的部分成果拼成完整驗收。
+
 ## 與既有 Harness 的順序接續
 
 產品內重用既有官方 Harness SDK driver，連到同一個 broker，不另建 History。這個 peer 使用獨立 SDK profile，保留日常 Desktop。
@@ -55,3 +67,13 @@ peer 明確限合成驗收，因沿用的 SDK driver 會保存完整合成可見
 Hermes 是外部依賴，不隨 CMCP 套件複製整個代理核心。詳見 [依賴重建](dependencies.md)。`configure` 不自動下載／安裝軟體，也不改全域 HOME、PATH、其他 profile。移除接線優先停用與不再使用本 profile；History 不會因解除接線而刪除。
 
 本輪最終語意裁決、同版成品、模型用量與失敗保留以配對工程報告及原件索引為準；此說明不是模型自評 PASS。
+# 有界 continuity 分頁
+
+一般設定保持單頁。建立新設定時，可用 `configure --read-max-pages 2`，或在 `configureHermes` 明設 `readMaxPages: 2`；`inspect` 的 `readingTransport` 會回報選定值與最大值 2。舊 v1 設定不必增加欄位，原供應商、憑證參照、timeout 與原生 24 輪上限都不變。這個選項只作用於 `cmcp_read_continuity`，歷史 READ-ALL 仍按原正式單頁契約。
+
+MCP 的 `cmcp_read_continuity` 可明設 `maxPages: 2`；Hermes 已選兩頁設定時會補上此值，亦可明設 1。transport 先移除 `maxPages`，每個子頁串行沿同一正式 dispatch、票券、delivery 與授權，以指定頁＋1取得連續頁，不把全域 `nextPage` 誤當重讀後的連續序號。每頁前後與最後出口都重驗授權、epoch、回合、取消及原 timeout；原文、角色、來源版本、原時間、TTL、coverage、sections、resultHash 與完整頁均保留。
+
+兩頁回傳為 `cmcp_formal_page_batch`，`pages` 是完整正式子頁；外層不重造 coverage 或全歷史完成宣告。既有每頁 sections 的 JSON 字元上限，加上固定 delivery／票券／hash／composition metadata，以 131072 bytes 的保守子頁界預留。第一頁以完整實測 bytes 計入外層，下一頁前須有剩餘 response budget；不足則 `stopReason=response_budget`，只回實際第一頁，原 `nextPage` 保持原值，第二頁從未 dispatch。既有 response cap 不提高。
+
+正式 dispatch 可能已提交子頁後，aggregate 才因撤權、取消或其他守護拒絕；本接點沒有原子回退能力。失敗時不回傳 aggregate，Hermes 清掉該次 delivery acquisition proof。server progress 是正式服務進度，不能替代宿主實際收到的子頁；完成提示須同時有本回合完整 child 頁序號／hash 證據與正式進度。安全 observer 記錄真實 aggregate rendered hash／bytes 及每個實收 child 的 hash／bytes，仍不讀 reasoning、認證或供應商 wire。正式派送與結構 ready 都不構成語意認證或執行授權。
+

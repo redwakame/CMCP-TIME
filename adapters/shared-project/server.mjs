@@ -3,7 +3,11 @@ import {timingSafeEqual} from 'node:crypto';
 import {createSharedProjectService} from './service.mjs';
 import {MAX_FRAME_BYTES,readSharedProjectCredential} from './client.mjs';
 
-const safeError=error=>/^[a-z][a-z0-9_]{1,100}$/.test(error?.message)?error.message:'shared_project_operation_failed';
+const safeError=error=>{
+  // Core 的單次導航票拒絕包含內部 workId；對外保留原因，不公開識別碼或放寬任意錯誤文字。
+  if(/^reading_navigation_already_consumed:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(error?.message))return 'reading_navigation_already_consumed';
+  return /^[a-z][a-z0-9_]{1,100}$/.test(error?.message)?error.message:'shared_project_operation_failed';
+};
 /** 不綁 TCP、不讀 provider credential；只在本機受驗 named pipe 接收一次性 JSON frame。 */
 export async function startSharedProjectServer({config,bridgeFactory}){
   const service=await createSharedProjectService({config,bridgeFactory}),credentials=[];

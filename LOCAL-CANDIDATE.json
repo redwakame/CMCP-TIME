@@ -1,0 +1,15 @@
+{
+  "kind": "cmcp_local_research_candidate",
+  "version": "0.1.1-s1r1.20261016.1",
+  "published": false,
+  "baselineVersion": "0.1.0",
+  "baselineCommit": "19be651efb8e0295dd6fa37b4948d0793fd17784",
+  "scope": "C50 既有功能維護：初始化／無 Codex 入口、H4 按需狀態處理、有效主動配置說明與回執更正；不更新日常部署、不發布或新增平台。",
+  "guide": "docs/release-readiness.zh-TW.md",
+  "historicalRecords": [
+    "NPM-CANDIDATE.json",
+    "VERIFICATION.json",
+    "PUBLICATION-VERIFICATION.json"
+  ],
+  "limits": "結構、來源、語意及執行授權分列；具名宿主、模型材料與語意的實際驗收另列同版交付證據。"
+}

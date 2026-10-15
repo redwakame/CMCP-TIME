@@ -1,0 +1,2550 @@
+{
+  "kind": "cmcp_c47_source_use_reconstruction_fixture",
+  "reconstruction": "Formal output receipts and original User bodies preserved; original proposal args unavailable. Corrected receipt effects reconstructed from delivered currentPlans fragments, not an original-args replay.",
+  "candidateVersion": "0.1.1-s1r1.20261014.3",
+  "formalToolIndex": 5,
+  "recordedProjectionHash": "5f4b38f5c1e68e4c8a234a675a2be804397ef022950c9a07593a46a7c306854d",
+  "recordedFormalResult": {
+    "kind": "cmcp_continuity_projection",
+    "status": "ready",
+    "reason": null,
+    "ticket": "9d325bb6-bfb4-4996-90e9-3859c57c7fd3",
+    "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+    "projection": {
+      "kind": "query_scoped_derived_continuity",
+      "version": 3,
+      "ticket": "9d325bb6-bfb4-4996-90e9-3859c57c7fd3",
+      "manifestHash": "8d35ab38d2688da710c96003f5c25f7f38f7cd9b381c0297aaee29c47c6bce1c",
+      "authority": "correctable_host_interpretation_not_world_verification",
+      "semanticVerification": "not_performed",
+      "eventMutation": "none",
+      "sourceAssociationMutation": "none",
+      "activation": "none",
+      "proactiveEligible": false,
+      "knownEvolution": [
+        {
+          "nodeId": "upper-shelf-plan",
+          "objectId": "社區舊書櫃修繕：上層隔板",
+          "aspect": "隔板材質與是否上漆",
+          "interpretation": {
+            "kind": "user_intent",
+            "temporalUse": "current",
+            "text": "隔板先用實木，抽屜沿用舊面板，兩邊都先刷透明漆。",
+            "planStatus": "planned"
+          },
+          "supported": true,
+          "time": {
+            "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+            "eventOccurredAt": null
+          },
+          "source": {
+            "ref": "r1",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 28,
+              "end": 52,
+              "text": "隔板先用實木，抽屜沿用舊面板，兩邊都先刷透明漆。"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt"
+          },
+          "effectiveRelation": {
+            "relation": {
+              "kind": "independent",
+              "targetNodeIds": []
+            },
+            "updateIds": [
+              "upper-shelf-plan"
+            ],
+            "sourceUpdates": [
+              {
+                "updateId": "upper-shelf-plan",
+                "source": {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 28,
+                    "end": 52,
+                    "text": "隔板先用實木，抽屜沿用舊面板，兩邊都先刷透明漆。"
+                  },
+                  "sourceAuthorRole": "user",
+                  "contentKind": "source_excerpt"
+                },
+                "sourceAuthorRole": "user",
+                "contentKind": "source_excerpt"
+              }
+            ],
+            "supported": true,
+            "ambiguous": false
+          },
+          "topic": "社區舊書櫃修繕：上層隔板",
+          "planRole": "basis"
+        },
+        {
+          "nodeId": "lower-drawer-plan",
+          "objectId": "社區舊書櫃修繕：下層抽屜",
+          "aspect": "舊面板沿用與刷透明漆",
+          "interpretation": {
+            "kind": "user_intent",
+            "temporalUse": "current",
+            "text": "抽屜沿用舊面板",
+            "planStatus": "planned"
+          },
+          "supported": true,
+          "time": {
+            "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+            "eventOccurredAt": null
+          },
+          "source": {
+            "ref": "r1",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 35,
+              "end": 42,
+              "text": "抽屜沿用舊面板"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt"
+          },
+          "effectiveRelation": {
+            "relation": {
+              "kind": "independent",
+              "targetNodeIds": []
+            },
+            "updateIds": [
+              "lower-drawer-plan"
+            ],
+            "sourceUpdates": [
+              {
+                "updateId": "lower-drawer-plan",
+                "source": {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 35,
+                    "end": 42,
+                    "text": "抽屜沿用舊面板"
+                  },
+                  "sourceAuthorRole": "user",
+                  "contentKind": "source_excerpt"
+                },
+                "sourceAuthorRole": "user",
+                "contentKind": "source_excerpt"
+              }
+            ],
+            "supported": true,
+            "ambiguous": false
+          },
+          "topic": "社區舊書櫃修繕：下層抽屜",
+          "planRole": "basis"
+        },
+        {
+          "nodeId": "shelf-size-report",
+          "objectId": "上層隔板尺寸",
+          "aspect": "使用者自述已量好",
+          "interpretation": {
+            "kind": "user_report",
+            "temporalUse": "current",
+            "text": "隔板尺寸我已量好"
+          },
+          "supported": true,
+          "time": {
+            "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+            "eventOccurredAt": null
+          },
+          "source": {
+            "ref": "r1",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 96,
+              "end": 104,
+              "text": "隔板尺寸我已量好"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt"
+          },
+          "effectiveRelation": {
+            "relation": {
+              "kind": "independent",
+              "targetNodeIds": []
+            },
+            "updateIds": [
+              "shelf-size-report"
+            ],
+            "sourceUpdates": [
+              {
+                "updateId": "shelf-size-report",
+                "source": {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 96,
+                    "end": 104,
+                    "text": "隔板尺寸我已量好"
+                  },
+                  "sourceAuthorRole": "user",
+                  "contentKind": "source_excerpt"
+                },
+                "sourceAuthorRole": "user",
+                "contentKind": "source_excerpt"
+              }
+            ],
+            "supported": true,
+            "ambiguous": false
+          },
+          "topic": "上層隔板尺寸"
+        },
+        {
+          "nodeId": "rail-unknown-report",
+          "objectId": "抽屜滑軌合用性",
+          "aspect": "使用者自述還沒查",
+          "interpretation": {
+            "kind": "user_report",
+            "temporalUse": "current",
+            "text": "但抽屜滑軌能不能合用還沒查"
+          },
+          "supported": true,
+          "time": {
+            "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+            "eventOccurredAt": null
+          },
+          "source": {
+            "ref": "r1",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 105,
+              "end": 118,
+              "text": "但抽屜滑軌能不能合用還沒查"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt"
+          },
+          "effectiveRelation": {
+            "relation": {
+              "kind": "independent",
+              "targetNodeIds": []
+            },
+            "updateIds": [
+              "rail-unknown-report"
+            ],
+            "sourceUpdates": [
+              {
+                "updateId": "rail-unknown-report",
+                "source": {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 105,
+                    "end": 118,
+                    "text": "但抽屜滑軌能不能合用還沒查"
+                  },
+                  "sourceAuthorRole": "user",
+                  "contentKind": "source_excerpt"
+                },
+                "sourceAuthorRole": "user",
+                "contentKind": "source_excerpt"
+              }
+            ],
+            "supported": true,
+            "ambiguous": false
+          },
+          "topic": "抽屜滑軌合用性"
+        },
+        {
+          "nodeId": "no-build-report",
+          "objectId": "施工狀態",
+          "aspect": "目前只排方案、不施工",
+          "interpretation": {
+            "kind": "user_report",
+            "temporalUse": "current",
+            "text": "現在只排方案，不施工"
+          },
+          "supported": true,
+          "time": {
+            "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+            "eventOccurredAt": null
+          },
+          "source": {
+            "ref": "r1",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 119,
+              "end": 129,
+              "text": "現在只排方案，不施工"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt"
+          },
+          "effectiveRelation": {
+            "relation": {
+              "kind": "independent",
+              "targetNodeIds": []
+            },
+            "updateIds": [
+              "no-build-report"
+            ],
+            "sourceUpdates": [
+              {
+                "updateId": "no-build-report",
+                "source": {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 119,
+                    "end": 129,
+                    "text": "現在只排方案，不施工"
+                  },
+                  "sourceAuthorRole": "user",
+                  "contentKind": "source_excerpt"
+                },
+                "sourceAuthorRole": "user",
+                "contentKind": "source_excerpt"
+              }
+            ],
+            "supported": true,
+            "ambiguous": false
+          },
+          "topic": "施工狀態"
+        },
+        {
+          "nodeId": "earlier-check-suggestion",
+          "objectId": "抽屜滑軌與舊面板配合檢查",
+          "aspect": "建議先核對再定抽屜工法",
+          "interpretation": {
+            "kind": "assistant_suggestion",
+            "temporalUse": "unspecified",
+            "text": "先量／核對抽屜滑軌與舊面板的配合條件，再定抽屜工法"
+          },
+          "supported": true,
+          "time": {
+            "messageRecordedAt": "2026-10-13T20:17:46.634Z",
+            "eventOccurredAt": null
+          },
+          "source": {
+            "ref": "r2",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 283,
+              "end": 308,
+              "text": "先量／核對抽屜滑軌與舊面板的配合條件，再定抽屜工法"
+            },
+            "sourceAuthorRole": "assistant",
+            "contentKind": "source_excerpt"
+          },
+          "effectiveRelation": {
+            "relation": {
+              "kind": "independent",
+              "targetNodeIds": []
+            },
+            "updateIds": [
+              "earlier-check-suggestion"
+            ],
+            "sourceUpdates": [
+              {
+                "updateId": "earlier-check-suggestion",
+                "source": {
+                  "ref": "r2",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 283,
+                    "end": 308,
+                    "text": "先量／核對抽屜滑軌與舊面板的配合條件，再定抽屜工法"
+                  },
+                  "sourceAuthorRole": "assistant",
+                  "contentKind": "source_excerpt"
+                },
+                "sourceAuthorRole": "assistant",
+                "contentKind": "source_excerpt"
+              }
+            ],
+            "supported": true,
+            "ambiguous": false
+          },
+          "topic": "抽屜滑軌與舊面板配合檢查"
+        },
+        {
+          "nodeId": "not-adopted-context",
+          "objectId": "檢查建議是否採用",
+          "aspect": "使用者明說仍未決定採用",
+          "interpretation": {
+            "kind": "user_report",
+            "temporalUse": "current",
+            "text": "你前面的檢查建議我仍沒決定採用。"
+          },
+          "supported": true,
+          "time": {
+            "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+            "eventOccurredAt": null
+          },
+          "source": {
+            "ref": "r3",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 104,
+              "end": 120,
+              "text": "你前面的檢查建議我仍沒決定採用。"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt"
+          },
+          "effectiveRelation": {
+            "relation": {
+              "kind": "independent",
+              "targetNodeIds": []
+            },
+            "updateIds": [
+              "not-adopted-context"
+            ],
+            "sourceUpdates": [
+              {
+                "updateId": "not-adopted-context",
+                "source": {
+                  "ref": "r3",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 104,
+                    "end": 120,
+                    "text": "你前面的檢查建議我仍沒決定採用。"
+                  },
+                  "sourceAuthorRole": "user",
+                  "contentKind": "source_excerpt"
+                },
+                "sourceAuthorRole": "user",
+                "contentKind": "source_excerpt"
+              }
+            ],
+            "supported": true,
+            "ambiguous": false
+          },
+          "topic": "檢查建議是否採用"
+        },
+        {
+          "nodeId": "record-local-context",
+          "objectId": "修繕紀錄保存",
+          "aspect": "只留管委會電腦、不上網",
+          "interpretation": {
+            "kind": "user_instruction",
+            "temporalUse": "current",
+            "text": "修繕紀錄只留管委會電腦，不上網"
+          },
+          "supported": true,
+          "time": {
+            "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+            "eventOccurredAt": null
+          },
+          "source": {
+            "ref": "r1",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 80,
+              "end": 95,
+              "text": "修繕紀錄只留管委會電腦，不上網"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt"
+          },
+          "effectiveRelation": {
+            "relation": {
+              "kind": "independent",
+              "targetNodeIds": []
+            },
+            "updateIds": [
+              "record-local-context"
+            ],
+            "sourceUpdates": [
+              {
+                "updateId": "record-local-context",
+                "source": {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 80,
+                    "end": 95,
+                    "text": "修繕紀錄只留管委會電腦，不上網"
+                  },
+                  "sourceAuthorRole": "user",
+                  "contentKind": "source_excerpt"
+                },
+                "sourceAuthorRole": "user",
+                "contentKind": "source_excerpt"
+              }
+            ],
+            "supported": true,
+            "ambiguous": false
+          },
+          "topic": "修繕紀錄保存"
+        },
+        {
+          "nodeId": "answer-format-context",
+          "objectId": "本輪回答方式",
+          "aspect": "兩段分清修改與取捨、不安排工作、對話回答不建檔案",
+          "interpretation": {
+            "kind": "user_instruction",
+            "temporalUse": "current",
+            "text": "請用兩段分清修改與取捨，不另外替我安排工作，直接在對話回答，不建立檔案。"
+          },
+          "supported": true,
+          "time": {
+            "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+            "eventOccurredAt": null
+          },
+          "source": {
+            "ref": "r3",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 120,
+              "end": 156,
+              "text": "請用兩段分清修改與取捨，不另外替我安排工作，直接在對話回答，不建立檔案。"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt"
+          },
+          "effectiveRelation": {
+            "relation": {
+              "kind": "independent",
+              "targetNodeIds": []
+            },
+            "updateIds": [
+              "answer-format-context"
+            ],
+            "sourceUpdates": [
+              {
+                "updateId": "answer-format-context",
+                "source": {
+                  "ref": "r3",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 120,
+                    "end": 156,
+                    "text": "請用兩段分清修改與取捨，不另外替我安排工作，直接在對話回答，不建立檔案。"
+                  },
+                  "sourceAuthorRole": "user",
+                  "contentKind": "source_excerpt"
+                },
+                "sourceAuthorRole": "user",
+                "contentKind": "source_excerpt"
+              }
+            ],
+            "supported": true,
+            "ambiguous": false
+          },
+          "topic": "本輪回答方式"
+        },
+        {
+          "nodeId": "__cmcp_v4_retention_0",
+          "objectId": "社區舊書櫃修繕：上層隔板",
+          "aspect": "隔板材質與是否上漆",
+          "interpretation": {
+            "kind": "user_intent",
+            "temporalUse": "current",
+            "text": "想保留木紋的考量還在，只是不拿它壓過先恢復使用"
+          },
+          "supported": true,
+          "time": {
+            "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+            "eventOccurredAt": null
+          },
+          "source": {
+            "ref": "r3",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 80,
+              "end": 103,
+              "text": "想保留木紋的考量還在，只是不拿它壓過先恢復使用"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt"
+          },
+          "effectiveRelation": {
+            "relation": {
+              "kind": "related",
+              "targetNodeIds": [
+                "upper-shelf-plan"
+              ]
+            },
+            "updateIds": [
+              "__cmcp_v4_retention_0"
+            ],
+            "sourceUpdates": [
+              {
+                "updateId": "__cmcp_v4_retention_0",
+                "source": {
+                  "ref": "r3",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 80,
+                    "end": 103,
+                    "text": "想保留木紋的考量還在，只是不拿它壓過先恢復使用"
+                  },
+                  "sourceAuthorRole": "user",
+                  "contentKind": "source_excerpt"
+                },
+                "sourceAuthorRole": "user",
+                "contentKind": "source_excerpt"
+              }
+            ],
+            "supported": true,
+            "ambiguous": false
+          },
+          "topic": "社區舊書櫃修繕：上層隔板",
+          "planRole": "evidence"
+        }
+      ],
+      "currentClaims": [
+        {
+          "objectId": "上層隔板尺寸",
+          "aspect": "使用者自述已量好",
+          "nodeId": "shelf-size-report",
+          "text": "隔板尺寸我已量好",
+          "textUse": "quoted_source_voice_not_current_speaker",
+          "source": {
+            "ref": "r1",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 96,
+              "end": 104,
+              "text": "隔板尺寸我已量好"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt",
+            "pointer": {
+              "version": 1,
+              "providerNamespace": "cmcp-local-console-v1",
+              "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+              "itemId": "harness-user-shared-message-a95838f2ecc698ac57917a4a26d6b321b0755375810233611144e2d3a79a10cc",
+              "sessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+              "revisionId": "r1"
+            },
+            "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+          },
+          "originalTime": {
+            "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+            "eventOccurredAt": null
+          }
+        },
+        {
+          "objectId": "抽屜滑軌合用性",
+          "aspect": "使用者自述還沒查",
+          "nodeId": "rail-unknown-report",
+          "text": "但抽屜滑軌能不能合用還沒查",
+          "textUse": "quoted_source_voice_not_current_speaker",
+          "source": {
+            "ref": "r1",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 105,
+              "end": 118,
+              "text": "但抽屜滑軌能不能合用還沒查"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt",
+            "pointer": {
+              "version": 1,
+              "providerNamespace": "cmcp-local-console-v1",
+              "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+              "itemId": "harness-user-shared-message-a95838f2ecc698ac57917a4a26d6b321b0755375810233611144e2d3a79a10cc",
+              "sessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+              "revisionId": "r1"
+            },
+            "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+          },
+          "originalTime": {
+            "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+            "eventOccurredAt": null
+          }
+        },
+        {
+          "objectId": "施工狀態",
+          "aspect": "目前只排方案、不施工",
+          "nodeId": "no-build-report",
+          "text": "現在只排方案，不施工",
+          "textUse": "quoted_source_voice_not_current_speaker",
+          "source": {
+            "ref": "r1",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 119,
+              "end": 129,
+              "text": "現在只排方案，不施工"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt",
+            "pointer": {
+              "version": 1,
+              "providerNamespace": "cmcp-local-console-v1",
+              "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+              "itemId": "harness-user-shared-message-a95838f2ecc698ac57917a4a26d6b321b0755375810233611144e2d3a79a10cc",
+              "sessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+              "revisionId": "r1"
+            },
+            "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+          },
+          "originalTime": {
+            "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+            "eventOccurredAt": null
+          }
+        },
+        {
+          "objectId": "檢查建議是否採用",
+          "aspect": "使用者明說仍未決定採用",
+          "nodeId": "not-adopted-context",
+          "text": "你前面的檢查建議我仍沒決定採用。",
+          "textUse": "quoted_source_voice_not_current_speaker",
+          "source": {
+            "ref": "r3",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 104,
+              "end": 120,
+              "text": "你前面的檢查建議我仍沒決定採用。"
+            },
+            "sourceAuthorRole": "user",
+            "contentKind": "source_excerpt",
+            "pointer": {
+              "version": 1,
+              "providerNamespace": "cmcp-local-console-v1",
+              "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+              "itemId": "harness-user-shared-message-927f59d3341232a97b8d311919ea6b8dbf4099bbcd4c1ed5815287fb66cf1537",
+              "sessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+              "revisionId": "r1"
+            },
+            "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a"
+          },
+          "originalTime": {
+            "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+            "eventOccurredAt": null
+          }
+        }
+      ],
+      "unresolved": [],
+      "unknownParts": [
+        {
+          "nodeId": "upper-shelf-plan",
+          "reason": "event_time_unknown"
+        },
+        {
+          "nodeId": "upper-shelf-plan",
+          "reason": "intent_outcome_not_inferred"
+        },
+        {
+          "nodeId": "lower-drawer-plan",
+          "reason": "event_time_unknown"
+        },
+        {
+          "nodeId": "lower-drawer-plan",
+          "reason": "intent_outcome_not_inferred"
+        },
+        {
+          "nodeId": "shelf-size-report",
+          "reason": "event_time_unknown"
+        },
+        {
+          "nodeId": "rail-unknown-report",
+          "reason": "event_time_unknown"
+        },
+        {
+          "nodeId": "no-build-report",
+          "reason": "event_time_unknown"
+        },
+        {
+          "nodeId": "earlier-check-suggestion",
+          "reason": "event_time_unknown"
+        },
+        {
+          "nodeId": "earlier-check-suggestion",
+          "reason": "assistant_not_state_evidence"
+        },
+        {
+          "nodeId": "not-adopted-context",
+          "reason": "event_time_unknown"
+        },
+        {
+          "nodeId": "record-local-context",
+          "reason": "event_time_unknown"
+        },
+        {
+          "nodeId": "record-local-context",
+          "reason": "instruction_not_fact_plan_or_execution_permission"
+        },
+        {
+          "nodeId": "answer-format-context",
+          "reason": "event_time_unknown"
+        },
+        {
+          "nodeId": "answer-format-context",
+          "reason": "instruction_not_fact_plan_or_execution_permission"
+        },
+        {
+          "nodeId": "__cmcp_v4_retention_0",
+          "reason": "event_time_unknown"
+        },
+        {
+          "nodeId": "__cmcp_v4_retention_0",
+          "reason": "intent_outcome_not_inferred"
+        }
+      ],
+      "reasons": [],
+      "reasonBindings": [
+        {
+          "reasonId": "upper-grain-reason",
+          "ref": "r1",
+          "citation": {
+            "unit": "unicode_code_points",
+            "start": 52,
+            "end": 66,
+            "text": "刷透明漆是想看得到原本的木紋"
+          },
+          "sourceAuthorRole": "user",
+          "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+          "eventOccurredAt": null,
+          "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+          "standing": "not_explicitly_withdrawn",
+          "relationAuthority": "host_proposed_reason_relation_not_semantically_verified",
+          "binding": {
+            "kind": "plan_basis",
+            "nodeId": "upper-shelf-plan",
+            "basisVersion": "1be01493061fbbbd2844e651350551816182262ea164718e8f3798c21ac10386",
+            "source": {
+              "ref": "r1",
+              "citation": {
+                "unit": "unicode_code_points",
+                "start": 28,
+                "end": 52,
+                "text": "隔板先用實木，抽屜沿用舊面板，兩邊都先刷透明漆。"
+              },
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+            }
+          },
+          "reasonVersion": "f1a74995eb641f4fbf57a14e4d4754af2c1a98e18a62e809fdda04fa24790768"
+        },
+        {
+          "reasonId": "upper-priority-speed",
+          "ref": "r3",
+          "citation": {
+            "unit": "unicode_code_points",
+            "start": 52,
+            "end": 67,
+            "text": "這次隔板先以早點恢復可用為優先"
+          },
+          "sourceAuthorRole": "user",
+          "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+          "eventOccurredAt": null,
+          "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+          "standing": "not_explicitly_withdrawn",
+          "relationAuthority": "host_proposed_reason_relation_not_semantically_verified",
+          "binding": {
+            "kind": "plan_basis",
+            "nodeId": "upper-shelf-plan",
+            "basisVersion": "1be01493061fbbbd2844e651350551816182262ea164718e8f3798c21ac10386",
+            "source": {
+              "ref": "r1",
+              "citation": {
+                "unit": "unicode_code_points",
+                "start": 28,
+                "end": 52,
+                "text": "隔板先用實木，抽屜沿用舊面板，兩邊都先刷透明漆。"
+              },
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+            }
+          },
+          "reasonVersion": "e03440e80629593bd24b10cd59f9e082e7826106c89b584d27b7912202456647"
+        },
+        {
+          "reasonId": "upper-tradeoff-color",
+          "ref": "r3",
+          "citation": {
+            "unit": "unicode_code_points",
+            "start": 68,
+            "end": 79,
+            "text": "我接受新板和舊櫃有色差"
+          },
+          "sourceAuthorRole": "user",
+          "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+          "eventOccurredAt": null,
+          "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+          "standing": "not_explicitly_withdrawn",
+          "relationAuthority": "host_proposed_reason_relation_not_semantically_verified",
+          "binding": {
+            "kind": "plan_basis",
+            "nodeId": "upper-shelf-plan",
+            "basisVersion": "1be01493061fbbbd2844e651350551816182262ea164718e8f3798c21ac10386",
+            "source": {
+              "ref": "r1",
+              "citation": {
+                "unit": "unicode_code_points",
+                "start": 28,
+                "end": 52,
+                "text": "隔板先用實木，抽屜沿用舊面板，兩邊都先刷透明漆。"
+              },
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+            }
+          },
+          "reasonVersion": "f58aaa4b22a339ae453ceb50898dfc599e257645fc9403361047b0405d4a58e4"
+        },
+        {
+          "reasonId": "upper-change-priority",
+          "ref": "r3",
+          "citation": {
+            "unit": "unicode_code_points",
+            "start": 52,
+            "end": 67,
+            "text": "這次隔板先以早點恢復可用為優先"
+          },
+          "sourceAuthorRole": "user",
+          "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+          "eventOccurredAt": null,
+          "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+          "kind": "prioritizes",
+          "standing": "not_explicitly_withdrawn",
+          "relationAuthority": "host_proposed_reason_relation_not_semantically_verified",
+          "binding": {
+            "kind": "plan_change",
+            "nodeId": "upper-shelf-plan",
+            "changeId": "__cmcp_v6_change_0_1",
+            "priorVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a",
+            "planVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a"
+          },
+          "reasonVersion": "830ff8d4137958fda829624d8697aa62e8936d74e0f145d04e4479f9e8b058a9"
+        },
+        {
+          "reasonId": "upper-change-tradeoff",
+          "ref": "r3",
+          "citation": {
+            "unit": "unicode_code_points",
+            "start": 68,
+            "end": 79,
+            "text": "我接受新板和舊櫃有色差"
+          },
+          "sourceAuthorRole": "user",
+          "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+          "eventOccurredAt": null,
+          "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+          "kind": "accepts_tradeoff",
+          "standing": "not_explicitly_withdrawn",
+          "relationAuthority": "host_proposed_reason_relation_not_semantically_verified",
+          "binding": {
+            "kind": "plan_change",
+            "nodeId": "upper-shelf-plan",
+            "changeId": "__cmcp_v6_change_0_1",
+            "priorVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a",
+            "planVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a"
+          },
+          "reasonVersion": "260b985aa038de12ef56f6b2140c4aff88b952dd3a6a610cf97903722121487e"
+        },
+        {
+          "reasonId": "lower-waste-reason",
+          "ref": "r1",
+          "citation": {
+            "unit": "unicode_code_points",
+            "start": 67,
+            "end": 79,
+            "text": "沿用抽屜面板是想減少廢料"
+          },
+          "sourceAuthorRole": "user",
+          "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+          "eventOccurredAt": null,
+          "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+          "standing": "not_explicitly_withdrawn",
+          "relationAuthority": "host_proposed_reason_relation_not_semantically_verified",
+          "binding": {
+            "kind": "plan_basis",
+            "nodeId": "lower-drawer-plan",
+            "basisVersion": "f61da8b2db792efa906e0edb1d5c502b4b9d7a8ab61c5c6ff63140faea5030a5",
+            "source": {
+              "ref": "r1",
+              "citation": {
+                "unit": "unicode_code_points",
+                "start": 35,
+                "end": 42,
+                "text": "抽屜沿用舊面板"
+              },
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+            }
+          },
+          "reasonVersion": "242cf28a9af13d60b31baf63b6674273d3a9ae5472932aa15c14595c56c29242"
+        }
+      ],
+      "reasonScopeReview": {
+        "kind": "cmcp_reason_scope_review",
+        "version": 1,
+        "status": "no_overlap_detected",
+        "authority": "exact_source_overlap_not_semantic_conflict_proof",
+        "semanticVerification": "not_performed",
+        "scope": "provided_named_reasons_and_selected_current_plan_chains_only",
+        "completeness": "not_established",
+        "findings": [],
+        "totalFindings": 0,
+        "unresolvedFindings": 0,
+        "maxFindings": 8,
+        "truncated": false
+      },
+      "currentPlans": [
+        {
+          "objectId": "社區舊書櫃修繕：上層隔板",
+          "aspect": "隔板材質與是否上漆",
+          "nodeId": "upper-shelf-plan",
+          "text": "隔板先用實木，抽屜沿用舊面板，這部分先不上漆。",
+          "planStatus": "planned",
+          "authority": "user_intent_not_outcome_or_execution_permission",
+          "textAuthority": "concatenated_formal_fragments_not_a_new_user_message",
+          "conditionState": "present",
+          "sourceFragments": [
+            {
+              "ref": "r1",
+              "citation": {
+                "unit": "unicode_code_points",
+                "start": 28,
+                "end": 43,
+                "text": "隔板先用實木，抽屜沿用舊面板，"
+              },
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+            },
+            {
+              "ref": "r3",
+              "citation": {
+                "unit": "unicode_code_points",
+                "start": 18,
+                "end": 25,
+                "text": "這部分先不上漆"
+              },
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a"
+            },
+            {
+              "ref": "r1",
+              "citation": {
+                "unit": "unicode_code_points",
+                "start": 51,
+                "end": 52,
+                "text": "。"
+              },
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+            }
+          ],
+          "statusSource": null,
+          "planVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a",
+          "changeId": "__cmcp_v6_change_0_1",
+          "textUse": "source_bound_plan_not_external_outcome"
+        },
+        {
+          "objectId": "社區舊書櫃修繕：下層抽屜",
+          "aspect": "舊面板沿用與刷透明漆",
+          "nodeId": "lower-drawer-plan",
+          "text": "抽屜沿用舊面板",
+          "planStatus": "planned",
+          "authority": "user_intent_not_outcome_or_execution_permission",
+          "textAuthority": "concatenated_formal_fragments_not_a_new_user_message",
+          "conditionState": "present",
+          "sourceFragments": [
+            {
+              "ref": "r1",
+              "citation": {
+                "unit": "unicode_code_points",
+                "start": 35,
+                "end": 42,
+                "text": "抽屜沿用舊面板"
+              },
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+            }
+          ],
+          "statusSource": null,
+          "planVersion": "f61da8b2db792efa906e0edb1d5c502b4b9d7a8ab61c5c6ff63140faea5030a5",
+          "changeId": null,
+          "textUse": "source_bound_plan_not_external_outcome"
+        }
+      ],
+      "unresolvedPlans": [],
+      "retentions": [
+        {
+          "byNodeId": "__cmcp_v4_retention_0",
+          "targetNodeIds": [
+            "upper-shelf-plan"
+          ],
+          "ref": "r3",
+          "citation": {
+            "unit": "unicode_code_points",
+            "start": 80,
+            "end": 103,
+            "text": "想保留木紋的考量還在，只是不拿它壓過先恢復使用"
+          },
+          "sourceAuthorRole": "user",
+          "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+          "eventOccurredAt": null,
+          "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+          "targets": [
+            {
+              "nodeId": "upper-shelf-plan",
+              "status": "current_plan"
+            }
+          ],
+          "authority": "explicitly_cited_preservation_host_interpretation_not_semantically_verified"
+        }
+      ],
+      "reasonRelations": [],
+      "validation": {
+        "structure": "validated",
+        "source": "formal_reading_verified",
+        "semantics": "not_performed",
+        "executionAuthority": "none"
+      },
+      "planBasis": [
+        {
+          "nodeId": "upper-shelf-plan",
+          "temporalUse": "current",
+          "source": {
+            "ref": "r1",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 28,
+              "end": 52,
+              "text": "隔板先用實木，抽屜沿用舊面板，兩邊都先刷透明漆。"
+            },
+            "sourceAuthorRole": "user",
+            "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+            "eventOccurredAt": null,
+            "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+          },
+          "baseVersion": "1be01493061fbbbd2844e651350551816182262ea164718e8f3798c21ac10386",
+          "reasonStatus": "provided_by_binding",
+          "currentEligibility": "selected_current_basis",
+          "candidates": [
+            {
+              "objectId": "社區舊書櫃修繕：上層隔板",
+              "aspect": "隔板材質與是否上漆",
+              "nodeId": "upper-shelf-plan",
+              "text": "隔板先用實木，抽屜沿用舊面板，這部分先不上漆。",
+              "planStatus": "planned",
+              "authority": "user_intent_not_outcome_or_execution_permission",
+              "textAuthority": "concatenated_formal_fragments_not_a_new_user_message",
+              "conditionState": "present",
+              "sourceFragments": [
+                {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 28,
+                    "end": 43,
+                    "text": "隔板先用實木，抽屜沿用舊面板，"
+                  },
+                  "sourceAuthorRole": "user",
+                  "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                  "eventOccurredAt": null,
+                  "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+                },
+                {
+                  "ref": "r3",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 18,
+                    "end": 25,
+                    "text": "這部分先不上漆"
+                  },
+                  "sourceAuthorRole": "user",
+                  "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+                  "eventOccurredAt": null,
+                  "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a"
+                },
+                {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 51,
+                    "end": 52,
+                    "text": "。"
+                  },
+                  "sourceAuthorRole": "user",
+                  "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                  "eventOccurredAt": null,
+                  "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+                }
+              ],
+              "statusSource": null,
+              "planVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a",
+              "changeId": "__cmcp_v6_change_0_1"
+            }
+          ]
+        },
+        {
+          "nodeId": "lower-drawer-plan",
+          "temporalUse": "current",
+          "source": {
+            "ref": "r1",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 35,
+              "end": 42,
+              "text": "抽屜沿用舊面板"
+            },
+            "sourceAuthorRole": "user",
+            "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+            "eventOccurredAt": null,
+            "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+          },
+          "baseVersion": "f61da8b2db792efa906e0edb1d5c502b4b9d7a8ab61c5c6ff63140faea5030a5",
+          "reasonStatus": "provided_by_binding",
+          "currentEligibility": "selected_current_basis",
+          "candidates": [
+            {
+              "objectId": "社區舊書櫃修繕：下層抽屜",
+              "aspect": "舊面板沿用與刷透明漆",
+              "nodeId": "lower-drawer-plan",
+              "text": "抽屜沿用舊面板",
+              "planStatus": "planned",
+              "authority": "user_intent_not_outcome_or_execution_permission",
+              "textAuthority": "concatenated_formal_fragments_not_a_new_user_message",
+              "conditionState": "present",
+              "sourceFragments": [
+                {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 35,
+                    "end": 42,
+                    "text": "抽屜沿用舊面板"
+                  },
+                  "sourceAuthorRole": "user",
+                  "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                  "eventOccurredAt": null,
+                  "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+                }
+              ],
+              "statusSource": null,
+              "planVersion": "f61da8b2db792efa906e0edb1d5c502b4b9d7a8ab61c5c6ff63140faea5030a5",
+              "changeId": null
+            }
+          ]
+        }
+      ],
+      "planChanges": [
+        {
+          "id": "__cmcp_v6_change_0_0",
+          "targetNodeId": "upper-shelf-plan",
+          "afterChangeId": null,
+          "kind": "content",
+          "source": {
+            "ref": "r3",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 5,
+              "end": 26,
+              "text": "只把上層隔板改用夾板，而且這部分先不上漆；"
+            },
+            "sourceAuthorRole": "user",
+            "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+            "eventOccurredAt": null,
+            "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a"
+          },
+          "priorVersion": "1be01493061fbbbd2844e651350551816182262ea164718e8f3798c21ac10386",
+          "planVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a",
+          "reasonStatus": "not_provided",
+          "reason": null,
+          "effect": "only_explicitly_scoped_content_changed",
+          "parts": [
+            {
+              "start": 0,
+              "end": 15,
+              "kind": "keep",
+              "priorSourceFragments": [
+                {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 28,
+                    "end": 43,
+                    "text": "隔板先用實木，抽屜沿用舊面板，"
+                  },
+                  "sourceAuthorRole": "user",
+                  "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                  "eventOccurredAt": null,
+                  "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+                }
+              ],
+              "replacementSourceFragments": []
+            },
+            {
+              "start": 15,
+              "end": 23,
+              "kind": "replace",
+              "priorSourceFragments": [
+                {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 43,
+                    "end": 51,
+                    "text": "兩邊都先刷透明漆"
+                  },
+                  "sourceAuthorRole": "user",
+                  "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                  "eventOccurredAt": null,
+                  "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+                }
+              ],
+              "replacementSourceFragments": [
+                {
+                  "ref": "r3",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 18,
+                    "end": 25,
+                    "text": "這部分先不上漆"
+                  },
+                  "sourceAuthorRole": "user",
+                  "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+                  "eventOccurredAt": null,
+                  "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a"
+                }
+              ]
+            },
+            {
+              "start": 23,
+              "end": 24,
+              "kind": "keep",
+              "priorSourceFragments": [
+                {
+                  "ref": "r1",
+                  "citation": {
+                    "unit": "unicode_code_points",
+                    "start": 51,
+                    "end": 52,
+                    "text": "。"
+                  },
+                  "sourceAuthorRole": "user",
+                  "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                  "eventOccurredAt": null,
+                  "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+                }
+              ],
+              "replacementSourceFragments": []
+            }
+          ],
+          "semanticVerification": "not_performed",
+          "executionAuthority": "none"
+        },
+        {
+          "id": "__cmcp_v6_change_0_1",
+          "targetNodeId": "upper-shelf-plan",
+          "afterChangeId": "__cmcp_v6_change_0_0",
+          "kind": "reason",
+          "source": {
+            "ref": "r3",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 52,
+              "end": 104,
+              "text": "這次隔板先以早點恢復可用為優先，我接受新板和舊櫃有色差；想保留木紋的考量還在，只是不拿它壓過先恢復使用。"
+            },
+            "sourceAuthorRole": "user",
+            "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+            "eventOccurredAt": null,
+            "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a"
+          },
+          "priorVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a",
+          "planVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a",
+          "reasonStatus": "provided_by_binding",
+          "reason": null,
+          "effect": "reason_only_conditions_and_status_preserved",
+          "semanticVerification": "not_performed",
+          "executionAuthority": "none"
+        }
+      ],
+      "planScopeReview": {
+        "kind": "cmcp_plan_scope_review",
+        "version": 2,
+        "status": "no_overlap_detected",
+        "authority": "exact_source_overlap_not_semantic_conflict_proof",
+        "semanticVerification": "not_performed",
+        "findings": [],
+        "totalFindings": 0,
+        "unresolvedFindings": 0,
+        "maxFindings": 8,
+        "truncated": false,
+        "resolutions": [],
+        "sourceBindingVerification": "validated"
+      },
+      "reportScopeReview": {
+        "kind": "cmcp_report_scope_review",
+        "version": 1,
+        "status": "no_overlap_detected",
+        "authority": "formal_source_range_overlap_not_semantic_classification",
+        "scope": "proposed_current_user_reports_and_status_changes_only",
+        "maxFindings": 24,
+        "totalFindings": 0,
+        "unresolvedFindings": 0,
+        "truncated": false,
+        "findings": [],
+        "resolutions": [],
+        "sourceBindingVerification": "validated",
+        "semanticVerification": "not_performed",
+        "completeness": "not_established",
+        "executionAuthority": "none"
+      },
+      "planEvidence": [
+        {
+          "nodeId": "__cmcp_v4_retention_0",
+          "objectId": "社區舊書櫃修繕：上層隔板",
+          "aspect": "隔板材質與是否上漆",
+          "source": {
+            "ref": "r3",
+            "citation": {
+              "unit": "unicode_code_points",
+              "start": 80,
+              "end": 103,
+              "text": "想保留木紋的考量還在，只是不拿它壓過先恢復使用"
+            },
+            "sourceAuthorRole": "user",
+            "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+            "eventOccurredAt": null,
+            "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a"
+          },
+          "targetNodeIds": [
+            "upper-shelf-plan"
+          ],
+          "uses": [
+            {
+              "kind": "retention",
+              "targetNodeId": "upper-shelf-plan",
+              "index": 0,
+              "source": {
+                "ref": "r3",
+                "citation": {
+                  "unit": "unicode_code_points",
+                  "start": 80,
+                  "end": 103,
+                  "text": "想保留木紋的考量還在，只是不拿它壓過先恢復使用"
+                },
+                "sourceAuthorRole": "user",
+                "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+                "eventOccurredAt": null,
+                "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a"
+              }
+            }
+          ],
+          "authority": "source_bound_plan_evidence_not_an_independent_plan"
+        }
+      ],
+      "planCoverage": {
+        "scope": "proposed_source_bound_plan_bases_only",
+        "historyCompleteness": "not_established",
+        "semanticCompleteness": "not_inferred_from_span_coverage",
+        "proposedBases": 2,
+        "changes": 2,
+        "selectedCurrentBasisNodeIds": [
+          "upper-shelf-plan",
+          "lower-drawer-plan"
+        ],
+        "unestablishedCurrentBasisNodeIds": [],
+        "currentnessMeaning": "explicit_host_selection_for_query_not_original_time_or_execution",
+        "evidenceNodes": 1
+      },
+      "reasonCoverage": {
+        "scope": "proposed_nodes_and_changes_only",
+        "nodeReasonsProvided": 0,
+        "changeReasonsProvided": 0,
+        "bindingReasonsProvided": 6,
+        "interpretationCompleteness": "not_established",
+        "omissionMeaning": "not_provided_does_not_mean_no_reason",
+        "semanticVerification": "not_performed"
+      },
+      "unknowns": [
+        "抽屜滑軌能否與舊面板合用（使用者明說還沒查）",
+        "上層隔板改用夾板後實際是否先恢復可用，尚無外部回報"
+      ],
+      "unknownsAuthority": "unverified_host_uncertainty_not_new_facts",
+      "sources": [
+        {
+          "ref": "r1",
+          "sourceAuthorRole": "user",
+          "contentKind": "source_excerpt",
+          "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+          "eventOccurredAt": null,
+          "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+        },
+        {
+          "ref": "r2",
+          "sourceAuthorRole": "assistant",
+          "contentKind": "source_excerpt",
+          "messageRecordedAt": "2026-10-13T20:17:46.634Z",
+          "eventOccurredAt": null,
+          "evidenceHash": "d89fb9a50c3f3ddb46a9d36b9fbdd286ca87e436eb2bef3280d2feb8c9ed8fdf"
+        },
+        {
+          "ref": "r3",
+          "sourceAuthorRole": "user",
+          "contentKind": "source_excerpt",
+          "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+          "eventOccurredAt": null,
+          "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a"
+        }
+      ],
+      "coverage": {
+        "complete": true,
+        "exhausted": true,
+        "sourceCount": 3,
+        "completedSources": 3,
+        "completedRefs": [
+          "r1",
+          "r2",
+          "r3"
+        ],
+        "unavailableSources": 0,
+        "unavailable": [],
+        "unread": [],
+        "cumulative": {
+          "pages": 3,
+          "sourceBytes": 2441,
+          "projectionBytes": 4724
+        },
+        "scopeCoverage": "frozen_authorized_history_selection_plus_bound_current_input",
+        "associationCompleteness": "catalog_associations_only",
+        "semanticCompleteness": "not_inferred_from_character_coverage",
+        "modelCoverageComplete": true,
+        "materialAvailableInFormalToolResult": {
+          "complete": true,
+          "selectedSources": 3,
+          "completeSourceRefs": [
+            "r1",
+            "r2",
+            "r3"
+          ],
+          "unprojectedSourceRefs": [],
+          "pagesWithModelContext": 3,
+          "pagesWithoutModelContext": 0,
+          "modelContextBytes": 4724,
+          "unprojectedPages": []
+        },
+        "actualModelConsumption": "not_observed",
+        "historyCompleteness": "not_established",
+        "interpretationCompleteness": "not_established",
+        "selectedRoleCounts": {
+          "user": 2,
+          "assistant": 1,
+          "tool": 0,
+          "unknown": 0
+        },
+        "citedRoleCounts": {
+          "user": 2,
+          "assistant": 1,
+          "tool": 0,
+          "unknown": 0
+        },
+        "proposedNodes": 10,
+        "citedSources": 3,
+        "uncitedReadSources": []
+      },
+      "runtimeTime": {
+        "now": "2026-10-13T20:18:29.200Z",
+        "timezone": "Asia/Taipei",
+        "nowLocal": "2026-10-14T04:18:29.200+08:00"
+      }
+    },
+    "projectionHash": "5f4b38f5c1e68e4c8a234a675a2be804397ef022950c9a07593a46a7c306854d",
+    "projectionCapacity": {
+      "version": 1,
+      "measurementScope": "projection_only",
+      "encoding": "exact_object_references",
+      "expandedProjectionBytes": 35896,
+      "modelProjectionBytes": 32035,
+      "maxExpandedProjectionBytes": 131072,
+      "maxModelProjectionBytes": 65536,
+      "lossless": true,
+      "mainViews": "inline",
+      "wireEnvelopeLimit": "transport_defined"
+    },
+    "presentation": {
+      "kind": "cmcp_continuity_presentation",
+      "version": 1,
+      "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+      "projectionHash": "5f4b38f5c1e68e4c8a234a675a2be804397ef022950c9a07593a46a7c306854d",
+      "authority": "derived_from_explicit_reason_withdrawal_not_new_condition_change",
+      "semanticVerification": "not_performed",
+      "status": "available",
+      "reason": null,
+      "plans": [],
+      "quotationView": {
+        "kind": "cmcp_formal_quotation_view",
+        "version": 1,
+        "projectionHash": "5f4b38f5c1e68e4c8a234a675a2be804397ef022950c9a07593a46a7c306854d",
+        "authority": "exact_fragments_of_same_formal_projection_not_new_user_message",
+        "semanticVerification": "not_performed",
+        "executionAuthority": "none",
+        "scope": "current_plan_fragments_and_explicit_retentions_for_current_plans",
+        "limits": {
+          "maxPlans": 128,
+          "maxBindings": 512,
+          "maxSupportingRows": 2048,
+          "maxQuoteCodePoints": 32768,
+          "maxBytes": 65536
+        },
+        "status": "available",
+        "reason": null,
+        "currentPlans": [
+          {
+            "nodeId": "upper-shelf-plan",
+            "planVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a",
+            "planStatus": "planned",
+            "currentTextReference": "/projection/currentPlans/0/text",
+            "currentTextUse": "assembled_formal_fragments_not_a_single_user_quote",
+            "quotations": [
+              {
+                "use": "current_plan_fragment",
+                "textUse": "verbatim_source_fragment",
+                "text": "隔板先用實木，抽屜沿用舊面板，",
+                "ref": "r1",
+                "sourceAuthorRole": "user",
+                "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                "eventOccurredAt": null,
+                "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+                "range": {
+                  "unit": "unicode_code_points",
+                  "start": 28,
+                  "end": 43
+                },
+                "projectionReference": "/projection/currentPlans/0/sourceFragments/0",
+                "sourceAnchorReference": "/projection/knownEvolution/0/source",
+                "sourceReference": "/projection/sources/0"
+              },
+              {
+                "use": "current_plan_fragment",
+                "textUse": "verbatim_source_fragment",
+                "text": "這部分先不上漆",
+                "ref": "r3",
+                "sourceAuthorRole": "user",
+                "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+                "eventOccurredAt": null,
+                "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+                "range": {
+                  "unit": "unicode_code_points",
+                  "start": 18,
+                  "end": 25
+                },
+                "projectionReference": "/projection/currentPlans/0/sourceFragments/1",
+                "sourceAnchorReference": "/projection/planChanges/0/source",
+                "sourceReference": "/projection/sources/2"
+              },
+              {
+                "use": "current_plan_fragment",
+                "textUse": "verbatim_source_fragment",
+                "text": "。",
+                "ref": "r1",
+                "sourceAuthorRole": "user",
+                "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                "eventOccurredAt": null,
+                "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+                "range": {
+                  "unit": "unicode_code_points",
+                  "start": 51,
+                  "end": 52
+                },
+                "projectionReference": "/projection/currentPlans/0/sourceFragments/2",
+                "sourceAnchorReference": "/projection/knownEvolution/0/source",
+                "sourceReference": "/projection/sources/0"
+              }
+            ]
+          },
+          {
+            "nodeId": "lower-drawer-plan",
+            "planVersion": "f61da8b2db792efa906e0edb1d5c502b4b9d7a8ab61c5c6ff63140faea5030a5",
+            "planStatus": "planned",
+            "currentTextReference": "/projection/currentPlans/1/text",
+            "currentTextUse": "assembled_formal_fragments_not_a_single_user_quote",
+            "quotations": [
+              {
+                "use": "current_plan_fragment",
+                "textUse": "verbatim_source_fragment",
+                "text": "抽屜沿用舊面板",
+                "ref": "r1",
+                "sourceAuthorRole": "user",
+                "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                "eventOccurredAt": null,
+                "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+                "range": {
+                  "unit": "unicode_code_points",
+                  "start": 35,
+                  "end": 42
+                },
+                "projectionReference": "/projection/currentPlans/1/sourceFragments/0",
+                "sourceAnchorReference": "/projection/knownEvolution/0/source",
+                "sourceReference": "/projection/sources/0"
+              }
+            ]
+          }
+        ],
+        "retentions": [
+          {
+            "byNodeId": "__cmcp_v4_retention_0",
+            "targetPlans": [
+              {
+                "nodeId": "upper-shelf-plan",
+                "planVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a"
+              }
+            ],
+            "quotation": {
+              "use": "explicit_retention_source",
+              "textUse": "verbatim_source_fragment",
+              "text": "想保留木紋的考量還在，只是不拿它壓過先恢復使用",
+              "ref": "r3",
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+              "range": {
+                "unit": "unicode_code_points",
+                "start": 80,
+                "end": 103
+              },
+              "projectionReference": "/projection/retentions/0",
+              "sourceAnchorReference": "/projection/knownEvolution/9/source",
+              "sourceReference": "/projection/sources/2"
+            },
+            "relationAuthority": "source_bound_host_interpretation_not_semantically_verified"
+          }
+        ],
+        "coverage": {
+          "currentPlans": 2,
+          "quotationBindings": 5,
+          "retentions": 1,
+          "retentionsOutsideCurrentPlans": 0,
+          "completeness": "this_view_scope_only_full_projection_and_formal_sources_remain_authoritative"
+        }
+      },
+      "evidenceLayers": {
+        "version": 1,
+        "projectionHash": "5f4b38f5c1e68e4c8a234a675a2be804397ef022950c9a07593a46a7c306854d",
+        "authority": "cross_reference_of_existing_formal_projection_not_new_state_evidence",
+        "semanticVerification": "not_performed",
+        "executionAuthority": "none",
+        "limits": {
+          "maxCurrentRows": 128,
+          "maxSourceBindings": 512,
+          "maxMetadataBytes": 65536,
+          "maxSupportingRows": 2048
+        },
+        "status": "available",
+        "reason": null,
+        "currentPlans": [
+          {
+            "nodeId": "upper-shelf-plan",
+            "currentViewReference": "/projection/currentPlans/0",
+            "nodeReference": "/projection/knownEvolution/0",
+            "interpretationKind": "user_intent",
+            "evidenceLevel": "user_intent_not_outcome_or_execution_permission",
+            "source": {
+              "bindingReference": "/projection/knownEvolution/0/source",
+              "sourceReference": "/projection/sources/0",
+              "ref": "r1",
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+              "range": {
+                "unit": "unicode_code_points",
+                "start": 28,
+                "end": 52
+              }
+            },
+            "existingLimitations": [
+              {
+                "reason": "event_time_unknown",
+                "reference": "/projection/unknownParts/0"
+              },
+              {
+                "reason": "intent_outcome_not_inferred",
+                "reference": "/projection/unknownParts/1"
+              }
+            ],
+            "sourceUse": "basis_source_only_current_text_and_revision_times_follow_current_view_bindings",
+            "planVersion": "22b4e900f0b7b70c9c960e27b72d8f925f8e9f8d4e3d88b35d54cdd304c7a77a",
+            "planStatus": "planned",
+            "currentSourceBindings": [
+              {
+                "bindingReference": "/projection/currentPlans/0/sourceFragments/0",
+                "sourceReference": "/projection/sources/0",
+                "ref": "r1",
+                "sourceAuthorRole": "user",
+                "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                "eventOccurredAt": null,
+                "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+                "range": {
+                  "unit": "unicode_code_points",
+                  "start": 28,
+                  "end": 43
+                }
+              },
+              {
+                "bindingReference": "/projection/currentPlans/0/sourceFragments/1",
+                "sourceReference": "/projection/sources/2",
+                "ref": "r3",
+                "sourceAuthorRole": "user",
+                "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+                "eventOccurredAt": null,
+                "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+                "range": {
+                  "unit": "unicode_code_points",
+                  "start": 18,
+                  "end": 25
+                }
+              },
+              {
+                "bindingReference": "/projection/currentPlans/0/sourceFragments/2",
+                "sourceReference": "/projection/sources/0",
+                "ref": "r1",
+                "sourceAuthorRole": "user",
+                "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                "eventOccurredAt": null,
+                "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+                "range": {
+                  "unit": "unicode_code_points",
+                  "start": 51,
+                  "end": 52
+                }
+              }
+            ],
+            "statusSourceBinding": null
+          },
+          {
+            "nodeId": "lower-drawer-plan",
+            "currentViewReference": "/projection/currentPlans/1",
+            "nodeReference": "/projection/knownEvolution/1",
+            "interpretationKind": "user_intent",
+            "evidenceLevel": "user_intent_not_outcome_or_execution_permission",
+            "source": {
+              "bindingReference": "/projection/knownEvolution/1/source",
+              "sourceReference": "/projection/sources/0",
+              "ref": "r1",
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+              "range": {
+                "unit": "unicode_code_points",
+                "start": 35,
+                "end": 42
+              }
+            },
+            "existingLimitations": [
+              {
+                "reason": "event_time_unknown",
+                "reference": "/projection/unknownParts/2"
+              },
+              {
+                "reason": "intent_outcome_not_inferred",
+                "reference": "/projection/unknownParts/3"
+              }
+            ],
+            "sourceUse": "basis_source_only_current_text_and_revision_times_follow_current_view_bindings",
+            "planVersion": "f61da8b2db792efa906e0edb1d5c502b4b9d7a8ab61c5c6ff63140faea5030a5",
+            "planStatus": "planned",
+            "currentSourceBindings": [
+              {
+                "bindingReference": "/projection/currentPlans/1/sourceFragments/0",
+                "sourceReference": "/projection/sources/0",
+                "ref": "r1",
+                "sourceAuthorRole": "user",
+                "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+                "eventOccurredAt": null,
+                "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+                "range": {
+                  "unit": "unicode_code_points",
+                  "start": 35,
+                  "end": 42
+                }
+              }
+            ],
+            "statusSourceBinding": null
+          }
+        ],
+        "currentClaims": [
+          {
+            "nodeId": "shelf-size-report",
+            "currentViewReference": "/projection/currentClaims/0",
+            "nodeReference": "/projection/knownEvolution/2",
+            "interpretationKind": "user_report",
+            "evidenceLevel": "user_report_not_independently_verified",
+            "source": {
+              "bindingReference": "/projection/knownEvolution/2/source",
+              "sourceReference": "/projection/sources/0",
+              "ref": "r1",
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+              "range": {
+                "unit": "unicode_code_points",
+                "start": 96,
+                "end": 104
+              }
+            },
+            "existingLimitations": [
+              {
+                "reason": "event_time_unknown",
+                "reference": "/projection/unknownParts/4"
+              }
+            ]
+          },
+          {
+            "nodeId": "rail-unknown-report",
+            "currentViewReference": "/projection/currentClaims/1",
+            "nodeReference": "/projection/knownEvolution/3",
+            "interpretationKind": "user_report",
+            "evidenceLevel": "user_report_not_independently_verified",
+            "source": {
+              "bindingReference": "/projection/knownEvolution/3/source",
+              "sourceReference": "/projection/sources/0",
+              "ref": "r1",
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+              "range": {
+                "unit": "unicode_code_points",
+                "start": 105,
+                "end": 118
+              }
+            },
+            "existingLimitations": [
+              {
+                "reason": "event_time_unknown",
+                "reference": "/projection/unknownParts/5"
+              }
+            ]
+          },
+          {
+            "nodeId": "no-build-report",
+            "currentViewReference": "/projection/currentClaims/2",
+            "nodeReference": "/projection/knownEvolution/4",
+            "interpretationKind": "user_report",
+            "evidenceLevel": "user_report_not_independently_verified",
+            "source": {
+              "bindingReference": "/projection/knownEvolution/4/source",
+              "sourceReference": "/projection/sources/0",
+              "ref": "r1",
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+              "range": {
+                "unit": "unicode_code_points",
+                "start": 119,
+                "end": 129
+              }
+            },
+            "existingLimitations": [
+              {
+                "reason": "event_time_unknown",
+                "reference": "/projection/unknownParts/6"
+              }
+            ]
+          },
+          {
+            "nodeId": "not-adopted-context",
+            "currentViewReference": "/projection/currentClaims/3",
+            "nodeReference": "/projection/knownEvolution/6",
+            "interpretationKind": "user_report",
+            "evidenceLevel": "user_report_not_independently_verified",
+            "source": {
+              "bindingReference": "/projection/knownEvolution/6/source",
+              "sourceReference": "/projection/sources/2",
+              "ref": "r3",
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+              "range": {
+                "unit": "unicode_code_points",
+                "start": 104,
+                "end": 120
+              }
+            },
+            "existingLimitations": [
+              {
+                "reason": "event_time_unknown",
+                "reference": "/projection/unknownParts/9"
+              }
+            ]
+          }
+        ]
+      },
+      "sourceContext": {
+        "kind": "cmcp_formal_source_context",
+        "version": 1,
+        "projectionHash": "5f4b38f5c1e68e4c8a234a675a2be804397ef022950c9a07593a46a7c306854d",
+        "scope": "only_refs_used_by_same_formal_projection",
+        "citationScope": "host_selected_exact_fragments_do_not_define_original_message_extent",
+        "authority": "same_formal_reader_originals_not_new_history_or_semantic_judgment",
+        "semanticVerification": "not_performed",
+        "executionAuthority": "none",
+        "actualModelConsumption": "not_observed",
+        "limits": {
+          "maxSources": 64,
+          "maxRanges": 256,
+          "maxMetadataBytes": 16384,
+          "maxSourceBytes": 4096,
+          "maxContextBytes": 16384
+        },
+        "localTimeDisplay": {
+          "status": "available",
+          "reason": null,
+          "timezone": "Asia/Taipei",
+          "authority": "existing_original_instants_in_formal_projection_timezone_not_new_source_or_event_evidence"
+        },
+        "metadata": {
+          "status": "available",
+          "reason": null,
+          "sources": [
+            {
+              "ref": "r1",
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+              "localMessageRecordedAt": "2026-10-14T04:17:40.624+08:00",
+              "localEventOccurredAt": null,
+              "sourceReference": "/projection/sources/0",
+              "originalMessageRange": {
+                "unit": "unicode_code_points",
+                "start": 0,
+                "end": 169
+              },
+              "originalMessageBytes": 507,
+              "formalRead": {
+                "complete": true,
+                "ranges": [
+                  {
+                    "unit": "unicode_code_points",
+                    "start": 0,
+                    "end": 169
+                  }
+                ]
+              },
+              "formalToolMaterial": {
+                "complete": true,
+                "ranges": [
+                  {
+                    "unit": "unicode_code_points",
+                    "start": 0,
+                    "end": 169
+                  }
+                ],
+                "observation": "formal_tool_result_only_not_provider_request"
+              },
+              "reader": {
+                "ticket": "9d325bb6-bfb4-4996-90e9-3859c57c7fd3",
+                "ref": "r1",
+                "pageNumbers": [
+                  1
+                ],
+                "scope": "current_reading_ticket_only"
+              },
+              "sourceProvenanceReference": "/presentation/sourceContext/provenance/bindings/0"
+            },
+            {
+              "ref": "r2",
+              "sourceAuthorRole": "assistant",
+              "messageRecordedAt": "2026-10-13T20:17:46.634Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "d89fb9a50c3f3ddb46a9d36b9fbdd286ca87e436eb2bef3280d2feb8c9ed8fdf",
+              "localMessageRecordedAt": "2026-10-14T04:17:46.634+08:00",
+              "localEventOccurredAt": null,
+              "sourceReference": "/projection/sources/1",
+              "originalMessageRange": {
+                "unit": "unicode_code_points",
+                "start": 0,
+                "end": 554
+              },
+              "originalMessageBytes": 1466,
+              "formalRead": {
+                "complete": true,
+                "ranges": [
+                  {
+                    "unit": "unicode_code_points",
+                    "start": 0,
+                    "end": 554
+                  }
+                ]
+              },
+              "formalToolMaterial": {
+                "complete": true,
+                "ranges": [
+                  {
+                    "unit": "unicode_code_points",
+                    "start": 0,
+                    "end": 554
+                  }
+                ],
+                "observation": "formal_tool_result_only_not_provider_request"
+              },
+              "reader": {
+                "ticket": "9d325bb6-bfb4-4996-90e9-3859c57c7fd3",
+                "ref": "r2",
+                "pageNumbers": [
+                  2
+                ],
+                "scope": "current_reading_ticket_only"
+              },
+              "sourceProvenanceReference": "/presentation/sourceContext/provenance/bindings/1"
+            },
+            {
+              "ref": "r3",
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+              "localMessageRecordedAt": "2026-10-14T04:17:52.049+08:00",
+              "localEventOccurredAt": null,
+              "sourceReference": "/projection/sources/2",
+              "originalMessageRange": {
+                "unit": "unicode_code_points",
+                "start": 0,
+                "end": 156
+              },
+              "originalMessageBytes": 468,
+              "formalRead": {
+                "complete": true,
+                "ranges": [
+                  {
+                    "unit": "unicode_code_points",
+                    "start": 0,
+                    "end": 156
+                  }
+                ]
+              },
+              "formalToolMaterial": {
+                "complete": true,
+                "ranges": [
+                  {
+                    "unit": "unicode_code_points",
+                    "start": 0,
+                    "end": 156
+                  }
+                ],
+                "observation": "formal_tool_result_only_not_provider_request"
+              },
+              "reader": {
+                "ticket": "9d325bb6-bfb4-4996-90e9-3859c57c7fd3",
+                "ref": "r3",
+                "pageNumbers": [
+                  3
+                ],
+                "scope": "current_reading_ticket_only"
+              },
+              "sourceProvenanceReference": "/presentation/sourceContext/provenance/bindings/2"
+            }
+          ],
+          "complete": true
+        },
+        "originalMessages": {
+          "status": "available",
+          "reason": null,
+          "messages": [
+            {
+              "ref": "r1",
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+              "range": {
+                "unit": "unicode_code_points",
+                "start": 0,
+                "end": 169
+              },
+              "text": "我在排社區舊書櫃的修繕方案，分上層隔板和下層抽屜兩部分。隔板先用實木，抽屜沿用舊面板，兩邊都先刷透明漆。刷透明漆是想看得到原本的木紋，沿用抽屜面板是想減少廢料。修繕紀錄只留管委會電腦，不上網。隔板尺寸我已量好，但抽屜滑軌能不能合用還沒查。現在只排方案，不施工。請整理，再提一個檢查建議；建議先不要算成我的決定。直接在對話回答，不建立檔案。",
+              "textHash": "2535c7ba918d6537a3296dce9c11a4220a3efe6aa576d40471b1fb11b4673ab4",
+              "textUse": "complete_formally_read_original_message_not_selected_quote",
+              "sourceProvenanceReference": "/presentation/sourceContext/provenance/bindings/0"
+            },
+            {
+              "ref": "r2",
+              "sourceAuthorRole": "assistant",
+              "messageRecordedAt": "2026-10-13T20:17:46.634Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "d89fb9a50c3f3ddb46a9d36b9fbdd286ca87e436eb2bef3280d2feb8c9ed8fdf",
+              "range": {
+                "unit": "unicode_code_points",
+                "start": 0,
+                "end": 554
+              },
+              "text": "## 目前方案（依你的原話整理）\n\n**共同做法**\n- 分兩部分處理：上層隔板、下層抽屜。\n- 兩邊都先刷透明漆。\n\n**上層隔板**\n- 材質先用實木（「先」表示是現階段的選材，之後仍可再改）。\n\n**下層抽屜**\n- 沿用舊面板。\n- 刷透明漆。\n\n**你明說的理由（兩項）**\n- 刷透明漆：想看到原本的木紋。\n- 沿用抽屜面板：想減少廢料。\n\n**紀錄方式**\n- 修繕紀錄只留管委會電腦，不上網。\n\n**目前狀態**\n- 隔板尺寸：你已量好。\n- 抽屜滑軌是否合用：你還沒查。\n- 現在只排方案，不施工。\n\n## 檢查建議（我的建議，尚未算你的決定）\n\n先量／核對抽屜滑軌與舊面板的配合條件，再定抽屜工法：\n\n1. 量出舊面板的實際厚度、抽屜箱體寬度與側邊可用淨空。\n2. 量舊滑軌（或預定滑軌）的安裝長度、孔位與面板鎖點位置，確認能否落在舊面板的既有孔位範圍內。\n3. 若舊面板孔位已被用過，看鎖點能不能避開、或需不需要補孔／換位——這一步會直接影響「沿用舊面板」是否還能少廢料。\n4. 上述尺寸確認後，才把抽屜的滑軌規格與隔板尺寸一起定案，透明漆施工順序也會比較好排。\n\n這只是建議方向；你沒有明說採用，我不列入你的決定。需要我把它展開成逐步檢查清單或加上隔板那邊的對應檢查項，再說一聲即可。",
+              "textHash": "d7fe64ccd33ae81ce8b5f531baa9a2aec0b3cf5cab7490b7130688a1073f0412",
+              "textUse": "complete_formally_read_original_message_not_selected_quote",
+              "sourceProvenanceReference": "/presentation/sourceContext/provenance/bindings/1"
+            },
+            {
+              "ref": "r3",
+              "sourceAuthorRole": "user",
+              "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+              "eventOccurredAt": null,
+              "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+              "range": {
+                "unit": "unicode_code_points",
+                "start": 0,
+                "end": 156
+              },
+              "text": "回到書櫃。只把上層隔板改用夾板，而且這部分先不上漆；下層抽屜仍沿用舊面板、刷透明漆，其他沒改的條件維持。這次隔板先以早點恢復可用為優先，我接受新板和舊櫃有色差；想保留木紋的考量還在，只是不拿它壓過先恢復使用。你前面的檢查建議我仍沒決定採用。請用兩段分清修改與取捨，不另外替我安排工作，直接在對話回答，不建立檔案。",
+              "textHash": "e06faf5ee9b2713d9cfdeed33f6427e4d0983360710bd9ba63c83680b312c838",
+              "textUse": "complete_formally_read_original_message_not_selected_quote",
+              "sourceProvenanceReference": "/presentation/sourceContext/provenance/bindings/2"
+            }
+          ],
+          "complete": true,
+          "truncated": false
+        },
+        "provenance": {
+          "kind": "cmcp_broker_source_provenance",
+          "version": 1,
+          "verificationLayer": "shared_project_broker_formal_read_binding_not_core_receipt",
+          "meaning": "capture_host_agent_and_native_session_not_model_personality_or_reader_adoption",
+          "readerIdentityReference": "/readerIdentity",
+          "semanticVerification": "not_performed",
+          "actualModelConsumption": "not_observed",
+          "executionAuthority": "none",
+          "status": "available",
+          "reason": null,
+          "currentReader": {
+            "kind": "cmcp_reader_identity",
+            "version": 1,
+            "projectId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+            "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+            "hostId": "harness",
+            "agentId": "cmcp-harness",
+            "sessionId": "s1-synthetic-harness-803bb360-ccb6-44b4-b655-e0380757f752",
+            "activeTurnId": "1c4508d8d55c11135979d0a8c37e50248ae973dc266b9858b4063dba16305fad",
+            "verification": "authenticated_active_host_turn"
+          },
+          "bindings": [
+            {
+              "ref": "r1",
+              "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+              "messageRole": "user",
+              "status": "verified",
+              "reason": null,
+              "sourceOriginReference": "/sourceOrigins/0",
+              "capture": {
+                "projectId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+                "hostId": "harness",
+                "agentId": "cmcp-harness",
+                "sessionId": "s1-synthetic-harness-803bb360-ccb6-44b4-b655-e0380757f752",
+                "messageId": "376f83e1-3e13-4244-b7a2-c8d77f3b6460",
+                "revisionId": "r1"
+              },
+              "readerComparison": {
+                "sameHost": true,
+                "sameAgent": true,
+                "sameSession": true,
+                "meaning": "identity_equality_only_not_adoption_or_execution"
+              }
+            },
+            {
+              "ref": "r2",
+              "evidenceHash": "d89fb9a50c3f3ddb46a9d36b9fbdd286ca87e436eb2bef3280d2feb8c9ed8fdf",
+              "messageRole": "assistant",
+              "status": "verified",
+              "reason": null,
+              "sourceOriginReference": "/sourceOrigins/1",
+              "capture": {
+                "projectId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+                "hostId": "harness",
+                "agentId": "cmcp-harness",
+                "sessionId": "s1-synthetic-harness-803bb360-ccb6-44b4-b655-e0380757f752",
+                "messageId": "5cbf29ca-098e-4384-b0df-560bd2851815",
+                "revisionId": "r1"
+              },
+              "readerComparison": {
+                "sameHost": true,
+                "sameAgent": true,
+                "sameSession": true,
+                "meaning": "identity_equality_only_not_adoption_or_execution"
+              }
+            },
+            {
+              "ref": "r3",
+              "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+              "messageRole": "user",
+              "status": "verified",
+              "reason": null,
+              "sourceOriginReference": "/sourceOrigins/2",
+              "capture": {
+                "projectId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+                "hostId": "harness",
+                "agentId": "cmcp-harness",
+                "sessionId": "s1-synthetic-harness-803bb360-ccb6-44b4-b655-e0380757f752",
+                "messageId": "83d630c3-fc80-4448-beb8-e88dc3da05d0",
+                "revisionId": "r1"
+              },
+              "readerComparison": {
+                "sameHost": true,
+                "sameAgent": true,
+                "sameSession": true,
+                "meaning": "identity_equality_only_not_adoption_or_execution"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "publication": {
+      "status": "verified",
+      "sourceVerification": "exact_pointer_revision_role_scope_time_hash",
+      "semanticVerification": "not_performed"
+    },
+    "bodyRetention": "retained",
+    "modelCoverageComplete": true,
+    "modelCalls": 0,
+    "inputVersion": 6,
+    "compilation": {
+      "kind": "cmcp_continuity_compilation",
+      "version": 1,
+      "inputVersion": 6,
+      "outputVersion": 3,
+      "inputHash": "3f4f08db2013e7421af3767155738c0a6ab1055cd2ae5e585afdad9b3e8453bc",
+      "compiledProposalHash": "83623c8e9f0b7183ced7ab84f269976ec1d49133889315b5e826881b222e8972",
+      "generatedChangeIds": [
+        "__cmcp_v6_change_0_0",
+        "__cmcp_v6_change_0_1"
+      ],
+      "generatedEvidenceNodeIds": [
+        "__cmcp_v4_retention_0"
+      ],
+      "planChangeBindings": [
+        {
+          "planId": "upper-shelf-plan",
+          "index": 0,
+          "changeId": "__cmcp_v6_change_0_0"
+        },
+        {
+          "planId": "upper-shelf-plan",
+          "index": 1,
+          "changeId": "__cmcp_v6_change_0_1"
+        }
+      ],
+      "orderAuthority": "orderedChanges_is_explicit_host_order_not_inferred_source_chronology",
+      "semanticVerification": "not_performed"
+    },
+    "readerIdentity": {
+      "kind": "cmcp_reader_identity",
+      "version": 1,
+      "projectId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+      "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+      "hostId": "harness",
+      "agentId": "cmcp-harness",
+      "sessionId": "s1-synthetic-harness-803bb360-ccb6-44b4-b655-e0380757f752",
+      "activeTurnId": "1c4508d8d55c11135979d0a8c37e50248ae973dc266b9858b4063dba16305fad",
+      "verification": "authenticated_active_host_turn",
+      "meaning": "configured_host_agent_and_native_session_not_user_identity_or_model_personality"
+    },
+    "sourceOrigins": [
+      {
+        "ref": "r1",
+        "ticket": "9d325bb6-bfb4-4996-90e9-3859c57c7fd3",
+        "origin": {
+          "projectId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+          "hostId": "harness",
+          "agentId": "cmcp-harness",
+          "sessionId": "s1-synthetic-harness-803bb360-ccb6-44b4-b655-e0380757f752",
+          "messageId": "376f83e1-3e13-4244-b7a2-c8d77f3b6460",
+          "revisionId": "r1",
+          "role": "user"
+        },
+        "qualifiedSessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+        "sourcePointer": {
+          "version": 1,
+          "providerNamespace": "cmcp-local-console-v1",
+          "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+          "itemId": "harness-user-shared-message-a95838f2ecc698ac57917a4a26d6b321b0755375810233611144e2d3a79a10cc",
+          "sessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+          "revisionId": "r1"
+        },
+        "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753",
+        "verification": "formal_read_binding",
+        "readerComparison": {
+          "sameHost": true,
+          "sameAgent": true,
+          "sameSession": true,
+          "meaning": "identity_equality_only_not_adoption_or_execution"
+        }
+      },
+      {
+        "ref": "r2",
+        "ticket": "9d325bb6-bfb4-4996-90e9-3859c57c7fd3",
+        "origin": {
+          "projectId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+          "hostId": "harness",
+          "agentId": "cmcp-harness",
+          "sessionId": "s1-synthetic-harness-803bb360-ccb6-44b4-b655-e0380757f752",
+          "messageId": "5cbf29ca-098e-4384-b0df-560bd2851815",
+          "revisionId": "r1",
+          "role": "assistant"
+        },
+        "qualifiedSessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+        "sourcePointer": {
+          "version": 1,
+          "providerNamespace": "cmcp-local-console-v1",
+          "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+          "itemId": "harness-assistant-shared-message-d8bb01236286c6d30097a0c79cee2b3f97bb773d00822f651af8a84b386ca527",
+          "sessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+          "revisionId": "r1"
+        },
+        "evidenceHash": "d89fb9a50c3f3ddb46a9d36b9fbdd286ca87e436eb2bef3280d2feb8c9ed8fdf",
+        "verification": "formal_read_binding",
+        "readerComparison": {
+          "sameHost": true,
+          "sameAgent": true,
+          "sameSession": true,
+          "meaning": "identity_equality_only_not_adoption_or_execution"
+        }
+      },
+      {
+        "ref": "r3",
+        "ticket": "9d325bb6-bfb4-4996-90e9-3859c57c7fd3",
+        "origin": {
+          "projectId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+          "hostId": "harness",
+          "agentId": "cmcp-harness",
+          "sessionId": "s1-synthetic-harness-803bb360-ccb6-44b4-b655-e0380757f752",
+          "messageId": "83d630c3-fc80-4448-beb8-e88dc3da05d0",
+          "revisionId": "r1",
+          "role": "user"
+        },
+        "qualifiedSessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+        "sourcePointer": {
+          "version": 1,
+          "providerNamespace": "cmcp-local-console-v1",
+          "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+          "itemId": "harness-user-shared-message-927f59d3341232a97b8d311919ea6b8dbf4099bbcd4c1ed5815287fb66cf1537",
+          "sessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+          "revisionId": "r1"
+        },
+        "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a",
+        "verification": "formal_read_binding",
+        "readerComparison": {
+          "sameHost": true,
+          "sameAgent": true,
+          "sameSession": true,
+          "meaning": "identity_equality_only_not_adoption_or_execution"
+        }
+      }
+    ]
+  },
+  "sources": [
+    {
+      "role": "user",
+      "body": "我在排社區舊書櫃的修繕方案，分上層隔板和下層抽屜兩部分。隔板先用實木，抽屜沿用舊面板，兩邊都先刷透明漆。刷透明漆是想看得到原本的木紋，沿用抽屜面板是想減少廢料。修繕紀錄只留管委會電腦，不上網。隔板尺寸我已量好，但抽屜滑軌能不能合用還沒查。現在只排方案，不施工。請整理，再提一個檢查建議；建議先不要算成我的決定。直接在對話回答，不建立檔案。",
+      "bodyHash": "2535c7ba918d6537a3296dce9c11a4220a3efe6aa576d40471b1fb11b4673ab4",
+      "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+      "pointer": {
+        "version": 1,
+        "providerNamespace": "cmcp-local-console-v1",
+        "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+        "itemId": "harness-user-shared-message-a95838f2ecc698ac57917a4a26d6b321b0755375810233611144e2d3a79a10cc",
+        "sessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+        "revisionId": "r1"
+      }
+    },
+    {
+      "role": "user",
+      "body": "回到書櫃。只把上層隔板改用夾板，而且這部分先不上漆；下層抽屜仍沿用舊面板、刷透明漆，其他沒改的條件維持。這次隔板先以早點恢復可用為優先，我接受新板和舊櫃有色差；想保留木紋的考量還在，只是不拿它壓過先恢復使用。你前面的檢查建議我仍沒決定採用。請用兩段分清修改與取捨，不另外替我安排工作，直接在對話回答，不建立檔案。",
+      "bodyHash": "e06faf5ee9b2713d9cfdeed33f6427e4d0983360710bd9ba63c83680b312c838",
+      "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+      "pointer": {
+        "version": 1,
+        "providerNamespace": "cmcp-local-console-v1",
+        "scopeId": "s1-synthetic-candidate-sealed06-803bb360-ccb6-44b4-b655-e0380757f752",
+        "itemId": "harness-user-shared-message-927f59d3341232a97b8d311919ea6b8dbf4099bbcd4c1ed5815287fb66cf1537",
+        "sessionId": "shared-session-52afb13432488b6ed9e7657f4a4a61d628b42f5b7c3a268b7c908ab276d38459",
+        "revisionId": "r1"
+      }
+    }
+  ],
+  "correctedObservedFragments": [
+    {
+      "ref": "r3",
+      "citation": {
+        "unit": "unicode_code_points",
+        "start": 9,
+        "end": 15,
+        "text": "隔板改用夾板"
+      },
+      "sourceAuthorRole": "user",
+      "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+      "eventOccurredAt": null,
+      "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a"
+    },
+    {
+      "ref": "r1",
+      "citation": {
+        "unit": "unicode_code_points",
+        "start": 34,
+        "end": 43,
+        "text": "，抽屜沿用舊面板，"
+      },
+      "sourceAuthorRole": "user",
+      "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+      "eventOccurredAt": null,
+      "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+    },
+    {
+      "ref": "r3",
+      "citation": {
+        "unit": "unicode_code_points",
+        "start": 18,
+        "end": 25,
+        "text": "這部分先不上漆"
+      },
+      "sourceAuthorRole": "user",
+      "messageRecordedAt": "2026-10-13T20:17:52.049Z",
+      "eventOccurredAt": null,
+      "evidenceHash": "776cd1e88180074a3c643700501e43ad89c0e5275513b8d4eb000089f809d95a"
+    },
+    {
+      "ref": "r1",
+      "citation": {
+        "unit": "unicode_code_points",
+        "start": 51,
+        "end": 52,
+        "text": "。"
+      },
+      "sourceAuthorRole": "user",
+      "messageRecordedAt": "2026-10-13T20:17:40.624Z",
+      "eventOccurredAt": null,
+      "evidenceHash": "5164adcc49f667265492f06aeca30f0de83f4e95196a9f28576391a839c79753"
+    }
+  ],
+  "refs": {
+    "sourceReview": {
+      "sha256": "0cff541d64305bd28984de7f91b7f397be7ed788a898351aa194cc6a36fb4272",
+      "jsonPointers": [
+        "/formalToolCalls/5/result",
+        "/formalToolCalls/8/result"
+      ],
+      "path": "<private-evidence-root>/source-review-partial.json"
+    },
+    "restored": {
+      "sha256": "b36db1903ab1741cfb0deaacbd627672aafc3879106cebecafba20b68b8472ac",
+      "path": "<private-evidence-root>/restored-projections.json",
+      "selector": "formalToolIndex=5"
+    }
+  }
+}

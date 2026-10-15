@@ -22,6 +22,6 @@ export async function runHarnessPeer({configFile,text,sessionId='harness-peer-'+
   await noAlias(peer.executable);await fs.access(peer.executable);if(signal?.aborted)throw Error('hermes_cancelled');
   const loaded=await loadHermesConfig(peer.hermesConfig);if(!loaded.shared.hosts.harness)throw Error('hermes_harness_peer_not_configured');
   const base=path.join(loaded.service.projectRoot,'harness-peer'),config={projectId:loaded.shared.projectId,profileName:'cmcp-interop-peer',sdkHome:path.join(base,'sdk-home'),evidenceRoot:path.join(base,'receipts'),turnDeadlineMs:loaded.config.timeoutSeconds*1000,
-    hosts:{harness:{executable:peer.executable,cli:peer.cli,route:{provider:'deepseek-official',model:loaded.config.model},credentials:{path:loaded.config.credentialFile,reference:loaded.config.credentialRef}}}};
+    hosts:{harness:{executable:peer.executable,cli:peer.cli,route:{provider:loaded.config.provider==='groq'?'groq':'deepseek-official',model:loaded.config.model},credentials:{path:loaded.config.credentialFile,reference:loaded.config.credentialRef}}}};
   return driver({config,shared:loaded.shared,text,signal,onEvent,sessionId});
 }

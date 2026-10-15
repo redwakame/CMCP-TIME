@@ -6,6 +6,7 @@ import {createInterface} from 'node:readline/promises';
 import {configureCmcpInstallation,inspectCmcpInstallation,inspectCmcpSetupEnvironment} from '../src/cmcp-guard/cmcp-setup.js';
 import {resolveCmcpWorkspaceRoot} from '../src/cmcp-guard/cmcp-project-paths.js';
 import {playgroundPath} from '../src/cmcp-guard/cmcp-playground.js';
+import {formatCmcpProactiveDescription} from '../src/cmcp-guard/cmcp-proactive-description.js';
 
 const packageRoot=fileURLToPath(new URL('../',import.meta.url));
 const help=`CMCP setup (project-local, no model calls or installation of dependencies)
@@ -15,12 +16,32 @@ node scripts/cmcp-setup.mjs --root <dir> --update
 node scripts/cmcp-setup.mjs --root <dir> --disable
 node scripts/cmcp-setup.mjs --root <dir> --uninstall
 --answers <project-local JSON> supplies the same explicit choices for automation.
+Without --answers, setup/update requires a terminal (TTY). Piped answers and EOF
+are rejected before configuration is written; no missing answer implies consent.
 --workspace <dir> selects the existing writable authorization root (required for npm installs).
 --host-workspace <dir> chooses a project-local Codex workspace.
 Program assets remain in the installed package. Persistent npx hook attachment is unsupported.
 Configuration and History are retained on disable/uninstall. No paid grant is created.
-Codex hook trust is reviewed by Codex; do not bypass trust or run as administrator.`;
-export async function runCmcpSetupCli(argv=process.argv.slice(2),{ask,emit=value=>console.log(typeof value==='string'?value:JSON.stringify(value,null,2))}={}){
+Codex is optional. When attached, hook trust is reviewed by Codex; do not bypass
+trust or run as administrator. Installation state describes only its hook binding.`;
+
+/** EOF must settle the pending question instead of leaving top-level await unsettled. */
+export function createCmcpSetupQuestioner({input=process.stdin,output=process.stdout}={}){
+ const controller=new AbortController();
+ const reader=createInterface({input,output});
+ let closed=input.destroyed||input.readableEnded;
+ const markClosed=()=>{closed=true;controller.abort();};
+ reader.on('close',markClosed);reader.on('SIGINT',()=>reader.close());
+ return {
+  async question(prompt){
+   if(closed)throw Error('setup_input_closed: setup cancelled before writing; use --answers <file> for non-interactive setup.');
+   try{return await reader.question(prompt,{signal:controller.signal});}
+   catch(error){if(closed||error.name==='AbortError')throw Error('setup_input_closed: setup cancelled before writing; use --answers <file> for non-interactive setup.');throw error;}
+  },
+  close(){reader.close();reader.off('close',markClosed);}
+ };
+}
+export async function runCmcpSetupCli(argv=process.argv.slice(2),{ask,input=process.stdin,output=process.stdout,emit=value=>console.log(typeof value==='string'?value:JSON.stringify(value,null,2))}={}){
  const {values:a}=parseArgs({args:argv,options:{workspace:{type:'string'},root:{type:'string'},'host-workspace':{type:'string'},answers:{type:'string'},status:{type:'boolean'},update:{type:'boolean'},disable:{type:'boolean'},uninstall:{type:'boolean'},help:{type:'boolean'}}});
  if(a.help){emit(help);return;}
  const projectRoot=resolveCmcpWorkspaceRoot(a.workspace);
@@ -31,11 +52,13 @@ export async function runCmcpSetupCli(argv=process.argv.slice(2),{ask,emit=value
  try{
   if(a.answers){const file=await playgroundPath(projectRoot,a.answers);choices=JSON.parse(await fs.readFile(file,'utf8'));}
   else if(!a.disable&&!a.uninstall){
+   if(!ask&&input.isTTY!==true)throw Error('setup_terminal_required: setup/update without --answers requires a terminal (TTY); piped or empty stdin is unsupported. Use --answers <workspace-local JSON>; no configuration was written.');
    const previous=a.update?(await inspectCmcpInstallation({projectRoot,root})).choices:null;
-   emit(inspectCmcpSetupEnvironment());
-   reader=ask?null:createInterface({input:process.stdin,output:process.stdout});const question=ask??(q=>reader.question(q));
-   const text=async(q,fallback)=>{const answer=(await question(`${q}${fallback===undefined?'':` [${fallback}]`}: `)).trim();if(!answer&&fallback===undefined)throw Error('explicit_setup_answer_required');return answer||fallback;};
-   const yes=async q=>{const answer=(await question(`${q} (yes/no): `)).trim().toLowerCase();if(!['yes','no'].includes(answer))throw Error('explicit_yes_or_no_required');return answer==='yes';};
+   emit(inspectCmcpSetupEnvironment({inspectCodex:false}));
+   reader=ask?null:createCmcpSetupQuestioner({input,output});const question=ask??(q=>reader.question(q));
+   const answerFor=async q=>{const answer=await question(q);if(typeof answer!=='string')throw Error('setup_input_closed: setup cancelled before writing; use --answers <file> for non-interactive setup.');return answer.trim();};
+   const text=async(q,fallback)=>{const answer=await answerFor(`${q}${fallback===undefined?'':` [${fallback}]`}: `);if(!answer&&fallback===undefined)throw Error('explicit_setup_answer_required');return answer||fallback;};
+   const yes=async q=>{const answer=(await answerFor(`${q} (yes/no): `)).toLowerCase();if(!['yes','no'].includes(answer))throw Error('explicit_yes_or_no_required');return answer==='yes';};
    const timezone=await text('Your effective timezone',previous?.timezone??Intl.DateTimeFormat().resolvedOptions().timeZone);
    const language=await text('Default response language',previous?.language??'en'),scopeId=previous?.scopeId??await text('Private continuation scope ID','my-cmcp');
    if(previous)emit(`Updating existing scope ${scopeId}; its event scope and Skill identity are retained.`);
@@ -50,7 +73,7 @@ export async function runCmcpSetupCli(argv=process.argv.slice(2),{ask,emit=value
    const attachCodex=await yes('Attach the project-local Codex Skill and per-turn hooks');
    const providerMode=await text('Answer path: host or configured',previous?.providerMode??'host');
    const allowPaidCalls=await yes('Permit a separately authorized configured-provider path (no grant is created now)');
-   const proactive=await yes('Enable automatic local proactive delivery; first-use default is OFF');
+   const proactive=await yes('Enable shared proactive control; delivery requires an eligible schedule and connected target; first-use default is OFF');
    const bufferHours=Number(await text('Buffer duration in hours, 6–48',String(previous?.bufferHours??12)));
    const featureControls={};
    for(const [key,label]of [['buffer','Buffer activity'],['timeIndex','Time/source index'],['historyRecall','History recall'],['answerHistory','On-demand original text'],['discussionAssociation','Discussion linking'],['pins','Pin controls']]){
@@ -67,7 +90,9 @@ export async function runCmcpSetupCli(argv=process.argv.slice(2),{ask,emit=value
   }
   const result=await configureCmcpInstallation({projectRoot,packageRoot,root,hostWorkspace,choices,action:a.update?'update':a.disable?'disable':a.uninstall?'uninstall':'setup'});
   emit(result);emit(`Chat/status: node ${JSON.stringify(path.join(packageRoot,'scripts/cmcp-playground.mjs'))} --workspace ${JSON.stringify(projectRoot)} --root ${JSON.stringify(path.relative(projectRoot,result.root))} --status`);
-  emit(`Codex: codex --enable hooks --cd ${JSON.stringify(result.hostWorkspace)}; review this project's hook trust in /hooks. No DeepSeek key or administrator mode is required for host mode.`);
+  if(result.layers.proactiveExecution)emit(formatCmcpProactiveDescription(result.layers.proactiveExecution,{language:result.choices.language}));
+  if(result.state==='enabled'&&result.choices.attachCodex)emit(`Codex: codex --enable hooks --cd ${JSON.stringify(result.hostWorkspace)}; review this project's hook trust in /hooks. No DeepSeek key or administrator mode is required for host mode.`);
+  else emit('Codex is not attached. Its disabled binding does not disable CMCP Runtime configuration, authorized saving, or non-Codex reading. Other Host connections are configured and verified separately.');
  }finally{reader?.close();}
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))runCmcpSetupCli().catch(error=>{console.error(error.message);process.exitCode=1;});

@@ -1,0 +1,1049 @@
+{
+  "kind": "cmcp_continuity_capacity_synthetic_fixture",
+  "version": 1,
+  "source": "已關閉 C27 合成驗收；保留四個原公開提案，未修正其語意內容。",
+  "verdictBoundary": "只驗容量、正式來源守護與無損還原，不以此判定原模型語意正確。",
+  "cases": [
+    {
+      "id": "c27-public-107",
+      "originalSequence": 107,
+      "priorResult": "ready",
+      "proposal": {
+        "version": 6,
+        "plans": [
+          {
+            "id": "plan-carrier",
+            "ref": "r1",
+            "quote": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+            "topic": "器材借用簿的紀錄載體",
+            "aspect": "載體形式",
+            "temporalUse": "current",
+            "reasons": [
+              {
+                "id": "reason-paper-because-pc-repair",
+                "ref": "r1",
+                "quote": "用紙本是因為辦公室電腦還在維修"
+              }
+            ],
+            "orderedChanges": [
+              {
+                "kind": "content",
+                "ref": "r4",
+                "quote": "電腦已修好，原本因設備維修而用紙本的理由不再適用；改成本機試算表，不連外部服務，其他沒改的條件維持",
+                "edits": [
+                  {
+                    "quote": "先用紙本",
+                    "kind": "replace",
+                    "replacement": {
+                      "ref": "r4",
+                      "quote": "改成本機試算表，不連外部服務"
+                    }
+                  },
+                  {
+                    "quote": "用紙本是因為辦公室電腦還在維修",
+                    "kind": "withdraw"
+                  }
+                ],
+                "reasons": [
+                  {
+                    "id": "reason-pc-repaired-paper-no-longer-applies",
+                    "ref": "r4",
+                    "quote": "電腦已修好，原本因設備維修而用紙本的理由不再適用",
+                    "kind": "adds"
+                  }
+                ]
+              }
+            ],
+            "reasonWithdrawals": [
+              {
+                "ref": "r4",
+                "quote": "電腦已修好，原本因設備維修而用紙本的理由不再適用",
+                "temporalUse": "current",
+                "targetReasonId": "reason-paper-because-pc-repair"
+              }
+            ],
+            "retentions": [
+              {
+                "ref": "r4",
+                "quote": "其他沒改的條件維持",
+                "temporalUse": "current"
+              }
+            ]
+          },
+          {
+            "id": "plan-write-permission",
+            "ref": "r1",
+            "quote": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+            "topic": "器材借用簿的填寫權限",
+            "aspect": "誰可以新增與修改紀錄",
+            "temporalUse": "current",
+            "reasons": [
+              {
+                "id": "reason-worry-mis-edit",
+                "ref": "r1",
+                "quote": "只給管理員寫是擔心舊紀錄被誤改"
+              }
+            ],
+            "orderedChanges": [
+              {
+                "kind": "content",
+                "ref": "r4",
+                "quote": "受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做",
+                "edits": [
+                  {
+                    "quote": "只有管理員可以填寫",
+                    "kind": "replace",
+                    "replacement": {
+                      "ref": "r4",
+                      "quote": "受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做"
+                    }
+                  }
+                ],
+                "reasons": [
+                  {
+                    "id": "reason-trainee-volunteers-may-add",
+                    "ref": "r4",
+                    "quote": "受過訓練的志工也可以新增紀錄",
+                    "kind": "adds"
+                  }
+                ]
+              }
+            ],
+            "retentions": [
+              {
+                "ref": "r4",
+                "quote": "我對誤改的顧慮沒有撤回",
+                "temporalUse": "current"
+              }
+            ]
+          },
+          {
+            "id": "plan-check-rhythm",
+            "ref": "r1",
+            "quote": "每週五核對借出和歸還",
+            "topic": "器材借用簿的核對節奏",
+            "aspect": "核對頻率與時間",
+            "temporalUse": "current",
+            "retentions": [
+              {
+                "ref": "r4",
+                "quote": "每週五核對不改",
+                "temporalUse": "current"
+              }
+            ]
+          },
+          {
+            "id": "plan-record-fields",
+            "ref": "r1",
+            "quote": "借用簿只記器材代碼與借用代號",
+            "topic": "器材借用簿的紀錄欄位",
+            "aspect": "欄位內容",
+            "temporalUse": "current"
+          },
+          {
+            "id": "plan-no-personal-data",
+            "ref": "r1",
+            "quote": "不記姓名或聯絡方式",
+            "topic": "器材借用簿的個人資料欄位",
+            "aspect": "不記錄姓名與聯絡方式",
+            "temporalUse": "current",
+            "reasons": [
+              {
+                "id": "reason-fewer-personal-data",
+                "ref": "r1",
+                "quote": "這是為了少留個人資料"
+              }
+            ]
+          },
+          {
+            "id": "plan-lookup-priority",
+            "ref": "r4",
+            "quote": "這次優先考量交班時找資料方便",
+            "topic": "借用紀錄的查找方式",
+            "aspect": "查找便利的優先",
+            "temporalUse": "current"
+          }
+        ],
+        "reports": [
+          {
+            "id": "report-committee-not-yet-agreed",
+            "ref": "r4",
+            "quote": "管委會也尚未同意試行",
+            "topic": "試行前提",
+            "aspect": "管委會同意",
+            "temporalUse": "current"
+          },
+          {
+            "id": "report-draft-done",
+            "ref": "r4",
+            "quote": "我剛完成一份空白欄位草稿",
+            "topic": "本機試算表",
+            "aspect": "草稿進度",
+            "temporalUse": "current"
+          },
+          {
+            "id": "report-old-paper-not-migrated",
+            "ref": "r4",
+            "quote": "舊紙本紀錄還沒移入",
+            "topic": "舊紙本紀錄",
+            "aspect": "移入試算表進度",
+            "temporalUse": "current"
+          },
+          {
+            "id": "report-labeling-not-started",
+            "ref": "r4",
+            "quote": "器材貼標還沒開始",
+            "topic": "器材貼標",
+            "aspect": "工作進度",
+            "temporalUse": "current"
+          },
+          {
+            "id": "report-lookup-undecided",
+            "ref": "r4",
+            "quote": "你剛才提的查找建議我還沒決定採用",
+            "topic": "查找紀錄的方式",
+            "aspect": "是否採用建議",
+            "temporalUse": "current"
+          }
+        ],
+        "suggestions": [
+          {
+            "id": "sugg-lookup-method",
+            "ref": "r2",
+            "quote": "建議在紙本上做兩件低成本的輔助，讓日後查找不必逐頁翻",
+            "topic": "查找紀錄的方式",
+            "aspect": "查找輔助設計",
+            "temporalUse": "current",
+            "relation": {
+              "kind": "independent",
+              "targetNodeIds": []
+            }
+          }
+        ],
+        "unknowns": [
+          "管委會是否同意試行、何時同意",
+          "舊紙本紀錄何時移入本機試算表",
+          "本機試算表的最終欄位設計與器材代碼、借用代號的編法",
+          "器材貼標的貼紙材質",
+          "交班查找方便與每週五核對之間的相對權重"
+        ]
+      },
+      "proposalSha256": "a4543fbdaa027d80aa34b8d63aab1d7b2a9fecfa7c40b77b4203976f5f41905c",
+      "sources": [
+        {
+          "ref": "r1",
+          "role": "user",
+          "text": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+          "messageRecordedAt": "2026-10-10T20:52:30.128Z",
+          "bodySha256": "621745609dc0c44b71c62172e8e9e06b4ee0a89805134a27934e88ee6cf86bf7"
+        },
+        {
+          "ref": "r2",
+          "role": "assistant",
+          "text": "## 方案整理\n\n**一、已由你明說決定的條件**（以下各點依你原話，來源是使用者決定）\n\n| 項目 | 內容 |\n|---|---|\n| 載體 | 先用紙本 |\n| 紙本理由 | 辦公室電腦還在維修 |\n| 填寫權限 | 只有管理員可以填寫 |\n| 限管理員的理由 | 擔心舊紀錄被誤改 |\n| 核對節奏 | 每週五核對借出和歸還 |\n| 紀錄欄位 | 只記器材代碼與借用代號 |\n| 不記姓名／聯絡方式 | 是為了少留個人資料 |\n| 生效前提 | 試行前仍須管委會同意 |\n\n**二、前提與狀態要分開看**\n\n- 「試行前須管委會同意」——這個**前提內容**是你明說的，已知。\n- 管委會**是否已同意、何時同意**——你未回報，保留為未知，不代你斷定已同意或未同意。\n- 「電腦維修完成」也未回報何時完成；紙本因此是現階段的載體選擇，不是永久定案。\n\n**三、與本事獨立的另一件事**\n\n器材貼標是**獨立工作**，貼紙材質還沒選。它與借用簿不互相依賴，不放進同一組前提，也不因借用簿定案而被帶動。\n\n**四、待決事項**\n\n1. 管委會同意（試行前提）。\n2. 貼紙材質（獨立貼標工作）。\n3. 器材代碼與借用代號的編法（若你未指定，這仍是未定的實作細節）。\n\n---\n\n## 建議：查找紀錄的方式\n\n> 這是**建議**，尚未經你採納，因此不列為你的決定，也不改變上面任何已定條件。\n\n建議在紙本上做兩件低成本的輔助，讓日後查找不必逐頁翻：\n\n1. **固定頁序＋每頁編號**：借用簿採裝訂本、頁碼連續，每筆紀錄占用固定欄位並標明序號；核對時直接引用「第 N 頁第 M 筆」，口頭或紙條都能定位。\n2. **依器材代碼的簡易索引**：在簿子末幾頁留索引頁，每當某器材代碼首次出現，就把「代碼 → 出現的頁碼」補上去；同一代碼後續只追加頁碼。\n\n這樣查找分兩條路：知道器材代碼就查索引頁；只知道大約時間就按頁碼與每週五的核對註記往前推。整本仍只有管理員能寫，符合你避免舊紀錄被誤改的顧慮；欄位也不增加姓名或聯絡方式，不違背你少留個人資料的目的。\n\n**界線說明：**\n- 上述方法是建議，**未算成你已採用**。\n- 本次**沒有建立或修改任何檔案**，純文字回覆。\n- 若你要採納、調整或否決這項建議，請明說；否則它維持未採納狀態。",
+          "messageRecordedAt": "2026-10-10T20:52:36.165Z",
+          "bodySha256": "73bd00d2c58ad1f9d492c0e50c3ea6596348434526118e3a9af2ddecbc3b296f"
+        },
+        {
+          "ref": "r3",
+          "role": "assistant",
+          "text": "主要是**散熱途徑多寡**的差別，同樣水溫下：\n\n1. **蒸發**：沒蓋時水分子可以直接從表面蒸發，蒸發帶走的熱很多（潛熱），是有蓋與沒蓋差距最大的原因。有蓋會把蒸氣擋住，蒸發幾乎停掉。\n2. **對流**：沒蓋時杯口上方的熱空氣會不斷上升被冷空氣取代，形成持續對流帶走熱；有蓋把這層流動封住，杯內空氣很快飽和、接近水溫，就幾乎不再帶熱。\n3. **傳導／輻射**：杯壁、杯底的傳導和輻射兩者都有，蓋子影響較小。\n\n所以有蓋主要是**切斷蒸發與杯口對流**這兩條最快的路，冷卻自然慢很多。若蓋子本身是金屬等導熱材質，仍會多一條傳導路徑，只是通常比不上蒸發的效果。",
+          "messageRecordedAt": "2026-10-10T20:52:38.608Z",
+          "bodySha256": "87ab011d5249fa544753e84555c2ca7371b8cd44abcdb0cca374dd0caec9289b"
+        },
+        {
+          "ref": "r4",
+          "role": "user",
+          "text": "回到器材借用簿。電腦已修好，原本因設備維修而用紙本的理由不再適用；改成本機試算表，不連外部服務，其他沒改的條件維持。受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做，我對誤改的顧慮沒有撤回。這次優先考量交班時找資料方便。每週五核對不改。我剛完成一份空白欄位草稿，舊紙本紀錄還沒移入，管委會也尚未同意試行。器材貼標還沒開始。你剛才提的查找建議我還沒決定採用。請整理這輪改了什麼、哪些條件仍在以及目前進度，不建立檔案。",
+          "messageRecordedAt": "2026-10-10T20:52:38.831Z",
+          "bodySha256": "b91407e7288ad10c932076ff653802f7df4ccf7991d1f866fcfb4df3121ca3af"
+        }
+      ]
+    },
+    {
+      "id": "c27-public-163",
+      "originalSequence": 163,
+      "priorResult": "continuity_projection_limit",
+      "proposal": {
+        "plans": [
+          {
+            "aspect": "載體形式",
+            "id": "plan-carrier",
+            "orderedChanges": [
+              {
+                "edits": [
+                  {
+                    "kind": "replace",
+                    "quote": "先用紙本",
+                    "replacement": {
+                      "quote": "改成本機試算表，不連外部服務",
+                      "ref": "r2"
+                    }
+                  },
+                  {
+                    "kind": "withdraw",
+                    "quote": "用紙本是因為辦公室電腦還在維修"
+                  }
+                ],
+                "kind": "content",
+                "quote": "電腦已修好，原本因設備維修而用紙本的理由不再適用；改成本機試算表，不連外部服務，其他沒改的條件維持",
+                "reasons": [
+                  {
+                    "id": "reason-pc-repaired-paper-no-longer-applies",
+                    "kind": "adds",
+                    "quote": "電腦已修好，原本因設備維修而用紙本的理由不再適用",
+                    "ref": "r2"
+                  }
+                ],
+                "ref": "r2"
+              },
+              {
+                "kind": "status",
+                "planStatus": "paused",
+                "quote": "借用簿先停在草稿階段，除了原本的管委會同意，還要等管理員確認欄位後才再談試行；這不表示清掉草稿或放寬其他限制。",
+                "ref": "r3"
+              }
+            ],
+            "quote": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+            "reasonWithdrawals": [
+              {
+                "quote": "電腦已修好，原本因設備維修而用紙本的理由不再適用",
+                "ref": "r2",
+                "targetReasonId": "reason-paper-because-pc-repair",
+                "temporalUse": "current"
+              }
+            ],
+            "reasons": [
+              {
+                "id": "reason-paper-because-pc-repair",
+                "quote": "用紙本是因為辦公室電腦還在維修",
+                "ref": "r1"
+              }
+            ],
+            "ref": "r1",
+            "temporalUse": "current",
+            "topic": "器材借用簿的紀錄載體"
+          },
+          {
+            "aspect": "誰可以新增與修改紀錄",
+            "id": "plan-write-permission",
+            "orderedChanges": [
+              {
+                "edits": [
+                  {
+                    "kind": "replace",
+                    "quote": "只有管理員可以填寫",
+                    "replacement": {
+                      "quote": "受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做",
+                      "ref": "r2"
+                    }
+                  }
+                ],
+                "kind": "content",
+                "quote": "受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做",
+                "reasons": [
+                  {
+                    "id": "reason-trainee-volunteers-may-add",
+                    "kind": "adds",
+                    "quote": "受過訓練的志工也可以新增紀錄",
+                    "ref": "r2"
+                  }
+                ],
+                "ref": "r2"
+              }
+            ],
+            "quote": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+            "reasons": [
+              {
+                "id": "reason-worry-mis-edit",
+                "quote": "只給管理員寫是擔心舊紀錄被誤改",
+                "ref": "r1"
+              }
+            ],
+            "ref": "r1",
+            "retentions": [
+              {
+                "quote": "我對誤改的顧慮沒有撤回",
+                "ref": "r2",
+                "temporalUse": "current"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "器材借用簿的填寫權限"
+          },
+          {
+            "aspect": "核對頻率與時間",
+            "id": "plan-check-rhythm",
+            "quote": "每週五核對借出和歸還",
+            "ref": "r1",
+            "retentions": [
+              {
+                "quote": "每週五核對不改",
+                "ref": "r2",
+                "temporalUse": "current"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "器材借用簿的核對節奏"
+          },
+          {
+            "aspect": "欄位內容",
+            "id": "plan-record-fields",
+            "quote": "借用簿只記器材代碼與借用代號",
+            "ref": "r1",
+            "temporalUse": "current",
+            "topic": "器材借用簿的紀錄欄位"
+          },
+          {
+            "aspect": "不記錄姓名與聯絡方式",
+            "id": "plan-no-personal-data",
+            "quote": "不記姓名或聯絡方式",
+            "ref": "r1",
+            "reasons": [
+              {
+                "id": "reason-fewer-personal-data",
+                "quote": "這是為了少留個人資料",
+                "ref": "r1"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "器材借用簿的個人資料欄位"
+          },
+          {
+            "aspect": "查找便利的優先",
+            "id": "plan-lookup-priority",
+            "quote": "這次優先考量交班時找資料方便",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "借用紀錄的查找方式"
+          },
+          {
+            "aspect": "試行前提與待確認事項",
+            "id": "plan-trial-preconditions",
+            "orderedChanges": [
+              {
+                "kind": "status",
+                "planStatus": "paused",
+                "quote": "借用簿先停在草稿階段，除了原本的管委會同意，還要等管理員確認欄位後才再談試行",
+                "ref": "r3"
+              }
+            ],
+            "quote": "試行前仍須管委會同意",
+            "ref": "r1",
+            "retentions": [
+              {
+                "quote": "這不表示清掉草稿或放寬其他限制",
+                "ref": "r3",
+                "temporalUse": "current"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "試行前提"
+          },
+          {
+            "aspect": "工作狀態",
+            "id": "plan-labeling-work",
+            "orderedChanges": [
+              {
+                "kind": "status",
+                "planStatus": "cancelled",
+                "quote": "獨立的器材貼標取消，不包括借用簿。",
+                "ref": "r3"
+              }
+            ],
+            "quote": "另有獨立的器材貼標工作，貼紙材質還沒選",
+            "ref": "r1",
+            "temporalUse": "current",
+            "topic": "器材貼標工作"
+          }
+        ],
+        "reports": [
+          {
+            "aspect": "草稿進度",
+            "id": "report-draft-done",
+            "quote": "我剛完成一份空白欄位草稿",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "本機試算表"
+          },
+          {
+            "aspect": "移入試算表進度",
+            "id": "report-old-paper-not-migrated",
+            "quote": "舊紙本紀錄還沒移入",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "舊紙本紀錄"
+          },
+          {
+            "aspect": "停頓範圍",
+            "id": "report-draft-retained",
+            "quote": "借用簿先停在草稿階段",
+            "ref": "r3",
+            "temporalUse": "current",
+            "topic": "借用簿狀態"
+          },
+          {
+            "aspect": "編碼規則判斷資料",
+            "id": "report-code-collision-undetermined",
+            "quote": "借用代號跟器材代碼會不會撞號，我目前沒有資料能判斷",
+            "ref": "r3",
+            "temporalUse": "current",
+            "topic": "器材代碼與借用代號"
+          },
+          {
+            "aspect": "試行日期",
+            "id": "report-trial-date-undecided",
+            "quote": "試行日期也沒決定",
+            "ref": "r3",
+            "temporalUse": "current",
+            "topic": "試行日期"
+          },
+          {
+            "aspect": "是否採用建議",
+            "id": "report-lookup-undecided",
+            "quote": "你剛才提的查找建議我還沒決定採用",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "查找紀錄的方式"
+          }
+        ],
+        "unknowns": [
+          "管委會何時審議試行及結果",
+          "管理員何時確認欄位及結果",
+          "借用代號與器材代碼是否會撞號（目前無資料可判斷）",
+          "器材代碼與借用代號的編碼規則（使用者指示先不要定）",
+          "試行日期",
+          "舊紙本紀錄何時移入本機試算表",
+          "交班查找方便與每週五核對之間的相對權重",
+          "查找建議是否採用"
+        ],
+        "version": 6
+      },
+      "proposalSha256": "8dd723e758ba2f24e84d09ac873735edc93317ae47164d5050ca526146ebccc4",
+      "sources": [
+        {
+          "ref": "r1",
+          "role": "user",
+          "text": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+          "messageRecordedAt": "2026-10-10T20:52:30.128Z",
+          "bodySha256": "621745609dc0c44b71c62172e8e9e06b4ee0a89805134a27934e88ee6cf86bf7"
+        },
+        {
+          "ref": "r2",
+          "role": "user",
+          "text": "回到器材借用簿。電腦已修好，原本因設備維修而用紙本的理由不再適用；改成本機試算表，不連外部服務，其他沒改的條件維持。受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做，我對誤改的顧慮沒有撤回。這次優先考量交班時找資料方便。每週五核對不改。我剛完成一份空白欄位草稿，舊紙本紀錄還沒移入，管委會也尚未同意試行。器材貼標還沒開始。你剛才提的查找建議我還沒決定採用。請整理這輪改了什麼、哪些條件仍在以及目前進度，不建立檔案。",
+          "messageRecordedAt": "2026-10-10T20:52:38.831Z",
+          "bodySha256": "b91407e7288ad10c932076ff653802f7df4ccf7991d1f866fcfb4df3121ca3af"
+        },
+        {
+          "ref": "r3",
+          "role": "user",
+          "text": "借用簿先停在草稿階段，除了原本的管委會同意，還要等管理員確認欄位後才再談試行；這不表示清掉草稿或放寬其他限制。獨立的器材貼標取消，不包括借用簿。借用代號跟器材代碼會不會撞號，我目前沒有資料能判斷，先不要替我定編碼規則；試行日期也沒決定。請簡短記下這些狀態，不建立檔案。",
+          "messageRecordedAt": "2026-10-10T20:53:24.067Z",
+          "bodySha256": "32ab4318f4a4de58024caa1189402211373c9a3eaf67f17fc68a56724feaa969"
+        }
+      ]
+    },
+    {
+      "id": "c27-public-236",
+      "originalSequence": 236,
+      "priorResult": "continuity_projection_limit",
+      "proposal": {
+        "plans": [
+          {
+            "aspect": "載體形式",
+            "id": "plan-carrier",
+            "orderedChanges": [
+              {
+                "edits": [
+                  {
+                    "kind": "replace",
+                    "quote": "先用紙本",
+                    "replacement": {
+                      "quote": "改成本機試算表，不連外部服務",
+                      "ref": "r2"
+                    }
+                  },
+                  {
+                    "kind": "withdraw",
+                    "quote": "用紙本是因為辦公室電腦還在維修"
+                  }
+                ],
+                "kind": "content",
+                "quote": "電腦已修好，原本因設備維修而用紙本的理由不再適用；改成本機試算表，不連外部服務，其他沒改的條件維持",
+                "ref": "r2"
+              },
+              {
+                "kind": "status",
+                "planStatus": "paused",
+                "quote": "借用簿先停在草稿階段，除了原本的管委會同意，還要等管理員確認欄位後才再談試行",
+                "ref": "r3"
+              }
+            ],
+            "quote": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+            "reasonWithdrawals": [
+              {
+                "quote": "電腦已修好，原本因設備維修而用紙本的理由不再適用",
+                "ref": "r2",
+                "targetReasonId": "reason-paper-because-pc-repair",
+                "temporalUse": "current"
+              }
+            ],
+            "reasons": [
+              {
+                "id": "reason-paper-because-pc-repair",
+                "quote": "用紙本是因為辦公室電腦還在維修",
+                "ref": "r1"
+              }
+            ],
+            "ref": "r1",
+            "retentions": [
+              {
+                "quote": "這不表示清掉草稿或放寬其他限制",
+                "ref": "r3",
+                "temporalUse": "current"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "器材借用簿的紀錄載體"
+          },
+          {
+            "aspect": "誰可以新增與修改紀錄",
+            "id": "plan-write-permission",
+            "orderedChanges": [
+              {
+                "edits": [
+                  {
+                    "kind": "replace",
+                    "quote": "只有管理員可以填寫",
+                    "replacement": {
+                      "quote": "受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做",
+                      "ref": "r2"
+                    }
+                  }
+                ],
+                "kind": "content",
+                "quote": "受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做",
+                "reasons": [
+                  {
+                    "id": "reason-trainee-volunteers-may-add",
+                    "kind": "adds",
+                    "quote": "受過訓練的志工也可以新增紀錄",
+                    "ref": "r2"
+                  }
+                ],
+                "ref": "r2"
+              }
+            ],
+            "quote": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+            "reasons": [
+              {
+                "id": "reason-worry-mis-edit",
+                "quote": "只給管理員寫是擔心舊紀錄被誤改",
+                "ref": "r1"
+              }
+            ],
+            "ref": "r1",
+            "retentions": [
+              {
+                "quote": "我對誤改的顧慮沒有撤回",
+                "ref": "r2",
+                "temporalUse": "current"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "器材借用簿的填寫權限"
+          },
+          {
+            "aspect": "核對頻率與時間",
+            "id": "plan-check-rhythm",
+            "quote": "每週五核對借出和歸還",
+            "ref": "r1",
+            "retentions": [
+              {
+                "quote": "每週五核對不改",
+                "ref": "r2",
+                "temporalUse": "current"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "器材借用簿的核對節奏"
+          },
+          {
+            "aspect": "欄位內容",
+            "id": "plan-record-fields",
+            "quote": "借用簿只記器材代碼與借用代號",
+            "ref": "r1",
+            "temporalUse": "current",
+            "topic": "器材借用簿的紀錄欄位"
+          },
+          {
+            "aspect": "不記錄姓名與聯絡方式",
+            "id": "plan-no-personal-data",
+            "quote": "不記姓名或聯絡方式",
+            "ref": "r1",
+            "reasons": [
+              {
+                "id": "reason-fewer-personal-data",
+                "quote": "這是為了少留個人資料",
+                "ref": "r1"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "器材借用簿的個人資料欄位"
+          },
+          {
+            "aspect": "查找便利的優先",
+            "id": "plan-lookup-priority",
+            "quote": "這次優先考量交班時找資料方便",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "借用紀錄的查找方式"
+          },
+          {
+            "aspect": "工作狀態",
+            "id": "plan-labeling-work",
+            "orderedChanges": [
+              {
+                "kind": "status",
+                "planStatus": "cancelled",
+                "quote": "獨立的器材貼標取消，不包括借用簿",
+                "ref": "r3"
+              }
+            ],
+            "quote": "另有獨立的器材貼標工作，貼紙材質還沒選",
+            "ref": "r1",
+            "temporalUse": "current",
+            "topic": "器材貼標工作"
+          }
+        ],
+        "reports": [
+          {
+            "aspect": "管委會同意",
+            "id": "report-committee-not-yet-agreed",
+            "quote": "管委會也尚未同意試行",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "試行前提"
+          },
+          {
+            "aspect": "管理員確認欄位",
+            "id": "report-admin-fields-pending",
+            "quote": "還要等管理員確認欄位後才再談試行",
+            "ref": "r3",
+            "temporalUse": "current",
+            "topic": "試行前提"
+          },
+          {
+            "aspect": "草稿進度",
+            "id": "report-draft-done",
+            "quote": "我剛完成一份空白欄位草稿",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "本機試算表"
+          },
+          {
+            "aspect": "移入試算表進度",
+            "id": "report-old-paper-not-migrated",
+            "quote": "舊紙本紀錄還沒移入",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "舊紙本紀錄"
+          },
+          {
+            "aspect": "是否撞號",
+            "id": "report-code-collision-undetermined",
+            "quote": "借用代號跟器材代碼會不會撞號，我目前沒有資料能判斷",
+            "ref": "r3",
+            "temporalUse": "current",
+            "topic": "器材代碼與借用代號"
+          },
+          {
+            "aspect": "是否已定",
+            "id": "report-trial-date-undecided",
+            "quote": "試行日期也沒決定",
+            "ref": "r3",
+            "temporalUse": "current",
+            "topic": "試行日期"
+          },
+          {
+            "aspect": "是否採用建議",
+            "id": "report-lookup-undecided",
+            "quote": "你剛才提的查找建議我還沒決定採用",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "查找紀錄的方式"
+          }
+        ],
+        "unknowns": [
+          "管委會何時審議試行及結果",
+          "管理員何時確認欄位及結果",
+          "借用代號與器材代碼是否會撞號（目前無資料可判斷）",
+          "器材代碼與借用代號的編碼規則（使用者指示先不要定）",
+          "試行日期",
+          "舊紙本紀錄何時移入本機試算表",
+          "查找建議是否採用"
+        ],
+        "version": 6
+      },
+      "proposalSha256": "7f8fdec4d127f6637ed53fea2e3ff8bba279f51c173b6a7404dc4c38a330f023",
+      "sources": [
+        {
+          "ref": "r1",
+          "role": "user",
+          "text": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+          "messageRecordedAt": "2026-10-10T20:52:30.128Z",
+          "bodySha256": "621745609dc0c44b71c62172e8e9e06b4ee0a89805134a27934e88ee6cf86bf7"
+        },
+        {
+          "ref": "r2",
+          "role": "user",
+          "text": "回到器材借用簿。電腦已修好，原本因設備維修而用紙本的理由不再適用；改成本機試算表，不連外部服務，其他沒改的條件維持。受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做，我對誤改的顧慮沒有撤回。這次優先考量交班時找資料方便。每週五核對不改。我剛完成一份空白欄位草稿，舊紙本紀錄還沒移入，管委會也尚未同意試行。器材貼標還沒開始。你剛才提的查找建議我還沒決定採用。請整理這輪改了什麼、哪些條件仍在以及目前進度，不建立檔案。",
+          "messageRecordedAt": "2026-10-10T20:52:38.831Z",
+          "bodySha256": "b91407e7288ad10c932076ff653802f7df4ccf7991d1f866fcfb4df3121ca3af"
+        },
+        {
+          "ref": "r3",
+          "role": "user",
+          "text": "借用簿先停在草稿階段，除了原本的管委會同意，還要等管理員確認欄位後才再談試行；這不表示清掉草稿或放寬其他限制。獨立的器材貼標取消，不包括借用簿。借用代號跟器材代碼會不會撞號，我目前沒有資料能判斷，先不要替我定編碼規則；試行日期也沒決定。請簡短記下這些狀態，不建立檔案。",
+          "messageRecordedAt": "2026-10-10T20:53:24.067Z",
+          "bodySha256": "32ab4318f4a4de58024caa1189402211373c9a3eaf67f17fc68a56724feaa969"
+        }
+      ]
+    },
+    {
+      "id": "c27-public-250",
+      "originalSequence": 250,
+      "priorResult": "ready",
+      "proposal": {
+        "plans": [
+          {
+            "aspect": "載體形式",
+            "id": "plan-carrier",
+            "orderedChanges": [
+              {
+                "edits": [
+                  {
+                    "kind": "replace",
+                    "quote": "先用紙本",
+                    "replacement": {
+                      "quote": "改成本機試算表，不連外部服務",
+                      "ref": "r2"
+                    }
+                  },
+                  {
+                    "kind": "withdraw",
+                    "quote": "用紙本是因為辦公室電腦還在維修"
+                  }
+                ],
+                "kind": "content",
+                "quote": "電腦已修好，原本因設備維修而用紙本的理由不再適用；改成本機試算表，不連外部服務，其他沒改的條件維持",
+                "ref": "r2"
+              },
+              {
+                "kind": "status",
+                "planStatus": "paused",
+                "quote": "借用簿先停在草稿階段，除了原本的管委會同意，還要等管理員確認欄位後才再談試行",
+                "ref": "r3"
+              }
+            ],
+            "quote": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+            "ref": "r1",
+            "retentions": [
+              {
+                "quote": "這不表示清掉草稿或放寬其他限制",
+                "ref": "r3",
+                "temporalUse": "current"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "器材借用簿的紀錄載體"
+          },
+          {
+            "aspect": "誰可以新增與修改紀錄",
+            "id": "plan-write-permission",
+            "orderedChanges": [
+              {
+                "edits": [
+                  {
+                    "kind": "replace",
+                    "quote": "只有管理員可以填寫",
+                    "replacement": {
+                      "quote": "受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做",
+                      "ref": "r2"
+                    }
+                  }
+                ],
+                "kind": "content",
+                "quote": "受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做",
+                "ref": "r2"
+              }
+            ],
+            "quote": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+            "reasons": [
+              {
+                "id": "reason-worry-mis-edit",
+                "quote": "只給管理員寫是擔心舊紀錄被誤改",
+                "ref": "r1"
+              }
+            ],
+            "ref": "r1",
+            "retentions": [
+              {
+                "quote": "我對誤改的顧慮沒有撤回",
+                "ref": "r2",
+                "temporalUse": "current"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "器材借用簿的填寫權限"
+          },
+          {
+            "aspect": "核對頻率與時間",
+            "id": "plan-check-rhythm",
+            "quote": "每週五核對借出和歸還",
+            "ref": "r1",
+            "retentions": [
+              {
+                "quote": "每週五核對不改",
+                "ref": "r2",
+                "temporalUse": "current"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "器材借用簿的核對節奏"
+          },
+          {
+            "aspect": "欄位內容",
+            "id": "plan-record-fields",
+            "quote": "借用簿只記器材代碼與借用代號",
+            "ref": "r1",
+            "temporalUse": "current",
+            "topic": "器材借用簿的紀錄欄位"
+          },
+          {
+            "aspect": "不記錄姓名與聯絡方式",
+            "id": "plan-no-personal-data",
+            "quote": "不記姓名或聯絡方式",
+            "ref": "r1",
+            "reasons": [
+              {
+                "id": "reason-fewer-personal-data",
+                "quote": "這是為了少留個人資料",
+                "ref": "r1"
+              }
+            ],
+            "temporalUse": "current",
+            "topic": "器材借用簿的個人資料欄位"
+          },
+          {
+            "aspect": "查找便利的優先",
+            "id": "plan-lookup-priority",
+            "quote": "這次優先考量交班時找資料方便",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "借用紀錄的查找方式"
+          }
+        ],
+        "reports": [
+          {
+            "aspect": "管委會同意",
+            "id": "report-committee-not-yet-agreed",
+            "quote": "管委會也尚未同意試行",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "試行前提"
+          },
+          {
+            "aspect": "管理員確認欄位",
+            "id": "report-admin-fields-pending",
+            "quote": "還要等管理員確認欄位後才再談試行",
+            "ref": "r3",
+            "temporalUse": "current",
+            "topic": "試行前提"
+          },
+          {
+            "aspect": "草稿進度",
+            "id": "report-draft-done",
+            "quote": "我剛完成一份空白欄位草稿",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "本機試算表"
+          },
+          {
+            "aspect": "移入試算表進度",
+            "id": "report-old-paper-not-migrated",
+            "quote": "舊紙本紀錄還沒移入",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "舊紙本紀錄"
+          },
+          {
+            "aspect": "器材貼標",
+            "id": "report-labeling-cancelled",
+            "quote": "獨立的器材貼標取消，不包括借用簿",
+            "ref": "r3",
+            "temporalUse": "current",
+            "topic": "器材貼標工作"
+          },
+          {
+            "aspect": "是否撞號",
+            "id": "report-code-collision-undetermined",
+            "quote": "借用代號跟器材代碼會不會撞號，我目前沒有資料能判斷",
+            "ref": "r3",
+            "temporalUse": "current",
+            "topic": "器材代碼與借用代號"
+          },
+          {
+            "aspect": "是否已定",
+            "id": "report-trial-date-undecided",
+            "quote": "試行日期也沒決定",
+            "ref": "r3",
+            "temporalUse": "current",
+            "topic": "試行日期"
+          },
+          {
+            "aspect": "是否採用建議",
+            "id": "report-lookup-undecided",
+            "quote": "你剛才提的查找建議我還沒決定採用",
+            "ref": "r2",
+            "temporalUse": "current",
+            "topic": "查找紀錄的方式"
+          }
+        ],
+        "unknowns": [
+          "管委會何時審議試行及結果",
+          "管理員何時確認欄位及結果",
+          "借用代號與器材代碼是否會撞號（目前無資料可判斷）",
+          "試行日期",
+          "舊紙本紀錄何時移入本機試算表"
+        ],
+        "version": 6
+      },
+      "proposalSha256": "c0849f4f4f394393ef8a0cf1b3368234b543d4d5b3aa9c1a9c5359ae7a140d02",
+      "sources": [
+        {
+          "ref": "r1",
+          "role": "user",
+          "text": "我在規劃社區器材借用簿。先用紙本，只有管理員可以填寫；每週五核對借出和歸還。用紙本是因為辦公室電腦還在維修，只給管理員寫是擔心舊紀錄被誤改。借用簿只記器材代碼與借用代號，不記姓名或聯絡方式，這是為了少留個人資料。試行前仍須管委會同意。另有獨立的器材貼標工作，貼紙材質還沒選。請整理方案，再提一個查找紀錄的建議；建議不要算成我已採用，也不要建立檔案。",
+          "messageRecordedAt": "2026-10-10T20:52:30.128Z",
+          "bodySha256": "621745609dc0c44b71c62172e8e9e06b4ee0a89805134a27934e88ee6cf86bf7"
+        },
+        {
+          "ref": "r2",
+          "role": "user",
+          "text": "回到器材借用簿。電腦已修好，原本因設備維修而用紙本的理由不再適用；改成本機試算表，不連外部服務，其他沒改的條件維持。受過訓練的志工也可以新增紀錄，但刪除或修改既有紀錄仍只有管理員能做，我對誤改的顧慮沒有撤回。這次優先考量交班時找資料方便。每週五核對不改。我剛完成一份空白欄位草稿，舊紙本紀錄還沒移入，管委會也尚未同意試行。器材貼標還沒開始。你剛才提的查找建議我還沒決定採用。請整理這輪改了什麼、哪些條件仍在以及目前進度，不建立檔案。",
+          "messageRecordedAt": "2026-10-10T20:52:38.831Z",
+          "bodySha256": "b91407e7288ad10c932076ff653802f7df4ccf7991d1f866fcfb4df3121ca3af"
+        },
+        {
+          "ref": "r3",
+          "role": "user",
+          "text": "借用簿先停在草稿階段，除了原本的管委會同意，還要等管理員確認欄位後才再談試行；這不表示清掉草稿或放寬其他限制。獨立的器材貼標取消，不包括借用簿。借用代號跟器材代碼會不會撞號，我目前沒有資料能判斷，先不要替我定編碼規則；試行日期也沒決定。請簡短記下這些狀態，不建立檔案。",
+          "messageRecordedAt": "2026-10-10T20:53:24.067Z",
+          "bodySha256": "32ab4318f4a4de58024caa1189402211373c9a3eaf67f17fc68a56724feaa969"
+        }
+      ]
+    }
+  ]
+}

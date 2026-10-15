@@ -7,8 +7,11 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {createCmcpLocalInput} from './cmcp-local-input.js';
+import {hasCmcpContinuityPreview} from './cmcp-continuity-projection.js';
 import {projectCmcpStorageStatus} from './cmcp-storage-status.js';
+import {createCmcpContinuityPresentation} from './cmcp-continuity-presentation.js';
 import {createCmcpRuntimeDispatch} from './cmcp-runtime-dispatch.js';
+import {describeCmcpProactiveExecution} from './cmcp-proactive-description.js';
 import {readCmcpDispatchObservation} from './cmcp-dispatch-arbitration.js';
 import {createCmcpPinLifecycle} from './cmcp-pin-lifecycle.js';
 import {getCmcpHostContext} from './cmcp-host-context.js';
@@ -326,6 +329,7 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
     const storageStatus=await projectCmcpStorageStatus({scopeId:config.input.scopeId,registration:state.registration,
       controls:statusControls.effective,requiresReopen,resolveSource:pointer=>resolveCmcpHistorySource({provider:core.history,pointer})});
     if((await controlManager.snapshot()).generation!==statusControls.generation)throw Error('status_controls_changed_refresh_required');
+    const dispatchStatus=dispatcher?await dispatcher.status():null;
     return {kind:'cmcp_runtime_status',runtimeId:config.runtimeId,sessionId,pid:process.pid,readOnly,modelCalls:0,storageStatus,
       dataScope:{root:config.input.root,scopeId:config.input.scopeId,eventKeys:config.input.events.map(e=>e.key)},
       ...(budgetAttachment?{budgetDependency:{...budgetAttachment,expectedAuthorizationId,active:budget.authorizationId===expectedAuthorizationId}}:{}),
@@ -335,7 +339,8 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
       bufferRetention:{...bufferRetention},
       timeLimits:{bufferNewActivationMs:bufferRetention.ttlMs,legacyMissingExpiryMs:config.input.loopTiming.ttlMs,
         readingTicketMs:config.input.loopTiming.ttlMs,proactiveInactivityMs:config.input.loopTiming.inactivityMs,
-        proactiveActivityWindowMs:config.input.loopTiming.activityWindowMs,historyRetention:'not_controlled_by_buffer'},
+        proactiveActivityWindowMs:config.input.loopTiming.activityWindowMs,historyRetention:'not_controlled_by_buffer',
+        proactiveTimingMeaning:'retained_local_loop_compatibility_not_runtime_send_deadline'},
       providerTransport:config.deepseekTransport??'responses',providerStream:config.deepseekStream??false,
       providerRequestBodyLimits:{...CMCP_RUNTIME_REQUEST_LIMITS,...(answerHistoryEnabled?{
         semanticAnswerHistoryBytes:CMCP_RUNTIME_REQUEST_LIMITS.optedInSemanticAnswerHistoryBytes,
@@ -353,7 +358,9 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
         model:providerWork.filter(r=>r.status==='in_progress').map(r=>r.logicalId),
         sourceWork:executionWork.filter(r=>r.source&&r.sourceProcessing==='pending').map(r=>({workId:r.workId,source:r.source,state:r.state}))},
       work:executionWork,providerWork,state,localReadProgress,discussionAssociation:state.discussionAssociation,
-      proactiveExecutor:{...state.proactive,...(dispatcher?{dispatch:await dispatcher.status()}:{}),workId:active?.mode==='proactive'?active.id:null,
+      proactiveExecutor:{...state.proactive,...(dispatchStatus?{dispatch:dispatchStatus}:{}),
+        execution:describeCmcpProactiveExecution({loopTiming:config.input.loopTiming,controls:statusControls.effective,
+          observation:'runtime',readOnly,dispatch:dispatchStatus,deliveryPresent:typeof delivery?.present==='function'}),workId:active?.mode==='proactive'?active.id:null,
         workRunning:active?.mode==='proactive',readOnly}};
   }
   function cancelProactiveWork(reason){
@@ -384,14 +391,17 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
       &&(!current.navigationControlStamp||current.navigationControlStamp===workControlStamp('local_reading_navigation'))
       &&(current.mode!=='local_event_resume'||effective.enabled&&!effective.clean)
       &&(!current.controlStamp||current.controlStamp===workControlStamp(current.mode))
-      &&Date.now()<parseCmcpInstant(current.deadlineAt)&&w?.state==='running';}
+      &&Date.now()<parseCmcpInstant(current.deadlineAt)&&(w?.state==='running'
+        ||current.mode==='local_reading_continuity'&&current.finalizing===true&&w?.state==='completed'
+        ||current.mode==='local_reading_continuity'&&current.correctionFinalizing===true&&w?.state==='failed');}
   const bufferNow=()=>parseCmcpInstant(clock?clock():new Date().toISOString());
   function workControlStamp(mode,snapshot=controlSnapshot){
     const keys=['enabled','clean'];
-    if(['local_read','local_answer','local_recall','local_candidates','local_reading_navigation','local_reading_open','local_reading_page','local_reading_outline','local_history_query','local_history_query_resume','context_only'].includes(mode))keys.push('historyRecall','readingLimits');
+    if(['local_read','local_answer','local_recall','local_candidates','local_reading_navigation','local_reading_open','local_reading_page','local_reading_outline','local_reading_continuity','local_history_query','local_history_query_resume','context_only'].includes(mode))keys.push('historyRecall','readingLimits');
+    if(mode==='local_reading_continuity')keys.push('answerHistory','saveUser','saveAssistant','timezone');
     if(mode==='standalone'||mode==='local_event_resume')keys.push('saveUser','saveAssistant','answerHistory','discussionAssociation');
     if(mode==='host_turn')keys.push('historyRecall','answerHistory','discussionAssociation','saveUser','saveAssistant','readingLimits','buffer','timeIndex','timezone');
-    return loopHash(keys.map(key=>[key,snapshot.featureRevisions[key]??0]));
+    return loopHash([...keys.map(key=>[key,snapshot.featureRevisions[key]??0]),...(mode==='local_reading_continuity'?[['sourceAuthorization',sourceAuthorization]]:[])]);
   }
   async function hostTurnState(){
     const snapshot=constrainControls(await controlManager.snapshot());
@@ -429,7 +439,8 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
     if(work.readingTicket&&await core.readingRevoked(work.readingTicket))throw Error('reading_revoked');
     if(work.navigationTicket&&await core.readingRevoked(work.navigationTicket))throw Error('reading_revoked');
     // A completed receipt is still a context exit, not an exemption from controls.
-    if(!effective.enabled||effective.clean||effective.historyRecall===false&&['local_read','local_answer','local_recall','local_candidates','local_reading_navigation','local_reading_open','local_reading_page','local_reading_outline','local_history_query','local_history_query_resume','context_only'].includes(work.mode))throw Error('buffer_context_disabled');
+    if(!effective.enabled||effective.clean||effective.historyRecall===false&&['local_read','local_answer','local_recall','local_candidates','local_reading_navigation','local_reading_open','local_reading_page','local_reading_outline','local_reading_continuity','local_history_query','local_history_query_resume','context_only'].includes(work.mode))throw Error('buffer_context_disabled');
+    if(work.mode==='local_reading_continuity'&&!effective.answerHistory)throw Error('continuity_disabled');
     if((work.bufferGeneration??0)!==core.bufferGeneration)throw Error('buffer_receipt_stale');
     let queryTime=null;
     if(work.queryBinding){await resolveCmcpReadingQuery({history:core.history,scopeId:config.input.scopeId,binding:work.queryBinding});queryTime=work.queryBinding.queryTime;}
@@ -447,6 +458,7 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
       ||queryTime!==null&&parseCmcpInstant(queryTime)+config.input.loopTiming.ttlMs<=bufferNow())throw Error('buffer_receipt_stale');
   }
   async function assertRetainedReadSources(work,result){
+    if(work.mode==='local_reading_continuity'){await assertContinuityReceipt(work,result);return;}
     if(!['local_reading_page','local_reading_outline','local_read','local_answer','local_recall'].includes(work.mode))return;
     const ranges=[...(result.internal?.readRanges??[]),...(result.internal?.pages??[]).flatMap(page=>page.internal?.readRanges??[])];
     const hasBody=!!(result.reader?.text||result.modelContext||result.host?.context||result.reader?.outline?.some(row=>row.locator||row.summary));
@@ -528,10 +540,69 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
         reason:terminalResult?.reader.reason??null,limits:openingResult.reader.limits,collection:openingResult.reader.collection,coverage,unresolved,revoked:false},modelContext:null});
     }catch(error){if(['reading_revoked','buffer_receipt_stale','buffer_context_disabled'].includes(error.message))return readingExit({reader:{kind:'cmcp_reading_progress',ticket,status:'unavailable',reason:error.message,revoked:error.message==='reading_revoked'},modelContext:null});throw error;}
   }
+  async function continuityAuthority(work){
+    if(closed||requiresReopen)return false;
+    const snapshot=constrainControls(await controlManager.snapshot()),current=snapshot.effective;
+    return current.enabled&&!current.clean&&current.historyRecall&&current.answerHistory
+      &&work.controlStamp===workControlStamp('local_reading_continuity',snapshot)&&await canContinue();
+  }
+  async function assertContinuityReceipt(work,retained){
+    const publicationPath=path.join(config.receiptRoot,'continuity-publication-'+loopHash(work.workId)+'.json');
+    try{await fs.access(path.join(config.receiptRoot,'continuity-rejected-'+loopHash(work.workId)+'.json'));throw Error('continuity_publication_rejected');}
+    catch(error){if(error.code!=='ENOENT')throw error;}
+    let publication;try{publication=JSON.parse(await fs.readFile(publicationPath,'utf8'));}catch{throw Error('continuity_publication_unconfirmed');}
+    if(publication.status!=='ready'||publication.binding!==binding||publication.workId!==work.workId||publication.sessionId!==work.sessionId
+      ||publication.ticket!==work.readingTicket||publication.projectionHash!==retained.projectionHash)throw Error('continuity_publication_receipt_mismatch');
+    await assertBufferReceipt(work,retained);
+    if(!await continuityAuthority(work))throw Error('continuity_control_changed');
+    const reading=await loadReading(work.readingTicket);
+    await core.validateReadingContinuity({openingResult:reading.openingResult,previousPages:reading.previousPages,result:retained,
+      operationValid:()=>continuityAuthority(work)});
+    await assertBufferReceipt(work,retained);
+    if(!await continuityAuthority(work))throw Error('continuity_control_changed');
+    return reading;
+  }
+  async function continuityStatus({projectWide=false}={}){
+    if(closed)throw Error('runtime_closed');
+    if(typeof projectWide!=='boolean'||projectWide&&!readOnly)throw Error('continuity_project_view_requires_readonly_runtime');
+    const observation={observationScope:projectWide?'project':'session',observationSession:sessionId,originalSession:null};
+    const empty=(status,reason)=>({kind:'cmcp_continuity_status',status,reason,...observation,projection:null,modelCalls:0});
+    if(!effective.enabled||effective.clean||!effective.historyRecall||!effective.answerHistory)return empty('unavailable','controls_disabled');
+    // 專案查閱只由可信 controller 的唯讀 Runtime 使用；不接手原 Session 的執行權。
+    const work=(await works.list()).filter(row=>row.mode==='local_reading_continuity'&&(projectWide||row.sessionId===sessionId&&row.state==='completed'))
+      .sort((a,b)=>parseCmcpInstant(a.terminal?.at??a.at)-parseCmcpInstant(b.terminal?.at??b.at)).at(-1);
+    if(!work)return empty('not_found',projectWide?'no_projection_for_current_project':'no_projection_for_current_session');
+    observation.originalSession=work.sessionId;
+    // 最新工作未完成、取消或失敗時，不退回較早成功結果冒稱最新現況。
+    if(work.state!=='completed')return empty('unavailable','latest_projection_not_completed');
+    try{
+      const expected=path.join(config.receiptRoot,'work-'+loopHash(work.workId)+'.json');
+      if(work.terminal.receiptPath!==expected)throw Error('continuity_receipt_mismatch');
+      const receipt=JSON.parse(await fs.readFile(expected,'utf8'));
+      if(receipt.runtimeId!==config.runtimeId||receipt.binding!==binding||receipt.workId!==work.workId||receipt.sessionId!==work.sessionId
+        ||receipt.mode!=='local_reading_continuity'||receipt.ticket!==work.readingTicket)throw Error('continuity_receipt_mismatch');
+      if(receipt.result?.replayable===false)return empty('not_retained','disabled_by_source_control');
+      const reading=await assertContinuityReceipt(work,receipt.result);
+      const sourceLinks=receipt.result.projection.sources.map(citation=>{
+        const source=reading.openingResult.internal.manifest.sources.find(item=>item.ref===citation.ref);
+        if(!source||source.evidenceHash!==citation.evidenceHash)throw Error('continuity_source_link_mismatch');
+        return {ref:source.ref,pointer:structuredClone(source.pointer),evidenceHash:source.evidenceHash,
+          location:{unit:'unicode_code_points',start:0,end:source.codePoints},sourceAuthorRole:source.sourceAuthorRole,messageRecordedAt:source.messageRecordedAt};
+      });
+      return {kind:'cmcp_continuity_status',status:receipt.result.status,reason:receipt.result.reason,modelCoverageComplete:receipt.result.modelCoverageComplete,
+        ...observation,ticket:work.readingTicket,projection:receipt.result.projection,
+        projectionHash:receipt.result.projectionHash,bodyRetention:'retained',sourceVerification:'currently_revalidated',sourceLinks,modelCalls:0,
+        ...(receipt.result.projectionCapacity?{projectionCapacity:structuredClone(receipt.result.projectionCapacity)}:{}),
+        ...(receipt.result.projection.version===3?{scopeId:config.input.scopeId,presentation:createCmcpContinuityPresentation({projection:receipt.result.projection,
+          projectionHash:receipt.result.projectionHash,scopeId:config.input.scopeId,verifiedScopeId:reading.openingResult.internal.manifest.scopeId,
+          ...(receipt.result.presentation?.sourceContext?{reading:reading.openingResult,previousPages:reading.previousPages}:{}),
+          ...(receipt.result.presentation?.sourceUseReviewDelivery?{sourceUseReviewDelivery:receipt.result.presentation.sourceUseReviewDelivery}:{})})}:{})};
+    }catch(error){return empty('unavailable',/^[a-z][a-z0-9_:]*$/.test(error.message)?error.message:'continuity_revalidation_failed');}
+  }
   async function submit(input,proactiveTask=null,bufferGeneration=core.bufferGeneration,publicationGuard=()=>true){
     const operationBufferTtlMs=bufferRetention.ttlMs;
     if(clearFlight)await clearFlight;
-    const bufferDependent=!!proactiveTask&&input.proactiveContext?.route!=='pin'||['candidates','read','recall','reading_navigation','reading_open','reading_page','reading_outline','history_query','history_query_resume'].includes(input.localOperation)
+    const bufferDependent=!!proactiveTask&&input.proactiveContext?.route!=='pin'||['candidates','read','recall','reading_navigation','reading_open','reading_page','reading_outline','reading_continuity','history_query','history_query_resume'].includes(input.localOperation)
       ||input.recall===true||input.contextOnly===true||input.eventKey!=null;
     if(bufferDependent&&bufferGeneration!==core.bufferGeneration)throw Error('buffer_receipt_stale');
     if(!proactiveTask&&!readOnly&&!closed){
@@ -548,12 +619,14 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
     if(operation.sourceBufferGeneration!==undefined)throw Error('source_generation_must_come_from_runtime_work');
     if(operation.sourceBufferTtlMs!==undefined)throw Error('source_retention_must_come_from_runtime_work');
     if(operation.queryAuthorization!==undefined||operation.queryBinding!==undefined)throw Error('query_authorization_must_come_from_runtime_work');
-    if(operation.localOperation!==undefined&&!['ingest','candidates','read','recall','reading_navigation','reading_open','reading_page','reading_outline','history_query','history_query_resume','event_resume','discussion_link'].includes(operation.localOperation))throw Error('invalid_local_operation');
+    if(operation.localOperation!==undefined&&!['ingest','candidates','read','recall','reading_navigation','reading_open','reading_page','reading_outline','reading_continuity','history_query','history_query_resume','event_resume','discussion_link'].includes(operation.localOperation))throw Error('invalid_local_operation');
     if(operation.localOperation==='ingest'&&((operation.role??'user')==='user'&&!effective.saveUser||operation.role==='assistant'&&!effective.saveAssistant)){
       return {status:'not_saved',reason:'new_source_save_disabled',sourcePointer:null,pointer:null,modelCalls:0};}
     if(['history_query','history_query_resume'].includes(operation.localOperation)&&(!effective.enabled||effective.clean||!effective.historyRecall))return {status:'disabled',modelCalls:0};
     if(operation.localOperation==='discussion_link'&&(!effective.enabled||effective.clean||!effective.discussionAssociation))return {status:'disabled',modelCalls:0};
-    if(['reading_navigation','reading_open','reading_page','reading_outline'].includes(operation.localOperation)&&['openingResult','previousPages','manifest','sourceBufferGeneration','navigationResult'].some(k=>operation[k]!==undefined))throw Error('reading_state_must_come_from_runtime_receipt');
+    if(['reading_navigation','reading_open','reading_page','reading_outline','reading_continuity'].includes(operation.localOperation)&&['openingResult','previousPages','manifest','sourceBufferGeneration','navigationResult'].some(k=>operation[k]!==undefined))throw Error('reading_state_must_come_from_runtime_receipt');
+    if(operation.localOperation==='reading_continuity'&&Object.keys(operation).some(key=>!['localOperation','ticket','proposal'].includes(key)))throw Error('continuity_uses_frozen_reading');
+    if(operation.localOperation==='reading_continuity'&&(!effective.enabled||effective.clean||!effective.historyRecall||!effective.answerHistory))return {kind:'cmcp_continuity_projection',status:'disabled',projection:null,modelCalls:0};
     if(['reading_navigation','reading_open','reading_page','reading_outline'].includes(operation.localOperation)&&(!effective.enabled||effective.clean||!effective.historyRecall))return readingDisabled();
     if(operation.selection!==undefined&&(!operation.navigationTicket||!['reading_navigation','reading_open'].includes(operation.localOperation)))throw Error('host_selection_requires_navigation_ticket');
     if(operation.localOperation==='reading_page'&&operation.project!==undefined&&typeof operation.project!=='boolean')throw Error('explicit_reading_projection_control');
@@ -599,7 +672,7 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
       const consumed=(await works.list()).find(work=>work.navigationTicket===operation.navigationTicket);
       if(consumed)throw Error('reading_navigation_already_consumed:'+consumed.workId);
     }
-    if(['reading_page','reading_outline'].includes(operation.localOperation)){
+    if(['reading_page','reading_outline','reading_continuity'].includes(operation.localOperation)){
       reading=await loadReading(operation.ticket);source=reading.openingWork.source;queryBinding=reading.openingWork.queryBinding;
     }
     if(proactiveTask){
@@ -661,7 +734,7 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
     busy=true;const started=performance.now();
     active={id:workId,deadlineAt,controller:new AbortController(),sourceVersion:source?.evidenceHash,sourcePointer:source?.pointer,queryBinding,bufferGeneration,bufferDependent};
     if(navigation){active.navigationTicket=operation.navigationTicket;active.navigationControlStamp=navigation.work.controlStamp;}
-    if(['reading_navigation','reading_open','reading_page','reading_outline'].includes(operation.localOperation))active.readingTicket=['reading_navigation','reading_open'].includes(operation.localOperation)?workId:operation.ticket;
+    if(['reading_navigation','reading_open','reading_page','reading_outline','reading_continuity'].includes(operation.localOperation))active.readingTicket=['reading_navigation','reading_open'].includes(operation.localOperation)?workId:operation.ticket;
     let timer,poll,done,finalizing=false;const completed=new Promise(r=>done=r);active.completed=completed;
     const controller=active.controller,abort=()=>controller.abort();
     const mode=proactiveTask?'proactive':operation.localOperation?operation.localOperation==='read'&&operation.answer===true?'local_answer':'local_'+operation.localOperation:
@@ -686,6 +759,8 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
         operation.localOperation==='discussion_link'?await core.linkDiscussionSegment(operation.declaration):operation.localOperation==='event_resume'?await core.resumeEventSource(operation):operation.localOperation==='reading_navigation'?await core.readingNavigate({...operation,ticket:workId,...(navigation?{navigationResult:navigation.result}:{})}):operation.localOperation==='reading_open'?readingExit(await core.readingOpen({...operation,ticket:workId,...(navigation?{navigationResult:navigation.result}:{})})):
         operation.localOperation==='reading_outline'?readingExit(await core.readingOutline({openingResult:reading.openingResult,previousPages:reading.previousPages})):
         operation.localOperation==='reading_page'?readingExit(await core.readingPage({openingResult:reading.openingResult,previousPages:reading.previousPages,project:operation.project===true})):
+        operation.localOperation==='reading_continuity'?await core.readingContinuity({openingResult:reading.openingResult,previousPages:reading.previousPages,proposal:operation.proposal,
+          operationValid:()=>continuityAuthority({controlStamp:active.controlStamp})}):
         proactiveTask?await proactiveTask():operation.localOperation==='ingest'?await core.ingest({...operation,
           operationValid:async()=>publicationGuard()===true,publicationGuard}):operation.localOperation==='candidates'
         ?await core.localCandidates({...operation,ticket:workId}):operation.localOperation==='read'
@@ -720,9 +795,15 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
         retainAuthorizedRead=cmcpReadingQueryKey(result.internal)===cmcpReadingQueryKey(active.queryBinding);
       }
       if(!await canContinue())throw Error('work_cancelled_or_expired');
+      if(operation.localOperation==='reading_continuity'){
+        result.bodyRetention=effective.saveUser&&effective.saveAssistant?'retained':'not_retained';
+        result.replayable=result.bodyRetention==='retained';
+      }
       let retainedReceipt=effective.saveUser&&effective.saveAssistant||retainAuthorizedRead?receipt:{...receipt,result:{status:result.status,
         queryPointer:result.queryPointer??null,answerPointer:result.answerPointer??null,bodyRetention:'disabled_by_source_control',
         replayable:false,assistantTiming:result.assistantTiming??null}};
+      if(operation.localOperation==='reading_continuity'&&!result.replayable)retainedReceipt={...receipt,result:{kind:result.kind,status:result.status,ticket:result.ticket,
+        bodyRetention:'not_retained',replayable:false,projectionHash:result.projectionHash,modelCalls:0}};
       if(retainAuthorizedRead&&active.queryBinding){
         retainedReceipt=structuredClone(receipt);const stored=retainedReceipt.result;
         // The frozen source metadata remains available; the unsaved new question
@@ -741,7 +822,8 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
         operation.localOperation?(result.internal?.sourceProcessing??'not_requested'):'completed';
       // A completed journal state must not make our own polling callback cancel success.
       // User cancellation, deadline and Buffer generation still have independent checks.
-      finalizing=true;clearInterval(poll);
+      if(operation.localOperation==='reading_continuity'&&!await canContinue())throw Error('work_cancelled_or_expired');
+      finalizing=true;if(operation.localOperation==='reading_continuity')active.finalizing=true;clearInterval(poll);
       const finished=await works.finish(workId,{state:'completed',sourceProcessing,remoteOutcome:transports.some(w=>w.workId===workId&&w.remoteOutcome==='completed')?'completed':'not_requested',receiptPath});
       if(active.readingTicket&&await core.readingRevoked(active.readingTicket))throw Error('reading_revoked');
       if(finished.state!=='completed'||controller.signal.aborted)throw Error('work_cancelled_or_expired');
@@ -749,10 +831,36 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
       if(active.readingTicket&&(!effective.enabled||effective.clean))throw Error('buffer_context_disabled');
       const readingTime=reading?.openingResult.internal.queryTime??result.internal?.queryTime;
       if(active.readingTicket&&readingTime!==undefined&&parseCmcpInstant(readingTime)+config.input.loopTiming.ttlMs<=bufferNow())throw Error('buffer_receipt_stale');
+      if(operation.localOperation==='reading_continuity'){
+        await core.validateReadingContinuity({openingResult:reading.openingResult,previousPages:reading.previousPages,result,
+          operationValid:async()=>publicationGuard()===true&&await continuityAuthority({controlStamp:active.controlStamp})});
+        // This operational receipt is metadata only. A completed work alone is
+        // never authority to replay a projection whose final exit was rejected.
+        await fs.writeFile(path.join(config.receiptRoot,'continuity-publication-'+loopHash(workId)+'.json'),JSON.stringify({
+          kind:'cmcp_continuity_publication',status:'ready',binding,workId,sessionId,ticket:operation.ticket,projectionHash:result.projectionHash}),{flag:'wx'});
+        if(controller.signal.aborted||publicationGuard()!==true||bufferGeneration!==core.bufferGeneration
+          ||active.controlStamp!==workControlStamp('local_reading_continuity')||Date.now()>=parseCmcpInstant(deadlineAt))throw Error('continuity_publication_cancelled');
+      }
       return result;
-    }catch(error){const failedState=active.controller.signal.aborted?'cancelled':'failed';controller.abort(error.message);
+    }catch(error){const failedState=active.controller.signal.aborted?'cancelled':'failed';
+      const previewExit=operation.localOperation==='reading_continuity'&&hasCmcpContinuityPreview(error);
+      // 有正文的拒絕回饋同樣需要最後來源／取消查證；僅此失敗工作暫留查證出口。
+      if(previewExit){active.correctionFinalizing=true;finalizing=true;clearInterval(poll);}else controller.abort(error.message);
+      if(operation.localOperation==='reading_continuity'){
+        await fs.mkdir(config.receiptRoot,{recursive:true});
+        await fs.writeFile(path.join(config.receiptRoot,'continuity-rejected-'+loopHash(workId)+'.json'),JSON.stringify({
+          kind:'cmcp_continuity_publication',status:'rejected',binding,workId,sessionId,ticket:operation.ticket,
+          reason:/^[a-z][a-z0-9_:]*$/.test(error.message)?error.message:'continuity_exit_failed'}),{flag:'wx'}).catch(writeError=>{if(writeError.code!=='EEXIST')throw writeError;});
+      }
       await works.finish(workId,{state:failedState,reason:active.cancelReason??error.message,
-      sourceProcessing:proactiveTask?'not_requested':'pending',remoteOutcome:'unknown',receiptPath:null});throw error;
+      sourceProcessing:proactiveTask?'not_requested':'pending',remoteOutcome:'unknown',receiptPath:null});
+      if(previewExit){
+        try{await core.validateReadingContinuityCorrection({openingResult:reading.openingResult,previousPages:reading.previousPages,error,
+          operationValid:async()=>publicationGuard()===true&&await continuityAuthority({controlStamp:active.controlStamp})});}
+        catch(blocked){error=blocked;}
+        controller.abort(error.message);
+      }
+      throw error;
     }finally{clearTimeout(timer);clearInterval(poll);signal?.removeEventListener('abort',abort);busy=false;active=null;done();
       if(!proactiveTask&&!closed)core.resumeProactive();}
   }
@@ -1023,6 +1131,8 @@ export async function createCmcpRuntimeSession({config:raw,repoRoot,readOnly=fal
     readingOpen:input=>foreground({...input,limits:applyReadingControls(input.limits),localOperation:'reading_open'}),
     readingPage:input=>foreground({...input,localOperation:'reading_page'}),
     readingOutline:input=>foreground({...input,localOperation:'reading_outline'}),
+    readingContinuity:input=>foreground({...input,localOperation:'reading_continuity'}),
+    continuityStatus,
     historyQuery:input=>foreground({...input,readingLimits:applyReadingControls(input.readingLimits),localOperation:'history_query'}),
     resumeHistoryQuery:input=>foreground({...input,localOperation:'history_query_resume'}),
     historyQueryStatus:id=>core.historyQueryStatus(id),

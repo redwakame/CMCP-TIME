@@ -130,7 +130,7 @@ await run('interactive_update_keeps_custom_scope_events_and_Skill_identity_witho
    events:[{key:'synthetic',eventId:'synthetic-event',objects:[{objectId:'delivery',aspects:['progress']}]}]},inspect});
  const before=JSON.parse(await fs.readFile(initial.configFile,'utf8')),questions=[];
  await runCmcpSetupCli(['--root',initial.root,'--update'],{emit:()=>{},ask:async q=>{questions.push(q);
-  return q.endsWith('(yes/no): ')?(/paid|configured-provider|automatic local proactive|do-not-disturb|Customize reading|Clean|Attach the project-local Codex/i.test(q)?'no':'yes'):'';}});
+  return q.endsWith('(yes/no): ')?(/paid|configured-provider|shared proactive|do-not-disturb|Customize reading|Clean|Attach the project-local Codex/i.test(q)?'no':'yes'):'';}});
  const after=JSON.parse(await fs.readFile(initial.configFile,'utf8')),manifest=JSON.parse(await fs.readFile(path.join(initial.root,'installation.json'),'utf8'));
  assert.deepEqual(after.input,before.input);assert.equal(manifest.choices.scopeId,'custom-not-default');
  assert.equal(manifest.choices.skillName,'cmcp-interactive-custom');assert.equal(manifest.choices.language,'ja');assert.equal(manifest.choices.bufferHours,24);

@@ -13,6 +13,7 @@ export function controlMenu({scopeId,sessionId,projectId=null,capabilities={}}){
     operations:[
       ['help / menu','操作選單與目前範圍'],...(capabilities.sessionControl===false?[]:[['on / off','僅加入／退出目前對話']]),['status','正式狀態：原件保存、清冊登錄與 reader 資格；跨宿主交接另依正式回執判定'],
       ['sources [頁碼] / time','來源與原時間清冊'],['read <選項> [頁碼]','正式原文；每頁最多 2048 字元，回執明列覆蓋'],['media-list <選項>','來源媒體清冊'],
+      ['continuity','唯讀查看本對話最近的有來源接續投影；缺關聯、待登錄與無投影分開，不呼模型或延長期限'],
       ['buffer / pins','Buffer／Pin 正式狀態'],['clear-buffer','只清 Buffer，不刪 History 或獨立 Pin'],
       ['retry-registration','明示重試本授權範圍登錄；零模型、不擴容量或刪原件，根因未排除仍待處理'],
       ['set <欄位> on|off','明示修改共用控制；欄位：'+Object.keys(booleanKeys).join(', ')],
@@ -48,7 +49,7 @@ export function createControlOptions({clock=Date.now,ttlMs=300000}={}){
     const match=/^(\S+)(?:\s+([\s\S]*))?$/u.exec(input.trim()),operation=match?.[1]??'help',tail=match?.[2]??'';
     const words=tail.split(/\s+/).filter(Boolean),generation=snapshot?.controlConfiguration?.generation;
     const payload=extra=>({scopeId:context.scopeId,generation,...extra});
-    if(['help','menu','status','on','off','buffer','time','clear-buffer','retry-registration'].includes(operation)){
+    if(['help','menu','status','continuity','on','off','buffer','time','clear-buffer','retry-registration'].includes(operation)){
       if(tail)throw Error('cmcp_unexpected_arguments');return {operation,...(['clear-buffer','retry-registration'].includes(operation)?{payload:payload({})}:{})};}
     if(operation==='ui'){if(words.length!==1||!DISPLAY_MODES.includes(words[0]))throw Error('cmcp_invalid_display_mode');return {operation,uiPreference:words[0]};}
     if(operation==='sources'||operation==='pins'){if(words.length>1)throw Error('cmcp_unexpected_arguments');return {operation,choices:offer(snapshot,context,operation,words.length?Number(words[0]):1)};}

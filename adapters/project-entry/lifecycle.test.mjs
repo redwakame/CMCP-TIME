@@ -8,8 +8,31 @@ import {pathToFileURL,fileURLToPath} from 'node:url';
 const productRoot=process.env.CMCP_PRODUCT_ROOT?path.resolve(process.env.CMCP_PRODUCT_ROOT):fileURLToPath(new URL('../../',import.meta.url));
 const {createOfficialAppServer}=await import(pathToFileURL(path.join(productRoot,'adapters/project-entry/app-server.mjs')).href);
 const {runDriver}=await import(pathToFileURL(path.join(productRoot,'adapters/project-entry/codex-driver.mjs')).href);
+const {buildHarnessProviderPatch,runHarnessTurn}=await import(pathToFileURL(path.join(productRoot,'adapters/project-entry/harness-driver.mjs')).href);
 
 const root=path.resolve(process.env.CMCP_TEST_OUTPUT_ROOT??path.join(process.cwd(),'.cmcp-test-output/project-entry'),'lifecycle');await fs.mkdir(root,{recursive:true});
+test('Groq 使用官方已掛載供應商與獨立憑證參照；舊路線不加登錄',()=>{
+  const settings={route:{provider:'groq',model:'openai/gpt-oss-120b'},credentials:{reference:'GROQ_API_KEY'}},before=structuredClone(settings);
+  assert.deepEqual(buildHarnessProviderPatch(settings),[{id:'llm-pi-ai',config:{providers:{groq:{apiKeyEnv:'GROQ_API_KEY'}}}}]);assert.deepEqual(settings,before);
+  assert.deepEqual(buildHarnessProviderPatch({route:{provider:'deepseek-official'}}),[]);assert.deepEqual(buildHarnessProviderPatch({route:{provider:'another-existing-provider'}}),[]);
+  for(const reference of ['DEEPSEEK_API_KEY','literal secret value','https://example.invalid',undefined])assert.throws(()=>buildHarnessProviderPatch({route:settings.route,credentials:{reference}}),/project_entry_groq_credential_reference_required/);
+});
+test('正常 Harness driver 使用相同供應商 patch，初始化失敗仍正常退出且不送問題',async()=>{
+  for(const provider of ['groq','deepseek-official']){
+    const directory=await fs.mkdtemp(path.join(root,'harness-provider-')),frames=[];let overlay;
+    const settings={executable:process.execPath,cli:path.join(directory,'synthetic-cli.js'),route:{provider,model:provider==='groq'?'openai/gpt-oss-120b':'deepseek-flash'},credentials:{path:path.join(directory,'nonexistent-credentials'),reference:provider==='groq'?'GROQ_API_KEY':'DEEPSEEK_API_KEY'}};
+    const config={hosts:{harness:settings},evidenceRoot:path.join(directory,'evidence'),sdkHome:path.join(directory,'sdk'),profileName:'synthetic-sdk',turnDeadlineMs:1000};
+    const shared={projectId:'synthetic-sdk',pipe:'synthetic-pipe',hosts:{harness:{agentId:'synthetic-agent',workspace:directory,controlAuthFile:path.join(directory,'controller'),readAuthFile:path.join(directory,'reader')}}};
+    const spawnProcess=(_exe,args)=>{const child=new EventEmitter();child.stdin=new PassThrough();child.stdout=new PassThrough();child.stderr=new PassThrough();child.kill=()=>assert.fail('不得強殺');
+      child.stdin.on('data',chunk=>{void(async()=>{const frame=JSON.parse(chunk.toString());frames.push(frame.method);if(frame.method==='initialize'){
+        overlay=JSON.parse(await fs.readFile(args[args.indexOf('--patch')+1],'utf8'));child.stdout.write(JSON.stringify({jsonrpc:'2.0',id:frame.id,error:{code:-32602,message:'synthetic_initialize_refusal'}})+'\n');
+      }else if(frame.method==='shutdown'){child.stdout.write(JSON.stringify({jsonrpc:'2.0',id:frame.id,result:{}})+'\n');setImmediate(()=>child.emit('close',0,null));}else assert.fail('不得送出問題或新增 RPC');})();});return child;};
+    const receipt=await runHarnessTurn({config,shared,text:'不應送出的合成問題',spawnProcess});
+    assert.deepEqual(overlay.filter(row=>row.id==='llm-pi-ai'),buildHarnessProviderPatch(settings));
+    assert.deepEqual(frames,['initialize','shutdown']);assert.equal(receipt.observedModelRequests,0);assert.equal(receipt.releaseConfirmed,true);assert.equal(receipt.error,'sdk_rpc_failed');
+    await assert.rejects(fs.access(settings.credentials.path),{code:'ENOENT'});
+  }
+});
 test('正常關閉逾時明示受阻，不強殺程序；稍後正式退出仍可核對',async()=>{
   const child=new EventEmitter();child.stdin=new PassThrough();child.stdout=new PassThrough();child.stderr=new PassThrough();child.kill=()=>assert.fail('不得強殺');
   const server=createOfficialAppServer({executable:process.execPath,cwd:root,spawnProcess:()=>child,closeTimeoutMs:10});

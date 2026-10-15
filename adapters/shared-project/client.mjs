@@ -3,13 +3,22 @@ import net from 'node:net';
 import path from 'node:path';
 
 export const MAX_FRAME_BYTES=1048576;
-export const MODEL_OPERATIONS=Object.freeze({find:'cmcp_find_history',open:'cmcp_open_history',read:'cmcp_read_history',progress:'cmcp_reading_progress','reader-status':'cmcp_status','list-images':'cmcp_list_images','read-image':'cmcp_read_image'});
+export const MODEL_OPERATIONS=Object.freeze({find:'cmcp_find_history',open:'cmcp_open_history',read:'cmcp_read_history',progress:'cmcp_reading_progress',continuity:'cmcp_project_continuity','continuity-page':'cmcp_read_continuity','reader-status':'cmcp_status','list-images':'cmcp_list_images','read-image':'cmcp_read_image'});
+export const OPEN_HISTORY_ARGUMENTS_HELP='cmcp_open_history 的合法引數：navigationTicket（必填字串，填 cmcp_find_history 結果的 ticket 值；不要傳名為 ticket 的引數）、selectionJson（必填字串，將該導航 schema 的選取物件序列化為 JSON）、includeCurrentInput（選配布林值）。不接受其他欄位；修正欄名／型別後仍須通過原票券、來源與授權檢查。';
+export const OPEN_HISTORY_TOOL_DESCRIPTION=OPEN_HISTORY_ARGUMENTS_HELP+'只有需要前文時依導航票券凍結必要來源；選取須符合該票 schema，無可選來源不 open、不發明 ref。reading_navigation_already_consumed 表示不能重播舊票。includeCurrentInput 預設不含當輪輸入；需要核對當輪修訂原話時明設 true，將可信宿主已保存／綁定的目前 User 原文附入集合，與歷史選取範圍分列。不能指定其他指標、用原生 Context 代替原文或繞過保存／授權；缺件、待登錄或變版會拒絕。';
+// 只提供固定契約，不將被拒的引數值或未知欄名寫入模型錯誤。
+export function modelToolArgumentsError(code,toolName){
+  const error=new Error(toolName==='cmcp_open_history'?code+': '+OPEN_HISTORY_ARGUMENTS_HELP:code);
+  error.code=code;return error;
+}
+export {CONTINUITY_TOOL_PARAMETERS,readContinuityProposal} from '../continuity-input.mjs';
+export const CONTINUITY_TOOL_DESCRIPTION='以已完整正式閱讀的必要來源核對修訂、目前計畫／回報及理由。傳 ticket 與 proposal（v6／v7 型別物件）；proposalJson 保留舊版相容，兩者必須二擇一。來源與語意契約在成功 cmcp_open_history 結果的 continuityContract。精確引文、角色、版本及控制仍由同一 Core 驗證，舊 v1-v7 字串相容。核對 currentPlans/currentClaims、具名 reasonBindings／targetReasonIds 及 reasonScopeReview 的理由作用範圍與原話；結構 ready 不是語意認證或執行授權。拒絕依正式回饋補正，不刪必要來源或修訂求通過。大型結果以 cmcp_continuity_delivery_page 分頁，依 delivery.id／nextPage 呼叫 cmcp_read_continuity 直到 delivery.complete=true；投影已產生不代表全部材料已送達。';
 // 既有 Codex／Harness 順序交接只承諾文字。通用 MCP 增加工具不自動擴大宿主 profile。
-const textOperations=Object.freeze(['find','open','read','progress']);
-export const MODEL_TEXT_PROFILE=Object.freeze({kind:'cmcp_model_read_capabilities',version:1,profile:'shared-text-v1',readOnly:true,modelCapture:false,modelControl:false,
+const textOperations=Object.freeze(['find','open','read','progress','continuity','continuity-page']);
+export const MODEL_TEXT_PROFILE=Object.freeze({kind:'cmcp_model_read_capabilities',version:3,profile:'shared-text-continuity-v3',readOnly:true,modelCapture:false,modelControl:false,
   operations:textOperations,tools:Object.freeze(textOperations.map(operation=>MODEL_OPERATIONS[operation])),
   unavailableOperations:Object.freeze(Object.keys(MODEL_OPERATIONS).filter(operation=>!textOperations.includes(operation))),
-  reason:'本 profile 保留已驗的四項文字正式閱讀；狀態與媒體 MCP 工具是另一個明示傳輸能力，不宣稱本宿主已接通。'});
+  reason:'正式文字閱讀加上按需來源核對投影；投影是宿主解讀，不新增 User 原文、事件決定或控制。狀態與媒體另依接點能力。'});
 export const validHostId=value=>typeof value==='string'&&/^[a-z][a-z0-9_-]{0,63}$/.test(value)&&!['__proto__','constructor','prototype'].includes(value);
 export function validatePipe(pipe){if(typeof pipe!=='string'||(!/^\\\\\.\\pipe\\cmcp-[A-Za-z0-9._-]{1,100}$/.test(pipe)&&!(process.platform!=='win32'&&path.isAbsolute(pipe)&&Buffer.byteLength(pipe)<=100&&path.basename(pipe).startsWith('cmcp-')&&pipe.endsWith('.sock'))))throw Error('shared_project_invalid_pipe');return pipe;}
 export async function readSharedProjectCredential(file){

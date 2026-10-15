@@ -1,5 +1,17 @@
 # 零模型測試與平台界線
 
+## 0.1.1 本輪適用重跑
+
+先依下方安裝相依並選本次專用輸出位置。由固定 `v0.1.1` 來源執行下列七份測試，原定結果為 96 項；不包含真模型、GUI 或全 S1 矩陣：
+
+```text
+node --test --test-concurrency=1 scripts/cmcp-setup-maintenance.test.mjs scripts/cmcp-proactive-description.test.mjs scripts/cmcp-continuity-report-scope.test.mjs scripts/cmcp-continuity-scoped-proposal.test.mjs adapters/continuity-model-view.test.mjs adapters/continuity-model-view-bounds.test.mjs adapters/continuity-delivery.test.mjs
+```
+
+以上七份測試支援 `CMCP_TEST_PRODUCT_ROOT` 指向另行安裝的同版實包；測試本身仍從固定 tag 來源執行。可另指定 `CMCP_SETUP_MAINTENANCE_ROOT`、`CMCP_PROACTIVE_TEST_ROOT`、`CMCP_TEST_OUTPUT` 為新的隔離輸出目錄。`scripts/cmcp-continuity-source-use.test.mjs` 可單獨核對公開 fixture 的來源用途；其兩個私人原件位置已遮蔽，原文、角色、時間、hash 與斷言未改。
+
+較寬 C27 容量測試仍有既存 163／236 超限 FAIL，不能把上面定點通過稱為全套通過。H4 真宿主與固定原件的不同證據層級見[四語 0.1.1 說明](release-0.1.1.md)。本頁命令可供重跑，是否在指定平台通過仍需該平台實際結果。
+
 本頁供 GitHub 完整來源使用。npm 執行套件刻意不附全部測試；驗證實際 npm 包時，使用同版來源或配對證據包內的測試，並將 `CMCP_PRODUCT_ROOT` 指向實際安裝的套件根。不要用作者管理根、舊日期資料夾或日常 History 當測試位置。
 
 下列命令不需要模型金鑰，也不會呼叫模型。純契約／替身測試、真本機服務測試與真宿主驗收分開；其中一組通過不能代稱其他層級通過。本次已驗版本及作業系統見 [支援矩陣](interop-capabilities.zh-TW.md)，不能只因命令可在另一平台啟動就宣稱已驗。

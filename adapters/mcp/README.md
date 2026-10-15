@@ -88,7 +88,7 @@ HTTP Host 採精確允許清單；Origin 出現時必須明列於 `http.allowedO
 
 ## 正式原文與媒體
 
-七個唯讀工具：`cmcp_status`、`cmcp_find_history`、`cmcp_open_history`、`cmcp_read_history`、`cmcp_reading_progress`、`cmcp_list_images`、`cmcp_read_image`。導航不是已讀，完整計數仍須正式 READ-ALL；有限未命中不是全歷史不存在。
+八個不改原文與控制的工具：`cmcp_status`、`cmcp_find_history`、`cmcp_open_history`、`cmcp_read_history`、`cmcp_reading_progress`、`cmcp_project_continuity`、`cmcp_list_images`、`cmcp_read_image`。導航不是已讀，完整計數仍須正式 READ-ALL；有限未命中不是全歷史不存在。接續投影沿保存設定保留衍生閱讀回執，不能替代原文或建立執行授權；詳見[按需接續契約](../../docs/daily-continuity.md)。
 
 圖片只接受本回合正式 reader 提供的 `mediaSourceRef` 加 `mediaId`。每次驗證父 User 原文、角色、時間、Pointer／版本、evidenceHash、原檔 bytes／SHA-256 與目前控制。不接受任意檔案路徑或 URL。原件缺件、變版、撤權或 hash 不符即拒絕，不用舊描述冒充圖片。查看不刷新 User 原時間、Buffer TTL 或 Pin 資格。
 

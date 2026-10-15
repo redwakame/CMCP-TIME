@@ -1,6 +1,6 @@
-# npm installation, workspace and updates
+# GitHub package installation, workspace and updates
 
-Install the fixed release `@redwakame-skill/cmcp-time@0.1.0`; source tag [v0.1.0](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0). Use `cmcp-time --version` to read the installed version. Mutable npm `latest` and `next` tags are channels; they do not identify an immutable artifact. [Version notes](release-0.1.0.md) distinguish the release from historical candidate records.
+Install **0.1.1** from the fixed `.tgz` attached to [GitHub Release v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1); source tag [v0.1.1](https://github.com/redwakame/CMCP-TIME/tree/v0.1.1). This release does not publish or retag npm: the registry package remains `@redwakame-skill/cmcp-time@0.1.0`. npm is still the installer for the GitHub tarball and its locked dependencies. Use `cmcp-time --version` to read the installed version; registry names and mutable `latest`/`next` do not identify the GitHub 0.1.1 artifact. [Version notes](release-0.1.1.md) explain the distribution difference. This filename is retained for existing links.
 
 ## Requirements and directories
 
@@ -18,15 +18,16 @@ Choose two persistent, user-writable directories:
 
 The installed package requires an explicit `--workspace` for data operations. Create that directory first. Configuration, answers, data and Host paths remain inside that authorization root and are checked for path escape and symlink redirection. Assets are resolved from the installed package, not guessed from the current directory. Do not place user data inside `node_modules` or use the installation prefix as a disposable data root.
 
-## Install from npm
+## Install 0.1.1 from the GitHub Release asset
 
-The following PowerShell example installs 0.1.0 into a persistent prefix. Choose different persistent directory names if these already serve another purpose. It does not require administrator rights or change the system PATH or global npm configuration. The example pins the exact version rather than a mutable channel.
+The following PowerShell example installs the exact GitHub 0.1.1 asset into a persistent prefix. Choose different persistent directory names if these already serve another purpose. It does not require administrator rights or change the system PATH or global npm configuration. Check the asset identity and checksums on the Release; the GitHub source ZIP is source code, not this npm-format installable `.tgz`.
 
 ```powershell
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
+$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
+npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --help
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
@@ -38,13 +39,24 @@ On a POSIX shell, the prefix binary is `bin/cmcp-time`:
 cmcp_prefix="$PWD/cmcp-install"
 cmcp_workspace="$PWD/cmcp-workspace"
 mkdir -p "$cmcp_prefix" "$cmcp_workspace"
-npm install --global --prefix "$cmcp_prefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
+cmcp_release="https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz"
+npm install --global --prefix "$cmcp_prefix" "$cmcp_release" --no-audit --no-fund
 "$cmcp_prefix/bin/cmcp-time" --version
 "$cmcp_prefix/bin/cmcp-time" --help
 "$cmcp_prefix/bin/cmcp-time" setup --workspace "$cmcp_workspace"
 ```
 
 The npm step downloads and installs code; `setup` starts the interactive configuration wizard. The POSIX example describes npm's executable layout; it does not by itself establish a new operating-system verification. See [evidence boundaries](verification.md). The configured DeepSeek credential path still requires Windows DPAPI and PowerShell 7. Host mode uses the Host's own authorized model access and does not require DeepSeek.
+
+### Retained npm 0.1.0 route
+
+The separately published npm version remains available when you deliberately want the older release:
+
+```powershell
+npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
+```
+
+This is **0.1.0**, not a 0.1.1 update. Read its [historical version notes](release-0.1.0.md); the 0.1.1 maintenance fixes described here are not retroactively present in that immutable package. No registry 0.1.1 install or change to `latest`/`next` is part of this release.
 
 ### Install a reviewed local tarball instead
 
@@ -62,7 +74,7 @@ Do not use `npm link` as evidence of installation from a package. This release i
 
 ## Configure and operate
 
-The wizard asks for source-saving consent, scope, timezone, language, features and optional Host attachment. It does not create a paid grant. Automatic proactive delivery remains initially OFF unless explicitly authorized in setup. Review Codex's generated project Hook trust separately.
+The wizard asks for source-saving consent, scope, timezone, language, features and optional Codex attachment. In 0.1.1, normal interactive setup requires a terminal (TTY) with one answer per question. Batch pipes and empty stdin are rejected before writes; EOF cancels instead of accepting missing answers. Use the explicit `--answers` route below for automation. Declining Codex attachment neither probes nor starts Codex; no Codex installation is required for local/non-Codex use. The compatible binding `state` concerns managed Codex hooks only; `setup --status` separately identifies configuration, host connection, Runtime controls and formal source readability. It does not create a paid grant. Proactive delivery starts OFF and requires separate explicit authorization; no configured inactivity value guarantees a message. Review Codex's generated project Hook trust only when you choose that attachment.
 
 Windows examples below reuse the two variables from installation:
 
@@ -86,13 +98,14 @@ Configured Playground use still requires separately configured credentials and a
 Close CMCP writers and the Host processes using its hooks before replacing program files. Retain the workspace and its data. Install the reviewed published version or replacement tarball into the **same prefix**, then invoke the installed `update` command. For a deliberately selected version:
 
 ```powershell
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
+$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
+npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') update --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
 ```
 
-Replace `0.1.0` only with the specific reviewed version you intend to install, or use a reviewed local tarball. Reinstalling the same version is not a newer update. `update` refreshes managed Hook/Skill bindings and explicit settings from the installed version; it does **not** download or upgrade the npm package. Reinstallation is the npm step. The setup receipt preserves installation identity and before-images. Changing the scope, event scope or Host workspace is not an automatic data migration. Unknown or modified managed files produce a conflict instead of being overwritten. Review renewed Host trust if generated Hook commands change.
+Use this fixed GitHub 0.1.1 asset, or the identical downloaded and verified local tarball, for this update. A registry-name reinstall still selects npm 0.1.0; it does not obtain 0.1.1. Reinstalling the same version is not a newer update. `update` refreshes managed Hook/Skill bindings and explicit settings from the installed version; it does **not** download or upgrade the npm package. Reinstallation is the npm step. The setup receipt preserves installation identity and before-images. Changing the scope, event scope or Host workspace is not an automatic data migration. Unknown or modified managed files produce a conflict instead of being overwritten. Review renewed Host trust if generated Hook commands change.
 
 The normal workflow does not modify stored source timestamps, extend existing Buffer expiry, replenish grants or restore previously delivered notifications. No automatic updater, service or background schedule is installed.
 
@@ -115,9 +128,10 @@ This removes the npm package, not the separate workspace. Do not delete the work
 
 ## Source installation uses the same implementation
 
-From the 0.1.0 source root:
+From the fixed v0.1.1 source root, install the locked dependencies before invoking commands:
 
 ```sh
+npm ci
 node bin/cmcp-time.mjs --help
 node bin/cmcp-time.mjs context --help
 node bin/cmcp-time.mjs setup --workspace /path/to/existing-workspace
@@ -128,6 +142,6 @@ Replace the example path with an actual existing directory. The older direct `sc
 
 ## Version and publication evidence
 
-The [npm version page](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0) and [GitHub v0.1.0](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.0) identify the fixed release. README changes on `main` do not rewrite already published npm packages. Exact versions, tag commits, release assets and mutable dist-tags are separate identities. The package is `@redwakame-skill/cmcp-time`; `npm install cmcp` is another name. Historical release preparation records remain historical; see [0.1.0 notes](release-0.1.0.md).
+[GitHub v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1) identifies this release and its installable `.tgz`; [npm 0.1.0](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0) remains the separate registry release. README changes on `main` and a GitHub release do not rewrite already published npm packages. Exact versions, tag commits, release assets and mutable dist-tags are separate identities. The package is `@redwakame-skill/cmcp-time`; `npm install cmcp` is another name. Historical records remain historical; see [0.1.1 notes](release-0.1.1.md) and [0.1.0 history](release-0.1.0.md).
 
 For native Desktop lifecycle, images, Pins, shared projects, backups and optional services, follow the [four-language operating guide](release-readiness.en.md). `setup` handles the existing local/Codex route; it does not silently deploy a Desktop plugin or install Hermes.

@@ -16,7 +16,7 @@ export function normalizeCmcpEvent(input) {
   return freezeLineage({ scopeId: id(input.scopeId, "scopeId"), eventId: id(input.eventId, "eventId") });
 }
 const kinds = {
-  user_report: "user", user_intent: "user", user_question: "user",
+  user_report: "user", user_intent: "user", user_question: "user", user_instruction: "user",
   assistant_suggestion: "assistant", assistant_statement: "assistant", tool_observation: "tool"
 };
 export const cmcpEventInterpretationRoles = Object.freeze(kinds);
@@ -26,17 +26,19 @@ function ids(input) {
   if (new Set(result).size !== result.length) throw lineageError("duplicate_event_target");
   return result;
 }
-function relation(input) {
+function relation(input, version) {
   shape(input, ["kind", "targetNodeIds"]);
-  if (!["independent", "supersedes", "related", "unresolved"].includes(input.kind)) throw lineageError("invalid_event_relation");
+  if (!["independent", "supersedes", "related", "unresolved", ...(version === 2 ? ["revises"] : [])].includes(input.kind)) throw lineageError("invalid_event_relation");
   const targetNodeIds = ids(input.targetNodeIds);
   if ((input.kind === "independent" && targetNodeIds.length)
-    || (["supersedes", "related"].includes(input.kind) && !targetNodeIds.length)) throw lineageError("invalid_event_targets");
+    || (["supersedes", "related", "revises"].includes(input.kind) && !targetNodeIds.length)) throw lineageError("invalid_event_targets");
   return { kind: input.kind, targetNodeIds };
 }
-export function normalizeCmcpEventUpdate(input) {
+export function normalizeCmcpEventUpdate(input, {allowPlanContract = false, allowUserInstruction = false} = {}) {
+  if (typeof allowPlanContract !== "boolean") throw lineageError("invalid_plan_contract_option");
+  if (typeof allowUserInstruction !== "boolean") throw lineageError("invalid_instruction_contract_option");
   shape(input, ["version", "updateId", "source", "interpretation", "action"]);
-  if (input.version !== 1) throw lineageError("invalid_event_version");
+  if (input.version !== 1 && !(allowPlanContract && input.version === 2)) throw lineageError("invalid_event_version");
   shape(input.source, ["pointer", "citation"]);
   const pointer = createCmcpSourcePointer(input.source.pointer), citation = input.source.citation;
   shape(citation, ["unit", "start", "end", "text", ...(Object.hasOwn(citation,"fragments")?["fragments"]:[])]);
@@ -56,31 +58,43 @@ export function normalizeCmcpEventUpdate(input) {
     if(citation.fragments[0].start!==citation.start||citation.fragments.at(-1).end!==citation.end)throw lineageError('invalid_event_citation_fragments');
   }
   const reading = input.interpretation;
-  shape(reading, ["kind", "temporalUse", "text"]);
+  shape(reading, ["kind", "temporalUse", "text", ...(input.version === 2 && Object.hasOwn(reading, "planStatus") ? ["planStatus"] : [])]);
   if (!Object.hasOwn(kinds, reading.kind) || !["current", "historical", "unspecified"].includes(reading.temporalUse)
     || typeof reading.text !== "string" || !reading.text.trim()) throw lineageError("invalid_event_interpretation");
+  // 僅正式 v6 接續投影明示啟用；不擴張既有 Event／舊版輸入的寫入契約。
+  if (reading.kind === "user_instruction" && !(allowUserInstruction && allowPlanContract && input.version === 2)) {
+    throw lineageError("invalid_event_interpretation");
+  }
+  if (Object.hasOwn(reading, "planStatus") && (reading.kind !== "user_intent"
+    || !["planned", "paused", "cancelled"].includes(reading.planStatus))) throw lineageError("invalid_plan_status");
   const action = input.action;
   let normalizedAction;
   if (action?.type === "add_node") {
     shape(action, ["type", "objectId", "aspect", "relation"]);
     normalizedAction = { type: action.type, objectId: id(action.objectId, "objectId"),
-      aspect: id(action.aspect, "aspect"), relation: relation(action.relation) };
+      aspect: id(action.aspect, "aspect"), relation: relation(action.relation, input.version) };
   } else if (action?.type === "correct_relation") {
     shape(action, ["type", "nodeId", "replacesUpdateIds", "relation"]);
     const replacesUpdateIds = ids(action.replacesUpdateIds);
     if (!replacesUpdateIds.length) throw lineageError("explicit_correction_target_required");
     normalizedAction = { type: action.type, nodeId: id(action.nodeId, "nodeId"),
-      replacesUpdateIds, relation: relation(action.relation) };
+      replacesUpdateIds, relation: relation(action.relation, input.version) };
   } else throw lineageError("invalid_event_action");
   return freezeLineage({
-    version: 1, updateId: id(input.updateId, "updateId"),
+    version: input.version, updateId: id(input.updateId, "updateId"),
     source: { pointer, citation: { unit: citation.unit, start: citation.start, end: citation.end, text: citation.text, ...(citation.fragments?{fragments:citation.fragments.map(part=>({...part}))}:{}) } },
-    interpretation: { kind: reading.kind, temporalUse: reading.temporalUse, text: reading.text },
+    interpretation: { kind: reading.kind, temporalUse: reading.temporalUse, text: reading.text,
+      ...(Object.hasOwn(reading, "planStatus") ? {planStatus: reading.planStatus} : {}) },
     action: normalizedAction
   });
 }
 const eligible = command => command.interpretation.temporalUse === "current"
   && ["user_report", "tool_observation"].includes(command.interpretation.kind);
+// v2 計畫有自己的目前版本；不擴張事實回報的 eligible 或執行權。
+const planEligible = command => command.version === 2 && command.interpretation.temporalUse === "current"
+  && command.interpretation.kind === "user_intent";
+const planRevisionTarget = command => command.version === 2 && ["current", "historical"].includes(command.interpretation.temporalUse)
+  && command.interpretation.kind === "user_intent";
 const groupKey = command => JSON.stringify([command.action.objectId, command.action.aspect]);
 
 /** Pure replay of explicit relations; never classifies language or sorts timestamps. */
@@ -92,6 +106,8 @@ export function buildCmcpEventView(event, records, support = records.map(() => t
       if (!target || targetId === node.command.updateId) throw lineageError("invalid_relation_target");
       if (edge.kind === "supersedes" && (!eligible(node.command) || !eligible(target.command)
         || groupKey(node.command) !== groupKey(target.command))) throw lineageError("invalid_state_relation");
+      if (edge.kind === "revises" && (!planEligible(node.command) || !planRevisionTarget(target.command)
+        || groupKey(node.command) !== groupKey(target.command))) throw lineageError("invalid_plan_relation");
     }
   }
   for (const [index, record] of records.entries()) {
@@ -134,32 +150,36 @@ export function buildCmcpEventView(event, records, support = records.map(() => t
     if (visited.has(nodeId)) return;
     visiting.add(nodeId);
     const edge = effective.get(nodeId).relation;
-    if (edge.kind === "supersedes") edge.targetNodeIds.forEach(visit);
+    if (["supersedes", "revises"].includes(edge.kind)) edge.targetNodeIds.forEach(visit);
     visiting.delete(nodeId); visited.add(nodeId);
   }
   nodes.forEach((_, nodeId) => visit(nodeId));
   const retiredNodes = new Set([...effective.values()].flatMap(({ relation: edge }) =>
-    edge.kind === "supersedes" ? edge.targetNodeIds : []));
+    ["supersedes", "revises"].includes(edge.kind) ? edge.targetNodeIds : []));
   const groups = new Map();
   for (const node of nodes.values()) {
-    if (!eligible(node.command)) continue;
-    const key = groupKey(node.command);
+    if (!eligible(node.command) && !planEligible(node.command)) continue;
+    const key = JSON.stringify([node.command.action.objectId, node.command.action.aspect,
+      planEligible(node.command) ? "plan" : "report"]);
     if (!groups.has(key)) groups.set(key, []);
     if (!retiredNodes.has(node.command.updateId)) groups.get(key).push(node);
   }
-  const currentClaims = [], unresolved = [];
+  const currentClaims = [], unresolved = [], currentPlans = [], unresolvedPlans = [];
   for (const [key, frontier] of groups) {
-    const [objectId, aspect] = JSON.parse(key);
+    const [objectId, aspect, channel] = JSON.parse(key);
     const blocked = frontier.some(node => {
       const edge = effective.get(node.command.updateId);
       return !node.supported || !edge.supported || edge.ambiguous || edge.relation.kind === "unresolved";
     });
     if (frontier.length === 1 && !blocked) {
       const node = frontier[0];
-      currentClaims.push({ objectId, aspect, nodeId: node.command.updateId, text: node.command.interpretation.text });
+      if (channel === "plan") currentPlans.push({objectId, aspect, nodeId:node.command.updateId,
+        text:node.command.interpretation.text, planStatus:node.command.interpretation.planStatus ?? "planned",
+        authority:"user_intent_not_outcome_or_execution_permission"});
+      else currentClaims.push({ objectId, aspect, nodeId: node.command.updateId, text: node.command.interpretation.text });
     } else {
-      unresolved.push({ objectId, aspect, nodeIds: frontier.map(node => node.command.updateId),
-        reason: blocked ? "support_or_relation_unresolved" : "multiple_unresolved_claims" });
+      (channel === "plan" ? unresolvedPlans : unresolved).push({ objectId, aspect, nodeIds: frontier.map(node => node.command.updateId),
+        reason: blocked ? "support_or_relation_unresolved" : channel === "plan" ? "multiple_unresolved_plans" : "multiple_unresolved_claims" });
     }
   }
   const knownEvolution = [...nodes.values()].map(node => {
@@ -179,10 +199,13 @@ export function buildCmcpEventView(event, records, support = records.map(() => t
     if (!node.supported) reasons.push("source_not_currently_verified");
     if (node.interpretation.kind === "user_intent") reasons.push("intent_outcome_not_inferred");
     if (node.interpretation.kind === "user_question") reasons.push("question_not_state_assertion");
+    if (node.interpretation.kind === "user_instruction") reasons.push("instruction_not_fact_plan_or_execution_permission");
     if (node.interpretation.temporalUse === "historical") reasons.push("historical_not_current");
     if (node.interpretation.kind.startsWith("assistant_")) reasons.push("assistant_not_state_evidence");
     return reasons.map(reason => ({ nodeId: node.nodeId, reason }));
   });
-  return freezeLineage({ kind: "derived_event_view", version: 1, event, semanticVerification: "not_performed",
-    knownEvolution, currentClaims, unresolved, unknownParts });
+  const hasPlanContract=records.some(record=>record.command.version===2);
+  return freezeLineage({ kind: "derived_event_view", version: hasPlanContract ? 2 : 1, event, semanticVerification: "not_performed",
+    knownEvolution, currentClaims, unresolved, unknownParts,
+    ...(hasPlanContract ? {currentPlans,unresolvedPlans} : {}) });
 }

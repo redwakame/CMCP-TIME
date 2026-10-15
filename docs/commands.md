@@ -113,6 +113,8 @@ Use a number actually returned by `/recoveries`. Recoveries reuse original Point
 
 ### Buffer, control and local proactive delivery
 
+`/status` separates configured timing values from the shared Runtime dispatcher and observed delivery state. `input.loopTiming.inactivityMs` (default 60000) is a retained compatibility value, not a promise to send after one idle minute. Runtime disables the retained local inactivity timer; only eligible candidate `dueAt` / original expiry, current guards and the connected delivery route can schedule work. The official Harness bridge currently delivers explicit Pins only. Read-only viewing does not start dispatch or prove another Runtime is running.
+
 | Command | Persistence and meaning |
 |---|---|
 | `/buffer` | Read-only entries, original/activity times, expiry and eligibility |

@@ -6,21 +6,21 @@
 
 **讓 AI 助理依原文與時間接續工作的技能：** 找回原話、圖片、角色及時間，沿用原本的宿主與模型。
 
-**0.1.0 · Apache-2.0 · 原作者：[redwakame](https://github.com/redwakame)**
+**0.1.1 · Apache-2.0 · 原作者：[redwakame](https://github.com/redwakame)**
 
 ## 回到真正需要的原件
 
 昨天完成草稿，今天只改其中一項。換到新對話後，CMCP 協助找回原稿與修訂，分清 User 的決定和 Assistant 的提案。圖片修訂保留各自原檔與來源關係，不只留下描述。
 
-![原稿、修訂與跨對話正式回查的用途示意](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/continuity-source-flow.png)
+![原稿、修訂與跨對話正式回查的用途示意](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/continuity-source-flow.png)
 
 Σ 表示衍生摘要的概念，不表示本版新增摘要功能。
 
 圖解是用途說明，不是真模型回答紀錄。CMCP 提供來源材料，不取代宿主推理或改寫最後答案；模型仍可能誤解已正確取得的原文。
 
-## 安裝 0.1.0 正式版
+## 從 GitHub 安裝 0.1.1 正式版
 
-套件：[`@redwakame-skill/cmcp-time`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0)。固定來源：[v0.1.0](https://github.com/redwakame/CMCP-TIME/tree/v0.1.0)；`main` 可有後續變更。以下固定完整版本號；`latest`、`next` 是可變動通道，不是來源身分。
+正式成品由 [GitHub Release v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1) 取得，固定來源為 [tag v0.1.1](https://github.com/redwakame/CMCP-TIME/tree/v0.1.1)。**本次不更新 npm：**registry 保留 [`@redwakame-skill/cmcp-time@0.1.0`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0)。只用套件名稱或可變標籤安裝，不會因此升為 0.1.1；以下直接使用固定 GitHub `.tgz` 網址。
 
 先準備 Node.js **22.16.0 以上**與 npm。選兩個持久目錄，分別存程式與獲授權的工作區資料。以下 PowerShell 範例不需要管理員或修改全域 PATH：
 
@@ -28,7 +28,8 @@
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
+$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
+npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
@@ -38,9 +39,11 @@ npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0
 
 [POSIX、本機套件與更新方式](docs/npm-installation.md) · [快速開始](docs/quick-start.md)
 
+**0.1.1 的增量：**分開保留有來源的目前計畫、事實回報、修改範圍與理由。沒有 Codex 也能初始化；正常互動須使用 TTY，自動化採明確 `--answers`。按需狀態保留真正歧義與有界覆蓋，結構 `ready` 不等於語意認證或執行授權。詳見 [0.1.1 更新與限制](docs/release-0.1.1.md)。
+
 ## 選擇有對應證據的入口
 
-![同一授權原文庫與選配宿主、MCP 介接](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/host-interoperability.png)
+![同一授權原文庫與選配宿主、MCP 介接](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/host-interoperability.png)
 
 圖示兩組分別成立的順序交接：Codex ↔ Harness、Hermes ↔ Harness，不代表三宿主並行或同一輪三方驗收；虛線 MCP 為共用同一 Core 的選配入口。
 
@@ -55,7 +58,7 @@ OpenClaw、dots、Grok Bot、Muse 的接點與帳戶條件不同，見[能力矩
 
 ## 日常使用、查證與停止
 
-![最小入口、按需詳細資料，以及分開的對話授權與保存控制](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.0/docs/assets/controls-modes.png)
+![最小入口、按需詳細資料，以及分開的對話授權與保存控制](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/controls-modes.png)
 
 概念線框，不是真實 GUI 截圖：1 最小化、2 一般列、3 隱藏。
 
@@ -72,7 +75,7 @@ History、Buffer 與 Pin 各司其職。Buffer 預設 12 小時，可設 6–48 
 
 **已保存不等於已可回查。** 狀態分開呈現原件保存、登錄待辦／失敗、正式可讀資格與跨宿主評估狀態。單憑儲存狀態未評估接收端交接，須另查正式閱讀與宿主回執。查看或切換介面不刷新原時間／TTL、不建立授權或派送。缺件、變版或撤權時明確拒絕。
 
-更新前請依[備份還原與更新操作](docs/release-readiness.zh-TW.md)保留資料。程式、工作區 History、宿主原生歷史與受保護憑證責任分開；解除 CMCP 保留原件，不代表清除宿主紀錄或完整刪除治理。0.1.0 不宣稱向量、音訊／影片、雲端同步或多人並行 writer 已交付。
+更新前請依[備份還原與更新操作](docs/release-readiness.zh-TW.md)保留資料。程式、工作區 History、宿主原生歷史與受保護憑證責任分開；解除 CMCP 保留原件，不代表清除宿主紀錄或完整刪除治理。0.1.1 不宣稱向量、音訊／影片、雲端同步或多人並行 writer 已交付。
 
 ## 文件與專案
 
@@ -89,4 +92,4 @@ History、Buffer 與 Pin 各司其職。Buffer 預設 12 小時，可設 6–48 
 
 原作者與維護者為 **redwakame**。目前專案發布採 [Apache-2.0](LICENSE)，保留 [NOTICE](NOTICE) 與[上游授權沿革](docs/license-provenance-v0.1.md)。舊版本已授出的權利不撤銷；內部相容識別仍為 `cmcp`，對外名稱為 **CMCP-TIME**。[CITATION.cff](CITATION.cff) 提供方便引用的資訊，不新增每次使用都必須宣傳作者的條款。
 
-[0.1.0](docs/release-0.1.0.md) · [可重跑核對](docs/testing.md)
+[0.1.1 更新與限制](docs/release-0.1.1.md) · [0.1.0 歷史](docs/release-0.1.0.md) · [可重跑核對](docs/testing.md)

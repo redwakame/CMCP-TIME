@@ -1,8 +1,10 @@
-# CMCP-TIME 0.1.0：正式操作指南
+# CMCP-TIME 0.1.1：正式操作指南
 
 [English](release-readiness.en.md) · [繁體中文](release-readiness.zh-TW.md) · [Español](release-readiness.es.md) · [日本語](release-readiness.ja.md)
 
-這份文件說明 **0.1.0** 的實際操作；保留原檔名以相容既有連結。以套件完整版本、發布 tag 與 `PUBLIC-FILES.json` 辨識交付來源，不以可變動通道代替版本身分。原作者 redwakame，Apache-2.0；保留 LICENSE 與 NOTICE。
+這份文件說明 **0.1.1** 的實際操作；保留原檔名以相容既有連結。以套件完整版本、發布 tag 與 `PUBLIC-FILES.json` 辨識交付來源，不以可變動通道代替版本身分。原作者 redwakame，Apache-2.0；保留 LICENSE 與 NOTICE。
+
+**0.1.1 請由 [GitHub Release v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1) 安裝**，使用下列固定 `.tgz`。本次 npm 保留 0.1.0；要用 0.1.1 時，不要換成 registry 套件名稱或 `latest`／`next`。請核對 Release 雜湊與安裝後的 `--version`。詳見[更新與證據限制](release-0.1.1.md)。
 
 ## 持久安裝與獨立工作區
 
@@ -12,7 +14,8 @@
 $cmcpPrefix = Join-Path $PWD 'cmcp-install'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0 --no-audit --no-fund
+$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
+npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
 & (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
@@ -21,6 +24,18 @@ npm.cmd install --global --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.0
 `setup` 詢問保存範圍、語言、時區與選配 Codex 接線，不代裝宿主、不匯入私人歷史、不授予付費呼叫或主動派送。POSIX 執行檔在 `<prefix>/bin/cmcp-time`，Windows 在 `<prefix>/cmcp-time.cmd`；後續範例請替換成自己的完整執行檔，不假設已改 PATH。來源使用者可用 `node bin/cmcp-time.mjs`，先 `npm ci` 裝妥選配 MCP 的鎖定相依。詳見[安裝指南](npm-installation.md)。
 
 受管理的本機 Codex Hook 須核對精靈產出的專案並完成原生核准。官方 Harness Desktop 是另一個宿主，npm setup 不會自動建立它的部署；已有 CMCP Desktop 部署者依下文查核 profile 與生命週期操作。只有程式副本不等於完整接線。
+
+### 0.1.1 維護：互動輸入與選配 Codex
+
+下列修正納入 GitHub 0.1.1；已發布的 npm 0.1.0 套件保持原樣。`setup`／`update` 不帶 `--answers` 時須在終端機（TTY）逐題回答；批次管線或空 stdin 會在寫設定前拒絕，途中 EOF 會取消，缺答不等於同意。自動化請先依 `examples/setup-host.json` 明確填妥自己的選項，再執行 `cmcp-time setup --workspace <既有工作區> --answers <工作區內的 answers.json>`。不使用 Codex 時選 `attachCodex: false`；不用安裝或啟動 Codex。
+
+`setup --status` 保留相容的 `state`／`cmcp_codex_binding`，但 `stateScope=managed_codex_hook_binding` 明示它只代表 Codex 接線。請分別查看 `layers.configuration`、`layers.hostConnection`、`layers.runtime` 與 `layers.sources`：已設定、宿主接線、有效控制、原件保存與正式可讀資格是不同狀態。其他宿主未經查核會顯示 `not_inspected`；reader 資格不代表模型已讀取。`disable` 只停用受管理的 Codex 接線，保留 Runtime 控制與 History；以原生非 Codex 入口使用時仍須自己的有效授權。
+
+### 0.1.1 維護：按需整理目前狀態
+
+在已授權對話自然要求「整理目前狀態」即可，由宿主使用既有正式工具完成，不必手寫 JSON。若 `partial` 回傳來源用途 finding，宿主須先核對完整原訊息，再依目前 `finding.requiredResolutionKind` 及正式 `finding.report.source.ref` 處理；`reportRef` 不能拿 `nodeId` 代替。若回傳分頁，沿同一結果的 `delivery.nextPage` 續讀直到 `complete`，不要重送 proposal 冒充下一頁。來源缺件或真正歧義仍保留 `partial`；結構／來源處理 `ready` 不等於語意已驗通過，也不授予執行權限。
+
+本次 H4 維護驗收已分清三項明示回報與暫停指令，所得投影的全部頁面均已供給。正常宿主選用精確引文區間；明示來源用途 resolution 另由固定原件正反例核對。投影完整不代表選定的全部原文已送達模型：額外選入的一段助理長答未讀，因此整體覆蓋仍正確顯示 `partial`。較早的 C27 兩個大型材料案例仍超過 65,536 bytes，屬已知容量限制，未宣稱全量通過。詳見 [0.1.1 證據界線](release-0.1.1.md)。
 
 ## 第一次接入官方 Desktop
 
@@ -140,9 +155,11 @@ Desktop 資料位於明示部署的 `state/history`，原件在其 `media-origin
 
 Buffer 預設 12 小時，可設 6–48 小時；到期／Clear 保留 History 與獨立 Pin。OFF、Clean、停止保存、解除接線各有語意。顯示切換、清冊／狀態查看及正式預覽不刷新 User 時間、TTL 或派送資格；正式閱讀可留下既有閱讀回執。共用控制與 Session 授權維持分開。
 
+Setup 保留低層 `loopTiming` 相容值：TTL／閒置／活動窗分別為 600000／60000／600000 毫秒。正式 Runtime 設 `externalDispatch:true`、使用共用派送器，保留的本機閒置計時器未啟用，**不代表 60 秒沒活動就會發送**。排程依合格 Pin 的 `dueAt` 或受支持 Buffer 的原期限，仍須通過目前控制、DND、來源、取消、去重及已授權送達目標檢查。目前官方 Harness 路線只接明確 Pin；主動共用開關首次 OFF。狀態分列配置、執行器、實際觀測與宿主送達限制；未觀測到執行器不能稱已確認停機。詳見[設定說明](configuration.md#timing-values-and-the-effective-proactive-executor)。
+
 `/cmcp ui minimized`、`row`、`hidden` 只改顯示，隱藏後仍可 `/cmcp help`。狀態分列已保存、登錄待辦／失敗、目前正式可讀及跨宿主評估狀態。單憑儲存狀態未評估接收端交接，須另查正式閱讀與宿主回執。需要補登時走明示受控重試，查看不自動重試或擴容量。
 
-## npm 更新與本機 Hook 解除
+## 程式更新與本機 Hook 解除
 
 替換程式前先正常停止該範圍 CMCP writer，保留原 prefix 與工作區。把審閱過的目標版本裝進同一 prefix、核對 `--version`，再以 `cmcp-time update --workspace <workspace>` 更新精靈管理的 Codex 接線；`update` 不下載 npm 程式。Desktop 另依下文 `desktop upgrade`。
 

@@ -7,7 +7,10 @@ import {randomUUID,createHash} from 'node:crypto';
 import {createSharedProjectService} from './service.mjs';
 import {startSharedProjectServer} from './server.mjs';
 import {callSharedProject} from './client.mjs';
-import {CmcpHarnessBridge} from '../deepseek-harness/runtime-bridge.mjs';
+import {CmcpHarnessBridge,projectHarnessToolResult,projectHarnessTimeContext} from '../deepseek-harness/runtime-bridge.mjs';
+import {restoreContinuityModelView} from '../continuity-model-view.mjs';
+import {restoreContinuityDelivery,CONTINUITY_PAGE_CHARS} from '../continuity-delivery.mjs';
+import {readTool as readCodexTool,makeTicket} from '../codex/shared-project/adapter.mjs';
 
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),base=process.env.CMCP_TEST_OUTPUT_ROOT?path.resolve(process.env.CMCP_TEST_OUTPUT_ROOT):path.resolve(repo,'logs/tests/shared-project');
 await fs.mkdir(base,{recursive:true});const run=await fs.mkdtemp(path.join(base,'run-'));
@@ -54,6 +57,14 @@ test('unauthorized project, exact workspace, host, role and unknown schema fail 
   await assert.rejects(f.call(r,'model_read'),/role_forbidden/);await assert.rejects(f.call({...r,rawConfig:{}}),/invalid_schema/);
   assert.equal((await files(path.join(f.root,'state'))).constructor,Object);assert.deepEqual(await files(path.join(f.root,'state')),{});
 });
+test('服務的 open 只允許選配當輪原文布林值；不能附帶任意 pointer 或錯型別',async()=>{
+  const forwarded=[],f=await fixture('current-input-arguments',{factory:bridge=>{const original=bridge.tool.bind(bridge);bridge.tool=async(...args)=>{if(args[1]==='cmcp_open_history'){forwarded.push(args);return {status:'opened'};}return original(...args);};return bridge;}});
+  const who=await f.claim(await f.join());await f.begin(who);const selection={navigationTicket:'正式導航',selectionJson:'{}'};
+  for(const option of [{},{includeCurrentInput:false},{includeCurrentInput:true}]){const args={...selection,...option};await f.send(who,'open',args,'model_read');assert.deepEqual(forwarded.at(-1)[2],args);}
+  for(const option of [{includeCurrentInput:'true'},{includeCurrentInput:null},{pointer:'other'},{selectionJson:undefined}]){const count=forwarded.length;await assert.rejects(f.send(who,'open',{...selection,...option},'model_read'),/invalid_schema/);assert.equal(forwarded.length,count);}
+  await f.finish(who);
+});
+
 test('join, status, progress visibility and owner claim never clear Clean/OFF',async()=>{
   for(const [label,controls]of [['off',{enabled:false}],['clean',{clean:true}]]){const f=await fixture(label,{controls}),who=await f.join(),before=await files(f.root);
     await assert.rejects(f.claim(who),/controls_disabled/);assert.equal((await f.send(who,'status')).joined,true);assert.deepEqual(await files(f.root),before);}
@@ -113,6 +124,31 @@ test('named pipe authenticates per-host role; finite close rejects connections a
   await assert.rejects(callSharedProject({connection:{...connection,authFile:f.config.hosts.harness.readAuthFile},role:'model_read',request}),/role_forbidden/);
   await assert.rejects(callSharedProject({connection,role:'model_read',request}),/credential_binding_mismatch/);await server.close();await assert.rejects(callSharedProject({connection,role:'controller',request}),/ipc_unavailable/);
 });
+test('空 History 的不合法選取與已消耗導航票由真 IPC 回傳不同原因，不以重播恢復閱讀權',async t=>{
+  const f=await fixture('empty-history-consumed-navigation');await f.service.close();const server=await startSharedProjectServer({config:f.config});resources.add(server);
+  t.after(()=>server.close());
+  let epoch;const invoke=(operation,args={},role='controller')=>callSharedProject({connection:{pipe:server.pipe,authFile:role==='controller'?f.config.hosts.harness.controlAuthFile:f.config.hosts.harness.readAuthFile},role,request:f.req('harness','empty-native-session',operation,args,epoch)});
+  epoch=(await invoke('join')).epoch;epoch=(await invoke('claim')).epoch;
+  const receivedAt=new Date().toISOString();await invoke('receive',{messageId:'first-native-message',text:'這是全新工作規劃，請只整理目前提供的條件。',receivedAt});await invoke('claim-turn',{messageId:'first-native-message',harnessTurn:1});
+  const navigation=await invoke('find',{},'model_read');assert.equal(navigation.selection.input.ordinaryHistory.registeredSources,0);
+  const ordinary={navigationTicket:navigation.ticket,selectionJson:JSON.stringify({version:2,eventRefs:[],scope:{basis:'ordinary_history'},clarification:''}),includeCurrentInput:true};
+  await assert.rejects(invoke('open',ordinary,'model_read'),{message:'invalid_temporal_selection_schema'});
+  const unresolved={version:2,eventRefs:[],scope:{basis:'unresolved',disposition:'not_found'},clarification:'沒有相符的已授權歷史範圍'};
+  await assert.rejects(invoke('open',{...ordinary,selectionJson:JSON.stringify(unresolved)},'model_read'),{message:'reading_navigation_already_consumed'});
+  // 明示的新導航可回未命中；不能把當輪訊息、假 ref 或舊票當成歷史集合。
+  const fresh=await invoke('find',{},'model_read');assert.notEqual(fresh.ticket,navigation.ticket);
+  const notFound=await invoke('open',{navigationTicket:fresh.ticket,selectionJson:JSON.stringify(unresolved)},'model_read');assert.equal(notFound.status,'not_found');assert.equal(notFound.collection,null);assert.equal(notFound.modelContext,null);
+  const status=await invoke('status');assert.equal(status.activeTurn,true);
+  await invoke('cancel',{userMessageId:'first-native-message',harnessTurn:1,reason:'synthetic_completed'});await server.close();
+});
+test('IPC 對未知錯誤仍隱藏正文，不把冒號或任意路徑當成公開原因',async t=>{
+  const f=await fixture('safe-error-private-reason');await f.service.close();
+  const server=await startSharedProjectServer({config:f.config,bridgeFactory:options=>{const bridge=new CmcpHarnessBridge(options);bridge.status=async()=>{throw Error('reading_navigation_already_consumed:C:/private/not-an-id');};return bridge;}});resources.add(server);
+  t.after(()=>server.close());
+  const request=f.req('harness','private-error-session','join'),connection={pipe:server.pipe,authFile:f.config.hosts.harness.controlAuthFile};
+  const joined=await callSharedProject({connection,role:'controller',request});
+  await assert.rejects(callSharedProject({connection:{...connection,authFile:f.config.hosts.harness.readAuthFile},role:'model_read',request:f.req('harness','private-error-session','reader-status',{},joined.epoch)}),{message:'shared_project_operation_failed'});await server.close();
+});
 test('formal cross-host find/open/read returns verified origin; progress is zero mutation',async()=>{
   const f=await fixture('formal-reader'),a=await f.claim(await f.join());await f.begin(a);await f.finish(a);const b=await f.join('codex');
   b.epoch=(await f.send(a,'handoff',{target:{hostId:b.hostId,agentId:'synthetic-agent',workspace:f.config.hosts.codex.workspace,sessionId:b.sid}})).epoch;
@@ -170,5 +206,150 @@ test('共用 CLI 選項正式閱讀，查看不改原文／Buffer／Pin與控制
  const read=await f.send(a,'control',{text:'read 1'});assert.equal(read.result.status,'found');assert.equal(read.result.completeStoredContent,true);
  const after=await f.bridge.status();for(const key of ['registration','pins','controlConfiguration'])assert.deepEqual(after[key],before[key]);assert.deepEqual({...after.buffer,evaluatedAt:null},{...before.buffer,evaluatedAt:null});
  await f.send(a,'control',{text:'set clean on'});await assert.rejects(f.send(a,'control',{text:'read 1'}),/expired|controls_disabled/);
+});
+async function attributionFixture(label,{targetHost='codex',targetSession='same-native-session',factory}={}){
+ const f=await fixture(label,{factory}),a=await f.claim(await f.join());
+ const user='我打算製作室內展示架；每個接面需要確認尺寸，仍須書面同意。'.repeat(12),assistant='我建議使用木製展示架。';
+ await f.begin(a,user);await f.send(a,'finish',{messageId:'a',revisionId:'r1',text:assistant,receivedAt:new Date().toISOString(),userMessageId:'same-native-message',userRevisionId:'r1',harnessTurn:1});
+ const b=await f.join(targetHost,targetSession);b.epoch=(await f.send(a,'handoff',{target:{hostId:b.hostId,agentId:'synthetic-agent',workspace:f.config.hosts[targetHost].workspace,sessionId:b.sid}})).epoch;
+ await f.begin(b,'請核對展示架原案與前一個 Assistant 的建議。');
+ const navigation=await f.send(b,'find',{},'model_read'),opened=await f.send(b,'open',{navigationTicket:navigation.ticket,selectionJson:JSON.stringify({version:2,eventRefs:[],scope:{basis:'ordinary_history'},clarification:''})},'model_read'),pages=[];
+ for(let i=0;i<64;i++){const page=await f.send(b,'read',{ticket:opened.ticket},'model_read');pages.push(page);if(page.coverage?.complete||page.status==='complete')break;}
+ const original=pages.find(page=>page.source?.sourceAuthorRole==='user'),suggestion=pages.find(page=>page.source?.sourceAuthorRole==='assistant');assert(original&&suggestion);
+ const proposal={version:4,nodes:[{id:'plan',ref:original.source.ref,quote:user,kind:'user_intent',temporalUse:'current',topic:'展示用品',aspect:'原案'},
+  {id:'suggestion',ref:suggestion.source.ref,quote:assistant,kind:'assistant_suggestion',temporalUse:'current',topic:'展示用品',aspect:'建議'}],unknowns:[]};
+ return {f,a,b,opened,pages,proposal,project:()=>f.send(b,'continuity',{ticket:opened.ticket,proposalJson:JSON.stringify(proposal)},'model_read')};
+}
+test('目前讀者與跨宿主原作者由正式身分綁定；同名 Agent／Session 不誤算相同',async()=>{
+ const x=await attributionFixture('attribution-cross-host'),{f,b,opened,pages}=x,context=await f.send(b,'request-context');
+ assert.equal(context.readerIdentity.hostId,'codex');assert.equal(context.readerIdentity.sessionId,b.sid);assert.equal(context.readerIdentity.verification,'authenticated_active_host_turn');
+ assert.deepEqual(projectHarnessTimeContext(context,true).readerIdentity,context.readerIdentity);
+ assert.equal(Object.hasOwn(projectHarnessTimeContext({contextId:'native',modelRequestTime:{}},true),'readerIdentity'),false);
+ const wire=await x.project(),result=restoreContinuityModelView(wire);assert.equal(result.status,'ready');assert.deepEqual(result.readerIdentity,context.readerIdentity);
+ assert.equal(result.projectionHash,sha(JSON.stringify(result.projection)));assert.equal(Object.hasOwn(result.projection,'readerIdentity'),false);
+ for(const origin of [...pages.flatMap(p=>p.sourceOrigins??[]),...result.sourceOrigins]){
+  assert.equal(origin.ticket,opened.ticket);assert.equal(origin.origin.hostId,'harness');assert.equal(origin.verification,'formal_read_binding');
+  assert.deepEqual(origin.readerComparison,{sameHost:false,sameAgent:false,sameSession:false,meaning:'identity_equality_only_not_adoption_or_execution'});
+ }
+ for(const page of pages.filter(page=>page.source?.ref)){
+  const view=page.sourceAttribution;assert.equal(view.status,'available');assert.equal(view.binding.ref,page.source.ref);
+  assert.equal(view.binding.capture.hostId,'harness');assert.equal(view.currentReader.hostId,'codex');assert.equal(view.binding.messageRole,page.source.sourceAuthorRole);
+  assert.deepEqual(view.material.range,page.range);assert.equal(view.material.messageRecordedAt,page.source.messageRecordedAt);
+  assert.equal(view.material.textSha256,sha(JSON.parse(page.modelContext).content));
+  const projected=projectHarnessToolResult(page);assert.deepEqual(projected.sourceAttribution,view);assert.equal(projected.modelContext.content,JSON.parse(page.modelContext).content);
+ }
+ const provenance=result.presentation.sourceContext.provenance;
+ assert.equal(provenance.status,'available');assert.equal(provenance.currentReader.hostId,'codex');
+ for(const source of provenance.bindings){assert.equal(source.capture.hostId,'harness');assert.equal(source.readerComparison.sameHost,false);assert.equal(source.readerComparison.sameSession,false);}
+ for(const message of result.presentation.sourceContext.originalMessages.messages)assert.match(message.sourceProvenanceReference,/^\/presentation\/sourceContext\/provenance\/bindings\/\d+$/);
+ const coreView=(await f.send(b,'control',{text:'continuity'})).result;assert.equal(Object.hasOwn(coreView.presentation.sourceContext,'provenance'),false);
+ assert.equal(result.projection.currentClaims.length,0);assert.equal(result.projection.currentPlans.length,1);assert.equal(result.projection.validation.executionAuthority,'none');
+ const compact=projectHarnessToolResult(result);assert.deepEqual(compact,wire);assert(compact.modelView);assert.deepEqual(projectHarnessToolResult(compact),compact);
+ assert.deepEqual(projectHarnessToolResult(JSON.parse(JSON.stringify(compact))),compact);assert.deepEqual(restoreContinuityModelView(compact),result);
+ await fs.writeFile(path.join(run,'attribution-result.json'),JSON.stringify({context,pages,proposal:x.proposal,result,compact,restoredEqual:true,modelCalls:0},null,2)+'\n');
+ await f.finish(b);
+});
+test('同宿主同配置 Agent 的新 Session 仍不是原 Session；同 Session 自讀可分辨',async()=>{
+ const x=await attributionFixture('attribution-new-session',{targetHost:'harness',targetSession:'second-native-session'}),result=await x.project();
+ for(const origin of result.sourceOrigins)assert.deepEqual(origin.readerComparison,{sameHost:true,sameAgent:true,sameSession:false,meaning:'identity_equality_only_not_adoption_or_execution'});
+ const {f,b}=x;await f.finish(b);
+ await f.begin(b,'請取回剛才展示架對話及回答。','r2');const nav=await f.send(b,'find',{},'model_read');
+ const opened=await f.send(b,'open',{navigationTicket:nav.ticket,selectionJson:JSON.stringify({version:2,eventRefs:[],scope:{basis:'ordinary_history'},clarification:''})},'model_read');
+ const origins=[];for(let i=0;i<64;i++){const page=await f.send(b,'read',{ticket:opened.ticket},'model_read');origins.push(...page.sourceOrigins??[]);if(page.coverage?.complete||page.status==='complete')break;}
+ assert(origins.some(o=>o.origin?.sessionId===b.sid&&o.readerComparison.sameSession===true));
+ assert(origins.some(o=>o.origin?.sessionId!==b.sid&&o.readerComparison.sameSession===false));await f.finish(b,'r2');
+});
+test('模型不能注入 readerIdentity、冒認 Host 或讀取未授權專案來源',async()=>{
+ const x=await attributionFixture('attribution-forgery'),{f,b}=x;
+ await assert.rejects(f.send(b,'continuity',{ticket:x.opened.ticket,proposalJson:JSON.stringify(x.proposal),readerIdentity:{hostId:'harness'}},'model_read'),/invalid_schema/);
+ const request=f.req(b.hostId,b.sid,'read',{ticket:x.opened.ticket},b.epoch);
+ await assert.rejects(f.service.dispatch({...request,hostId:'harness'},{hostId:'codex',role:'model_read'}),/unauthorized_host/);
+ await assert.rejects(f.service.dispatch({...request,projectId:'other-project'},{hostId:'codex',role:'model_read'}),/unauthorized_project/);await f.finish(b);
+});
+test('只持相同 hash 不足以配來源；ticket、ref、Pointer、role 任一不符均不補造作者',async()=>{
+ let transform=value=>value;
+ const x=await attributionFixture('attribution-exact-bindings',{factory:bridge=>{const original=bridge.tool.bind(bridge);bridge.tool=async(...args)=>{
+  const value=await original(...args);return args[1]==='cmcp_project_continuity'?transform(value):value;};return bridge;}});
+ const normal=restoreContinuityModelView(await x.project()),{f,b,opened}=x;assert(normal.sourceOrigins.every(o=>o.origin));
+ const actualTool=f.bridge.tool.bind(f.bridge),known=normal.sourceOrigins[0];
+ f.bridge.tool=async(session,name,args,...rest)=>{if(name!=='cmcp_read_history')return actualTool(session,name,args,...rest);
+  await f.bridge.note(session,'formal_read',{ticket:opened.ticket,sourceBindings:[{ref:known.ref,pointer:{...known.sourcePointer,itemId:'different-pointer-same-hash'},evidenceHash:known.evidenceHash}]});
+  return {kind:'cmcp_reading_page',ticket:opened.ticket};};
+ await assert.rejects(f.send(b,'read',{ticket:opened.ticket},'model_read'),/shared_project_read_binding_changed/);f.bridge.tool=actualTool;
+ // 只改傳輸 fixture；正式 Core／來源仍完整執行，確認中繼資料不能用 hash-only 配回。
+ transform=value=>({...value,projection:{...value.projection,sources:value.projection.sources.map(s=>({...s,ref:'unread-ref'}))}});
+ await assert.rejects(x.project(),/continuity_delivery_source_changed/);
+ transform=value=>({...value,projection:{...value.projection,sources:value.projection.sources.map(s=>({...s,sourceAuthorRole:s.sourceAuthorRole==='user'?'assistant':'user'}))}});
+ await assert.rejects(x.project(),/continuity_delivery_source_changed/);
+ transform=value=>({...value,projection:{...value.projection,sources:value.projection.sources.map(s=>({...s,evidenceHash:'0'.repeat(64)}))}});
+ await assert.rejects(x.project(),/continuity_delivery_source_changed/);
+ transform=value=>({...value,ticket:'different-result-ticket'});await assert.rejects(x.project(),/shared_project_read_binding_changed/);
+ transform=value=>value;
+ const original=f.bridge.tool.bind(f.bridge);f.bridge.tool=async(...args)=>args[1]==='cmcp_project_continuity'&&args[2].ticket==='unread-ticket'?{...normal,ticket:'unread-ticket'}:original(...args);
+ await assert.rejects(f.send(b,'continuity',{ticket:'unread-ticket',proposalJson:JSON.stringify(x.proposal)},'model_read'),/continuity_delivery_source_changed/);
+ f.bridge.tool=original;const priorNote=f.bridge.note.bind(f.bridge);f.bridge.note=async(session,kind,row)=>priorNote(session,kind,kind==='formal_read'&&row.tool==='cmcp_read_history'?{...row,sourceBindings:row.sourceBindings.map(binding=>({...binding,pointer:{...binding.pointer,itemId:'unregistered-pointer'}}))}:row);
+ const nav=await f.send(b,'find',{},'model_read'),other=await f.send(b,'open',{navigationTicket:nav.ticket,selectionJson:JSON.stringify({version:2,eventRefs:[],scope:{basis:'ordinary_history'},clarification:''})},'model_read');
+ const wrongPointer=await f.send(b,'read',{ticket:other.ticket},'model_read');assert(wrongPointer.sourceOrigins.length>0);assert(wrongPointer.sourceOrigins.every(o=>o.verification==='origin_unavailable'&&!o.origin));
+ f.bridge.note=priorNote;await f.finish(b);
+ await f.begin(b,'新一輪未閱讀不能沿用舊票身分。','r2');await assert.rejects(f.send(b,'continuity',{ticket:opened.ticket,proposalJson:JSON.stringify(x.proposal)},'model_read'),/reading_not_owned_by_turn/);await f.finish(b,'r2');
+});
+test('OFF 與 Clean 拒絕後不回傳舊 origin 封套',async()=>{
+ for(const [label,command]of [['off','set enabled off'],['clean','set clean on']]){
+  const x=await attributionFixture('attribution-'+label);await x.f.send(x.b,'control',{text:command});
+  await assert.rejects(x.project(),/disabled|cancelled|expired|not_active|no_active|control|turn/);
+ }
+});
+test('撤權與取消在正式工具等候時先失效，晚到結果不洩漏來源 origin',async()=>{
+ for(const operation of ['revoke','cancel']){
+  const x=await attributionFixture('attribution-late-'+operation);let entered,release;const ready=new Promise(r=>entered=r),gate=new Promise(r=>release=r),original=x.f.bridge.tool.bind(x.f.bridge);
+  x.f.bridge.tool=async(...args)=>{const value=await original(...args);if(args[1]==='cmcp_project_continuity'){entered();await gate;}return value;};
+  const pending=x.project();await ready;const stopped=x.f.send(x.b,operation,operation==='cancel'?{userMessageId:'same-native-message',harnessTurn:1,reason:'attribution_test_cancelled'}:{});
+  release();await assert.rejects(pending,/authorization_changed|cancelled/);await stopped;
+  await assert.rejects(x.project(),/epoch_stale|not_joined|turn_mismatch|owner_required/);
+ }
+});
+test('來源身分唯讀顯示、精簡與還原不改原時間、Buffer／Pin及控制',async()=>{
+ const x=await attributionFixture('attribution-readonly'),before=await x.f.bridge.status(),result=await x.project();
+ const after=await x.f.bridge.status();for(const key of ['registration','pins','controlConfiguration'])assert.deepEqual(after[key],before[key]);
+ assert.deepEqual({...after.buffer,evaluatedAt:null},{...before.buffer,evaluatedAt:null});
+ const hashes=await files(x.f.root),projected=projectHarnessToolResult(result);restoreContinuityModelView(projected);projectHarnessTimeContext(await x.f.send(x.b,'request-context'),true);
+ assert.deepEqual(await files(x.f.root),hashes);await x.f.finish(x.b);
+});
+test('正式模型出口在來源身分追加後編碼；跨宿主重複序列化可還原，人類查證保留完整資料',async()=>{
+ const x=await attributionFixture('capacity-final-transport'),wire=await x.project(),full=restoreContinuityModelView(wire),{f,b}=x;
+ assert.ok(wire.modelView);assert.ok(full.projectionCapacity);assert.deepEqual(wire.projectionCapacity,full.projectionCapacity);
+ assert.equal(full.projectionHash,sha(JSON.stringify(full.projection)));assert(full.sourceOrigins.every(o=>o.verification==='formal_read_binding'));
+ const harness=projectHarnessToolResult(wire),hermes=projectHarnessToolResult(JSON.parse(JSON.stringify(wire)));
+ assert.deepEqual(harness,wire);assert.deepEqual(hermes,wire);assert.deepEqual(restoreContinuityModelView(hermes),full);
+ const binding={kind:'cmcp_codex_shared_binding',version:1,projectId:f.config.projectId,hostId:'codex',agentId:f.config.hosts.codex.agentId,
+  workspace:f.config.hosts.codex.workspace,role:'model_read',connection:{pipe:f.config.pipe,authFile:f.config.hosts.codex.readAuthFile}};
+ const ticket=makeTicket(binding,b.sid,b.epoch),args={ticket:x.opened.ticket,proposalJson:JSON.stringify(x.proposal)};
+ const codex=await readCodexTool({binding,ticket,operation:'continuity',args,call:async()=>wire});assert.deepEqual(codex,wire);
+ const human=await f.send(b,'control',{text:'continuity'});assert.equal(human.result.kind,'cmcp_continuity_status');
+ assert.equal(Object.hasOwn(human.result,'modelView'),false);assert.deepEqual(human.result.projection,full.projection);
+ assert.deepEqual(human.result.projectionCapacity,full.projectionCapacity);
+ const forged=structuredClone(wire);forged.sourceOrigins[0].verification='forged';
+ assert.throws(()=>projectHarnessToolResult(forged),/continuity_model_view_invalid/);
+ await assert.rejects(readCodexTool({binding,ticket,operation:'continuity',args,call:async()=>forged}),/continuity_model_view_invalid/);
+ await assert.rejects(f.send(b,'continuity',{...args,projectionCapacity:{modelProjectionBytes:1}},'model_read'),/invalid_schema/);
+ await fs.writeFile(path.join(run,'capacity-final-transport.json'),JSON.stringify({layer:'正式共用服務／Core 與 controller；Harness／Hermes 同 render、Codex readTool 回傳固定正式封套的零模型出口核對',wire,full,human:human.result,codex,restoredEqual:true,modelCalls:0},null,2)+'\n',{flag:'wx'});
+ await f.finish(b);
+});
+test('有界正式分頁全量還原，重讀不刷新 Buffer；舊頁、Clean 與取消拒絕',async()=>{
+ const x=await attributionFixture('bounded-continuity-delivery',{factory:bridge=>{const original=bridge.tool.bind(bridge);
+   bridge.tool=async(...args)=>{const value=await original(...args);return args[1]==='cmcp_project_continuity'&&value.projection?{...value,compilation:{...value.compilation,syntheticEnvelope:'合成傳輸容量；不屬 User 原文。'.repeat(6000)}}:value;};return bridge;}}),{f,b,opened}=x;
+ const before=await f.bridge.status(),first=await x.project();assert.equal(first.kind,'cmcp_continuity_delivery_page');assert.equal(first.delivery.complete,false);
+ const args=page=>({ticket:opened.ticket,deliveryId:first.delivery.id,page:String(page)}),pages=[first];
+ await assert.rejects(f.send(b,'continuity-page',args(2),'model_read'),/previous_page_required/);
+ await assert.rejects(f.send(b,'continuity-page',{...args(1),deliveryId:'wrong'},'model_read'),/not_owned_by_turn/);
+ for(let i=1;i<first.delivery.pageCount;i++){const page=await f.send(b,'continuity-page',args(i),'model_read');assert(JSON.stringify(page).length<=CONTINUITY_PAGE_CHARS);pages.push(page);}
+ assert.equal(pages.at(-1).delivery.complete,true);const full=restoreContinuityModelView(restoreContinuityDelivery(pages));assert.equal(full.projectionHash,sha(JSON.stringify(full.projection)));assert(full.sourceOrigins.every(o=>o.verification==='formal_read_binding'));
+ const repeated=await f.send(b,'continuity-page',args(0),'model_read');assert.equal(repeated.delivery.nextPage,null);
+ const after=await f.bridge.status();for(const key of ['registration','pins','controlConfiguration'])assert.deepEqual(after[key],before[key]);assert.deepEqual({...after.buffer,evaluatedAt:null},{...before.buffer,evaluatedAt:null});
+ await fs.writeFile(path.join(run,'bounded-delivery-result.json'),JSON.stringify({pages,restoredHash:sha(JSON.stringify(full)),modelCalls:0},null,2)+'\n',{flag:'wx'});
+ const newer=await x.project();assert.notEqual(newer.delivery.id,first.delivery.id);await assert.rejects(f.send(b,'continuity-page',args(1),'model_read'),/not_owned_by_turn/);
+ await f.send(b,'control',{text:'set clean on'});await assert.rejects(f.send(b,'continuity-page',{ticket:opened.ticket,deliveryId:newer.delivery.id,page:'1'},'model_read'),/changed|disabled/);
+ await f.send(b,'cancel',{userMessageId:'same-native-message',userRevisionId:'r1',harnessTurn:1,reason:'synthetic_cancel'});
+ await assert.rejects(f.send(b,'continuity-page',{ticket:opened.ticket,deliveryId:newer.delivery.id,page:'1'},'model_read'),/turn_mismatch/);
 });
 test('all synthetic resources close and no network/model call occurred',async()=>{for(const resource of resources)await resource.close();globalThis.fetch=realFetch;assert.equal(fetches,0);});
