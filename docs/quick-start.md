@@ -4,9 +4,9 @@
 
 ## 1. Install once, keep data separate
 
-Use [the installation guide](npm-installation.md) to install the **0.1.1 GitHub Release `.tgz`** into a persistent prefix. This release does not update npm: its registry package remains at 0.1.0, so a registry-name install does not provide 0.1.1. Keep an independent existing workspace for authorized data; do not store it in `node_modules` or an `npx` cache. Node >=22.16.0, npm and the chosen host must be installed separately.
+Use [the installation guide](npm-installation.md) to install the fixed npm package **`@redwakame-skill/cmcp-time@0.1.1`** with `npm install --prefix ./cmcp-0.1.1 @redwakame-skill/cmcp-time@0.1.1`. Keep an independent existing workspace for authorized data; do not store it in `node_modules` or an `npx` cache. Node >=22.16.0, npm and the chosen host must be installed separately. The previous GitHub-only v0.1.1 assets/tag remain unchanged; see the [separate channel identities](npm-installation.md#version-and-publication-evidence).
 
-Use `<prefix>/cmcp-time.cmd` on Windows or `<prefix>/bin/cmcp-time` on POSIX wherever the following examples say `cmcp-time`:
+Use `<prefix>/node_modules/.bin/cmcp-time.cmd` on Windows or `<prefix>/node_modules/.bin/cmcp-time` on POSIX wherever the following examples say `cmcp-time`:
 
 ```text
 cmcp-time --version

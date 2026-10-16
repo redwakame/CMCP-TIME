@@ -2,7 +2,7 @@
 
 **Keep the original words. Understand the time between them.**
 
-[English](README.md) · [繁體中文](README.zh-TW.md) · [Español](README.es.md) · [日本語](README.ja.md)
+[English](https://github.com/redwakame/CMCP-TIME/blob/main/README.md) · [繁體中文](https://github.com/redwakame/CMCP-TIME/blob/main/README.zh-TW.md) · [Español](https://github.com/redwakame/CMCP-TIME/blob/main/README.es.md) · [日本語](https://github.com/redwakame/CMCP-TIME/blob/main/README.ja.md)
 
 **A time-aware continuity skill for AI agents:** resume a discussion using its original words, images, roles and times, while keeping your existing host and model.
 
@@ -18,28 +18,27 @@ Yesterday you drafted a plan. Today you change one detail. In a new conversation
 
 The diagram is an explanation, not a recorded model result. CMCP supplies source material; it does not replace the host's reasoning or rewrite its final answer. Models can still misinterpret correct sources.
 
-## Install 0.1.1 from GitHub
+## Install 0.1.1 from npm
 
-Get the formal package from [GitHub Release v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1) and the fixed source from [tag v0.1.1](https://github.com/redwakame/CMCP-TIME/tree/v0.1.1). **This release does not update npm:** the published registry package remains [`@redwakame-skill/cmcp-time@0.1.0`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.0). Installing by its registry name or mutable tags is not an upgrade to 0.1.1. The command below uses the exact GitHub `.tgz` URL.
+Install the fixed version [`@redwakame-skill/cmcp-time@0.1.1`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.1) from the official npm registry. The earlier [GitHub-only v0.1.1 Release](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1), its [fixed source tag](https://github.com/redwakame/CMCP-TIME/tree/v0.1.1) and four assets remain unchanged. The npm package has the same runtime and contracts, with subsequent publication settings and installation documents; its bytes/hash and exact source commit differ. See the [channel and source-identity guide](https://github.com/redwakame/CMCP-TIME/blob/main/docs/npm-installation.md#version-and-publication-evidence).
 
 Prepare Node.js **22.16.0 or newer** and npm. Choose two persistent directories: one for installed code, another for authorized workspace data. PowerShell example; no administrator or global PATH change is required:
 
 ```powershell
-$cmcpPrefix = Join-Path $PWD 'cmcp-install'
+$cmcpPrefix = Join-Path $PWD 'cmcp-0.1.1'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
-npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
+npm.cmd install --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.1 --no-audit --no-fund
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') --version
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') status --workspace "$cmcpWorkspace"
 ```
 
-The wizard is for local setup and managed Codex attachment. Official Harness Desktop and optional MCP/Hermes have their own setup steps in the [operating guide](docs/release-readiness.en.md). Installation alone does not attach a host, import private chats, authorize paid model calls or turn on proactive delivery. Keep live integrations out of disposable `npx` caches.
+The wizard is for local setup and managed Codex attachment. Official Harness Desktop and optional MCP/Hermes have their own setup steps in the [operating guide](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-readiness.en.md). Installation alone does not attach a host, import private chats, authorize paid model calls or turn on proactive delivery. Keep live integrations out of disposable `npx` caches.
 
-[POSIX, local tarball and update instructions](docs/npm-installation.md) · [Quick start](docs/quick-start.md)
+[POSIX, local tarball and update instructions](https://github.com/redwakame/CMCP-TIME/blob/main/docs/npm-installation.md) · [Quick start](https://github.com/redwakame/CMCP-TIME/blob/main/docs/quick-start.md)
 
-**In 0.1.1:** source-bound current plans, reported facts, revision scope and reasons remain distinct. Local setup works without Codex; interactive setup requires a TTY, while automation uses explicit `--answers`. On-demand status retains genuine uncertainty and bounded coverage; structural `ready` is not semantic certification or execution permission. See the [0.1.1 changes and limits](docs/release-0.1.1.md).
+**In 0.1.1:** source-bound current plans, reported facts, revision scope and reasons remain distinct. Local setup works without Codex; interactive setup requires a TTY, while automation uses explicit `--answers`. On-demand status retains genuine uncertainty and bounded coverage; structural `ready` is not semantic certification or execution permission. See the [0.1.1 changes and limits](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-0.1.1.md).
 
 ## Choose a demonstrated route
 
@@ -54,7 +53,7 @@ Two separately demonstrated sequential routes: Codex ↔ Harness and Hermes ↔ 
 | Hermes v2026.9.24 / 0.21.5 | Official headless lifecycle, native tools, text handoff with Harness SDK | External Python/Git Bash dependencies; tested DeepSeek route; not Hermes TUI or Desktop GUI certification |
 | MCP stdio / Streamable HTTP | Real clients, formal reading, media handles, scope/revocation and persistent local service | Optional transport; local tests do not prove remote cloud, TLS deployment or platform approval |
 
-OpenClaw, dots, Grok Bot and Muse have different interface/account requirements; see the [capability matrix](docs/interop-capabilities.zh-TW.md). The latest interoperability increment was tested on Windows Node 24.18.0; earlier Linux/Node 22.16.0 evidence does not certify every new adapter or OS. Four-language documentation is not four-language behavioral certification.
+OpenClaw, dots, Grok Bot and Muse have different interface/account requirements; see the [capability matrix](https://github.com/redwakame/CMCP-TIME/blob/main/docs/interop-capabilities.zh-TW.md). The latest interoperability increment was tested on Windows Node 24.18.0; earlier Linux/Node 22.16.0 evidence does not certify every new adapter or OS. Four-language documentation is not four-language behavioral certification.
 
 ## Use, inspect and stop
 
@@ -75,23 +74,23 @@ History, Buffer and Pin have different roles. Buffer defaults to 12 hours (confi
 
 **Stored is not necessarily retrievable.** Status separates saved originals, pending/failed registration, formal-read eligibility and cross-host assessment status. Storage metadata alone does not assess receiver handoff; check formal-reading and host receipts separately. Viewing and UI changes do not refresh source times/TTL, create a grant or send a reminder. Missing originals, stale versions and revoked sources fail closed.
 
-Use [backup/restore and update instructions](docs/release-readiness.en.md) before changing an installation. Program, workspace History, host-native history and protected credentials have separate responsibilities. Detaching CMCP preserves originals; it does not erase native host history or implement complete deletion governance. No vectors, audio/video support, cloud synchronization or multi-user concurrent writers are claimed by 0.1.1.
+Use [backup/restore and update instructions](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-readiness.en.md) before changing an installation. Program, workspace History, host-native history and protected credentials have separate responsibilities. Detaching CMCP preserves originals; it does not erase native host history or implement complete deletion governance. No vectors, audio/video support, cloud synchronization or multi-user concurrent writers are claimed by 0.1.1.
 
 ## Documentation and project
 
-[Operating guide](docs/release-readiness.en.md) · [MCP/Hermes and self-hosting](docs/interop.en.md) · [Commands](docs/commands.md) · [Configuration](docs/configuration.md) · [Privacy](docs/privacy.md) · [Evidence and limits](docs/verification.md) · [Roadmap](docs/roadmap.md)
+[Operating guide](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-readiness.en.md) · [MCP/Hermes and self-hosting](https://github.com/redwakame/CMCP-TIME/blob/main/docs/interop.en.md) · [Commands](https://github.com/redwakame/CMCP-TIME/blob/main/docs/commands.md) · [Configuration](https://github.com/redwakame/CMCP-TIME/blob/main/docs/configuration.md) · [Privacy](https://github.com/redwakame/CMCP-TIME/blob/main/docs/privacy.md) · [Evidence and limits](https://github.com/redwakame/CMCP-TIME/blob/main/docs/verification.md) · [Roadmap](https://github.com/redwakame/CMCP-TIME/blob/main/docs/roadmap.md)
 
 **CMCP-TIME is the current development line.** [OpenClaw Continuity](https://github.com/redwakame/openclaw-continuity) and [cmcp](https://github.com/redwakame/cmcp) preserve earlier code and policy work, with their own licenses and evidence. No automatic migration or drop-in replacement is implied.
 
 ## Documentation and contribution
-Ideas, reproducible issues, independent evaluation and collaboration are welcome. Keep private conversations and credentials out of public reports. Read [CONTRIBUTING](CONTRIBUTING.md), [SECURITY](SECURITY.md) and the [roadmap](docs/roadmap.md).
+Ideas, reproducible issues, independent evaluation and collaboration are welcome. Keep private conversations and credentials out of public reports. Read [CONTRIBUTING](https://github.com/redwakame/CMCP-TIME/blob/main/CONTRIBUTING.md), [SECURITY](https://github.com/redwakame/CMCP-TIME/blob/main/SECURITY.md) and the [roadmap](https://github.com/redwakame/CMCP-TIME/blob/main/docs/roadmap.md).
 
 Interested in CMCP-TIME? I’d love to exchange ideas and hear how you’re using it. If you find the project useful, please consider giving it a star on GitHub. I’ll continue improving and updating it, and I also welcome commercial collaboration. Get in touch at [adarobot666@gmail.com](mailto:adarobot666@gmail.com) or [redwakame616@gmail.com](mailto:redwakame616@gmail.com).
 
 ## Author and license
 
-Created and maintained by **redwakame**. Current project-authored distribution: [Apache-2.0](LICENSE), subject to the retained [NOTICE](NOTICE) and [upstream provenance](docs/license-provenance-v0.1.md). Earlier permissions are not revoked. The internal compatibility identifier remains `cmcp`; the public name is **CMCP-TIME**.
+Created and maintained by **redwakame**. Current project-authored distribution: [Apache-2.0](https://github.com/redwakame/CMCP-TIME/blob/main/LICENSE), subject to the retained [NOTICE](https://github.com/redwakame/CMCP-TIME/blob/main/NOTICE) and [upstream provenance](https://github.com/redwakame/CMCP-TIME/blob/main/docs/license-provenance-v0.1.md). Earlier permissions are not revoked. The internal compatibility identifier remains `cmcp`; the public name is **CMCP-TIME**.
 
-[CITATION.cff](CITATION.cff) provides a convenient citation. No additional per-use advertising requirement is added. Public sources contain no personal History, credentials, development transcripts or model weights.
+[CITATION.cff](https://github.com/redwakame/CMCP-TIME/blob/main/CITATION.cff) provides a convenient citation. No additional per-use advertising requirement is added. Public sources contain no personal History, credentials, development transcripts or model weights.
 
-[0.1.1 changes and limits](docs/release-0.1.1.md) · [0.1.0 history](docs/release-0.1.0.md) · [Reproducible checks](docs/testing.md)
+[0.1.1 changes and limits](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-0.1.1.md) · [0.1.0 history](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-0.1.0.md) · [Reproducible checks](https://github.com/redwakame/CMCP-TIME/blob/main/docs/testing.md)

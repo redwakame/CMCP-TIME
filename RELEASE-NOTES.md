@@ -1,3 +1,9 @@
+# CMCP-TIME 0.1.1 — npm publication channel
+
+This source adds the npm publication channel and four-language installation instructions to the existing GitHub 0.1.1 release. Runtime, CLI logic, Skills, schemas and locked dependencies are unchanged. Use the [npm installation guide](docs/npm-installation.md); verify registry availability and external publication receipts. The original `v0.1.1` tag and Release attachments retain their original identity and bytes.
+
+## Original GitHub-only release (historical)
+
 # CMCP-TIME 0.1.1 — GitHub-only release
 
 Formal version notes in four languages: [0.1.1](docs/release-0.1.1.md). Fixed source tag: `v0.1.1`. Install the Release `.tgz`; npm is not updated by this release. The external Release mapping identifies the exact commit and archive.

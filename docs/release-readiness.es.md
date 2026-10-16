@@ -2,32 +2,31 @@
 
 [English](release-readiness.en.md) · [繁體中文](release-readiness.zh-TW.md) · [Español](release-readiness.es.md) · [日本語](release-readiness.ja.md)
 
-Esta guía describe **0.1.1**; conserva el nombre del archivo para no romper enlaces existentes. La versión exacta, el tag y `PUBLIC-FILES.json` identifican la fuente entregada; los canales modificables no sustituyen esa identidad. Autor original: redwakame; Apache-2.0. Conserva LICENSE y NOTICE.
+Esta guía describe **0.1.1**; conserva el nombre del archivo para no romper enlaces existentes. El canal, el hash del paquete, el commit y `PUBLIC-FILES.json` identifican la fuente; compartir número de versión o etiqueta no significa que GitHub y npm tengan los mismos bytes. Autor original: redwakame; Apache-2.0. Conserva LICENSE y NOTICE.
 
-Instala **0.1.1 desde [GitHub Release v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1)** mediante el `.tgz` fijo de abajo. npm conserva 0.1.0 en esta publicación; no sustituyas la URL por el nombre del registro ni por `latest`/`next` si quieres 0.1.1. Comprueba los hashes del Release y `--version` tras instalar. [Cambios y límites de evidencia](release-0.1.1.md).
+Instala la versión fija npm **`@redwakame-skill/cmcp-time@0.1.1`** con el comando siguiente y comprueba `--version`. El anterior [Release v0.1.1 exclusivo de GitHub](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1) y su tag fijo permanecen intactos; su tarball es un artefacto distinto. La fuente posterior de npm cambia ajustes de publicación/documentación, no el Runtime. Consulta [instalación e identidad](npm-installation.md#version-and-publication-evidence) y [cambios históricos y límites](release-0.1.1.md).
 
 ## Prefijo persistente y espacio independiente
 
 Prepara Node.js >=22.16.0 y npm. El último incremento se ejecutó en Windows Node 24.18.0; las pruebas anteriores Linux/22.16.0 no cubren automáticamente lo añadido. Separa el prefijo del programa y el espacio persistente existente. No guardes History en `node_modules` ni enlaces hooks persistentes a la caché `npx`.
 
 ```powershell
-$cmcpPrefix = Join-Path $PWD 'cmcp-install'
+$cmcpPrefix = Join-Path $PWD 'cmcp-0.1.1'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
-npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
+npm.cmd install --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.1 --no-audit --no-fund
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') --version
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') status --workspace "$cmcpWorkspace"
 ```
 
-`setup` pregunta por guardado, idioma, zona horaria y conexión opcional de Codex. No instala el host, importa datos privados, concede llamadas de pago ni activa avisos. En POSIX usa `<prefix>/bin/cmcp-time`; en Windows `<prefix>/cmcp-time.cmd`. Sustituye `cmcp-time` por ese ejecutable completo en los ejemplos; no se presupone un cambio de PATH. Desde fuentes usa `node bin/cmcp-time.mjs` y antes `npm ci` para las dependencias MCP bloqueadas. Consulta [instalación](npm-installation.md).
+`setup` pregunta por guardado, idioma, zona horaria y conexión opcional de Codex. No instala el host, importa datos privados, concede llamadas de pago ni activa avisos. En POSIX usa `<prefix>/node_modules/.bin/cmcp-time`; en Windows `<prefix>/node_modules/.bin/cmcp-time.cmd`. Sustituye `cmcp-time` por ese ejecutable completo en los ejemplos; no se presupone un cambio de PATH. Desde fuentes usa `node bin/cmcp-time.mjs` y antes `npm ci` para las dependencias MCP bloqueadas. Consulta [instalación](npm-installation.md).
 
 Para hooks locales de Codex, revisa el proyecto generado y su aprobación nativa. Harness Desktop oficial es otro host: npm setup no crea automáticamente su despliegue. En uno ya configurado, usa el profile y las operaciones inspeccionadas que se detallan abajo. Copiar el programa no equivale a configurar su integración.
 
 ### Mantenimiento de 0.1.1: terminal y Codex opcional
 
-Estas correcciones forman parte de GitHub 0.1.1; el paquete npm 0.1.0 publicado permanece intacto. Sin `--answers`, `setup`/`update` requiere un terminal (TTY) y respuestas una por una. Los lotes por tubería y stdin vacío se rechazan antes de escribir la configuración; EOF cancela y nunca implica consentimiento. Para automatizar, completa las opciones explícitas a partir de `examples/setup-host.json` y ejecuta `cmcp-time setup --workspace <espacio-existente> --answers <answers.json-dentro-del-espacio>`. Elige `attachCodex: false` si no quieres Codex; no hace falta instalarlo ni iniciarlo.
+Estas correcciones forman parte de ambos canales 0.1.1; el paquete npm 0.1.0 publicado anteriormente permanece intacto. Sin `--answers`, `setup`/`update` requiere un terminal (TTY) y respuestas una por una. Los lotes por tubería y stdin vacío se rechazan antes de escribir la configuración; EOF cancela y nunca implica consentimiento. Para automatizar, completa las opciones explícitas a partir de `examples/setup-host.json` y ejecuta `cmcp-time setup --workspace <espacio-existente> --answers <answers.json-dentro-del-espacio>`. Elige `attachCodex: false` si no quieres Codex; no hace falta instalarlo ni iniciarlo.
 
 `setup --status` conserva `state` y `cmcp_codex_binding` por compatibilidad; `stateScope=managed_codex_hook_binding` limita su significado a esa conexión. Consulta por separado `layers.configuration`, `layers.hostConnection`, `layers.runtime` y `layers.sources`: configuración, conexión del host, controles efectivos, originales guardados y elegibilidad del lector formal son estados distintos. Otros hosts muestran `not_inspected` hasta su comprobación independiente; elegibilidad no prueba recepción por el modelo. `disable` desconecta Codex administrado y conserva controles Runtime e History. Las entradas sin Codex siguen necesitando autorización válida propia.
 

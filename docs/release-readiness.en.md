@@ -2,32 +2,31 @@
 
 [English](release-readiness.en.md) · [繁體中文](release-readiness.zh-TW.md) · [Español](release-readiness.es.md) · [日本語](release-readiness.ja.md)
 
-This is the operating guide for **0.1.1**. The filename is retained for existing links. The exact package version, release tag and `PUBLIC-FILES.json` identify the delivered source; mutable channels do not replace those identities. Original author: redwakame; Apache-2.0. Retain LICENSE and NOTICE.
+This is the operating guide for **0.1.1**. The filename is retained for existing links. The exact channel, package hash, source commit and `PUBLIC-FILES.json` identify the delivered source; a shared version number or mutable tag does not make GitHub and npm packages byte-identical. Original author: redwakame; Apache-2.0. Retain LICENSE and NOTICE.
 
-Install **0.1.1 from [GitHub Release v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1)** using the fixed `.tgz` below. npm remains at 0.1.0 for this release; do not substitute a registry package name or `latest`/`next` when you intend to install 0.1.1. Check the Release checksums and installed `--version`. [Changes and evidence limits](release-0.1.1.md).
+Install the fixed npm version **`@redwakame-skill/cmcp-time@0.1.1`** with the command below, then check `--version`. The earlier [GitHub-only v0.1.1 Release](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1) and fixed tag remain unchanged; its tarball is a separate artifact. The npm source includes subsequent publication settings/documents, not runtime changes. See [installation and source identity](npm-installation.md#version-and-publication-evidence) and [historical changes and evidence limits](release-0.1.1.md).
 
 ## Install into a persistent prefix
 
 Prepare Node.js >=22.16.0 and npm separately. The latest interoperability increment was exercised on Windows Node 24.18.0; earlier Linux/22.16.0 tests are not a complete new-platform claim. Use a user-writable prefix and an independent existing workspace. Never store History inside `node_modules` or bind persistent hooks to `npx` caches.
 
 ```powershell
-$cmcpPrefix = Join-Path $PWD 'cmcp-install'
+$cmcpPrefix = Join-Path $PWD 'cmcp-0.1.1'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
-npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
+npm.cmd install --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.1 --no-audit --no-fund
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') --version
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') status --workspace "$cmcpWorkspace"
 ```
 
-`setup` asks for saving scope, language, timezone and optional Codex attachment. It does not install the host, import private history, grant paid calls or enable proactive delivery. On POSIX the executable is `<prefix>/bin/cmcp-time`; Windows uses `<prefix>/cmcp-time.cmd`. Use that full executable in the examples below instead of assuming PATH was changed. Source users run `node bin/cmcp-time.mjs`; run `npm ci` first for locked optional MCP dependencies. See [installation](npm-installation.md).
+`setup` asks for saving scope, language, timezone and optional Codex attachment. It does not install the host, import private history, grant paid calls or enable proactive delivery. On POSIX the executable is `<prefix>/node_modules/.bin/cmcp-time`; Windows uses `<prefix>/node_modules/.bin/cmcp-time.cmd`. Use that full executable in the examples below instead of assuming PATH was changed. Source users run `node bin/cmcp-time.mjs`; run `npm ci` first for locked optional MCP dependencies. See [installation](npm-installation.md).
 
 For managed local Codex hooks, review the emitted project and native hook approval before use. Official Harness Desktop is a separate host: npm setup does not automatically create its deployment. For an existing CMCP Desktop deployment use the inspected profile and lifecycle operations below. A copy of the program alone is not a valid configured deployment.
 
 ### 0.1.1 maintenance: terminal input and optional Codex
 
-These fixes are included in GitHub 0.1.1; the published npm 0.1.0 package is unchanged. Without `--answers`, `setup`/`update` requires a terminal (TTY) with answers entered one at a time. Piped batches and empty stdin are rejected before writing configuration; EOF cancels instead of implying consent. For automation, fill explicit choices using `examples/setup-host.json`, then run `cmcp-time setup --workspace <existing-workspace> --answers <answers.json-inside-workspace>`. Choose `attachCodex: false` when Codex is not wanted; installing or starting Codex is unnecessary.
+These fixes are included in both 0.1.1 channels; the previously published npm 0.1.0 package is unchanged. Without `--answers`, `setup`/`update` requires a terminal (TTY) with answers entered one at a time. Piped batches and empty stdin are rejected before writing configuration; EOF cancels instead of implying consent. For automation, fill explicit choices using `examples/setup-host.json`, then run `cmcp-time setup --workspace <existing-workspace> --answers <answers.json-inside-workspace>`. Choose `attachCodex: false` when Codex is not wanted; installing or starting Codex is unnecessary.
 
 `setup --status` retains compatible `state` and `cmcp_codex_binding` fields; `stateScope=managed_codex_hook_binding` identifies their limited meaning. Read `layers.configuration`, `layers.hostConnection`, `layers.runtime` and `layers.sources` separately: configuration, host attachment, effective controls, stored originals and formal-reader eligibility are different states. Other hosts remain `not_inspected` until separately checked; reader eligibility does not prove model receipt. `disable` detaches the managed Codex connection while preserving Runtime controls and History. Non-Codex entries still require their own valid authorization.
 

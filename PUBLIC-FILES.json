@@ -1,7 +1,7 @@
 {
   "kind": "cmcp-time-public-source-allowlist",
   "version": "0.1.1",
-  "publicationRevision": "v0.1.1",
+  "publicationRevision": "0.1.1-npm-channel-source",
   "hashAlgorithm": "SHA-256",
   "selfHash": "Git commit and archive digest cover this index; the index does not hash itself.",
   "sourceOnlyFiles": [
@@ -554,33 +554,33 @@
     },
     {
       "path": "README.es.md",
-      "bytes": 9540,
-      "sha256": "46fcbfd1908186d5ef60560ea87ffaf3dd4ebdda0193646a330345acf531ed01"
+      "bytes": 11069,
+      "sha256": "74363ef10988b4a1199f720de2a37f438088518b12a36f68bee1a417c3e641a2"
     },
     {
       "path": "README.ja.md",
-      "bytes": 10448,
-      "sha256": "c885a05ea8ef34359862d381f016c19bf661ac7e948cef64788319134f123c45"
+      "bytes": 11981,
+      "sha256": "e26df48af4793b9053b756c0efb7e6ab7f9ea6677694cbc3cd15b70a8b31ee4c"
     },
     {
       "path": "README.md",
-      "bytes": 9525,
-      "sha256": "5e09e13d0f5e9e18e6d91522e8e44a6c291fd6842126e53b98112f57319793c1"
+      "bytes": 10965,
+      "sha256": "d53243489ddce007db83366d4eff5fe4d34c31972e9b82478c44407816ce940a"
     },
     {
       "path": "README.zh-TW.md",
-      "bytes": 8406,
-      "sha256": "c822e51a27885070020810e3426161c6ec55e1180a45c5ee33eded0258dbd814"
+      "bytes": 9894,
+      "sha256": "f86555b40b0d0a7da275aa6974fb1b39353fdc0ea2e301de14916d8673c5caaf"
     },
     {
       "path": "RELEASE-IDENTITY.json",
-      "bytes": 905,
-      "sha256": "2116b33239b354e36f4c39e4a69ad569a2e059178cbd30ad6d064b2c20332bc1"
+      "bytes": 1512,
+      "sha256": "61d325f1a8bc6d713d2e3eefff9ed0b8c986b2c9c4bfe9ca545d4e75b85bdf7d"
     },
     {
       "path": "RELEASE-NOTES.md",
-      "bytes": 7402,
-      "sha256": "8a01825173671fa9d3a584bbac0c9aa9b4e7b77623e936cdbf436918ef10353e"
+      "bytes": 7914,
+      "sha256": "2abb12626fab3c817276395ba2fa5344e348c520328dca6b0072e6b45e3fc769"
     },
     {
       "path": "SECURITY.md",
@@ -1099,8 +1099,8 @@
     },
     {
       "path": "docs/installation-and-hosts.md",
-      "bytes": 7823,
-      "sha256": "6151d5017e89ee018829f69293d510fb303199cf4184afea8ee58bda60b3cebb"
+      "bytes": 8013,
+      "sha256": "431df96206e3c990e7c5bb131f91b5a6c3c0d7934a1f6fe72fe0578dc28d396c"
     },
     {
       "path": "docs/interop-capabilities.zh-TW.md",
@@ -1144,8 +1144,8 @@
     },
     {
       "path": "docs/npm-installation.md",
-      "bytes": 13595,
-      "sha256": "042f2136f941db0294d1ebe8befc529ceae7a3715e8ff64c53838c9bdec0452f"
+      "bytes": 15206,
+      "sha256": "a6a4f72d24bdeeb90a6552ff56e0bed7f262c483b9e2cb872bd773b5efbf2f13"
     },
     {
       "path": "docs/operations.zh-TW.md",
@@ -1159,8 +1159,8 @@
     },
     {
       "path": "docs/quick-start.md",
-      "bytes": 5233,
-      "sha256": "b13e21cca4465c30662a176a3bc8ec82a92ea9cd04a9de12de0bda6d5adb057f"
+      "bytes": 5369,
+      "sha256": "59556e903a8c6c5daaa5e8dcf9ab7610cc542524f59ca84bced893ecc3d7b7c9"
     },
     {
       "path": "docs/read-operations-v0.1.md",
@@ -1179,28 +1179,28 @@
     },
     {
       "path": "docs/release-readiness.en.md",
-      "bytes": 24974,
-      "sha256": "698c27218c5208e3e2b0d886bcdd8a53d796e17a461f39c73757be4c274fe2e6"
+      "bytes": 25175,
+      "sha256": "9a006d6ae25c0603dad7bf30cba33c6c68976e93207b0d009d63ab47d86289df"
     },
     {
       "path": "docs/release-readiness.es.md",
-      "bytes": 25041,
-      "sha256": "d4d144424c8a87762bd37cfe27ab168dacb309fffb26cc85185879dd6aeefa5d"
+      "bytes": 25229,
+      "sha256": "2fe928fd8bdf9710a36aaf07cdbf86ad72bc12a9d8d4b7c57443ab5c1db28d5b"
     },
     {
       "path": "docs/release-readiness.ja.md",
-      "bytes": 27857,
-      "sha256": "4b2d676c623149cc3dedfa830567791a8ba0afa511be0089beb603b3b84ae8d2"
+      "bytes": 28130,
+      "sha256": "e9ce4f51641a6d3ec549ab0618f02dc8a804a1dded56767b5dcd958452286db2"
     },
     {
       "path": "docs/release-readiness.zh-TW.md",
-      "bytes": 21692,
-      "sha256": "37ca27d723f498f377c647c056737f027bac0a93f5f3d94f66e2070a3d3b10e6"
+      "bytes": 21819,
+      "sha256": "3ae9828cd5be2dce1047031a17dfdcc2d979b6a6bfec95ec1df418ea4a3f0311"
     },
     {
       "path": "docs/roadmap.md",
-      "bytes": 16031,
-      "sha256": "9e25c5b6848ceb232fd0a474c047afcf0fa75755513ca421ae1b2e89705222a0"
+      "bytes": 16649,
+      "sha256": "3af72d61928f5f1ed8e89fb7505ca0a5b17344eb710a5fccf58487ca054bdf30"
     },
     {
       "path": "docs/testing.md",
@@ -1239,8 +1239,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 13965,
-      "sha256": "094ac3dbb25c79c99ddfc2594ecfda1930beb2a02106a1531aa7db08ba687f59"
+      "bytes": 13966,
+      "sha256": "55b453fb390e63c981b8888c614aa628fd8cdf142544b7c275c323f1d50b8dd3"
     },
     {
       "path": "scripts/check-cmcp-bundle.mjs",
@@ -1910,6 +1910,6 @@
     "currentIncrementMinimumRuntimeTested": false,
     "currentIncrementLinuxTested": false
   },
-  "releaseChannel": "github-only",
-  "npmPublishedByThisRelease": false
+  "releaseChannel": "npm",
+  "publicationEvidence": "Exact npm-source commit and registry readback are external; v0.1.1 remains the original GitHub-only source tag."
 }

@@ -2,32 +2,31 @@
 
 [English](release-readiness.en.md) · [繁體中文](release-readiness.zh-TW.md) · [Español](release-readiness.es.md) · [日本語](release-readiness.ja.md)
 
-這份文件說明 **0.1.1** 的實際操作；保留原檔名以相容既有連結。以套件完整版本、發布 tag 與 `PUBLIC-FILES.json` 辨識交付來源，不以可變動通道代替版本身分。原作者 redwakame，Apache-2.0；保留 LICENSE 與 NOTICE。
+本指南說明 **0.1.1**；保留既有檔名以維持連結。請以通道、套件雜湊、來源提交與 `PUBLIC-FILES.json` 核對成品；相同版號或可變標籤不代表 GitHub 與 npm 包位元組相同。原作者 redwakame，Apache-2.0，保留 LICENSE 與 NOTICE。
 
-**0.1.1 請由 [GitHub Release v0.1.1](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1) 安裝**，使用下列固定 `.tgz`。本次 npm 保留 0.1.0；要用 0.1.1 時，不要換成 registry 套件名稱或 `latest`／`next`。請核對 Release 雜湊與安裝後的 `--version`。詳見[更新與證據限制](release-0.1.1.md)。
+使用下列命令安裝固定 npm 版本 **`@redwakame-skill/cmcp-time@0.1.1`**，再核對 `--version`。先前的 [GitHub-only v0.1.1 Release](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1) 與固定 tag 保持原樣，原 tgz 與 npm 包是不同成品。npm 後續來源只調整發布設定與文件，不更換 Runtime。見[安裝與來源身分](npm-installation.md#version-and-publication-evidence)及[歷史更新與證據限制](release-0.1.1.md)。
 
 ## 持久安裝與獨立工作區
 
 先準備 Node.js >=22.16.0 與 npm。最新互通增量實跑 Windows Node 24.18.0；先前 Linux／22.16.0 測試不代表新增功能已全面跨平台驗收。程式 prefix 與已存在的持久工作區分開；History 不放在 `node_modules`，永久 Hook 不綁 `npx` 快取。
 
 ```powershell
-$cmcpPrefix = Join-Path $PWD 'cmcp-install'
+$cmcpPrefix = Join-Path $PWD 'cmcp-0.1.1'
 $cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
 New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-$cmcpRelease = 'https://github.com/redwakame/CMCP-TIME/releases/download/v0.1.1/redwakame-skill-cmcp-time-0.1.1.tgz'
-npm.cmd install --global --prefix "$cmcpPrefix" "$cmcpRelease" --no-audit --no-fund
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') --version
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
-& (Join-Path $cmcpPrefix 'cmcp-time.cmd') status --workspace "$cmcpWorkspace"
+npm.cmd install --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.1 --no-audit --no-fund
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') --version
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
+& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') status --workspace "$cmcpWorkspace"
 ```
 
-`setup` 詢問保存範圍、語言、時區與選配 Codex 接線，不代裝宿主、不匯入私人歷史、不授予付費呼叫或主動派送。POSIX 執行檔在 `<prefix>/bin/cmcp-time`，Windows 在 `<prefix>/cmcp-time.cmd`；後續範例請替換成自己的完整執行檔，不假設已改 PATH。來源使用者可用 `node bin/cmcp-time.mjs`，先 `npm ci` 裝妥選配 MCP 的鎖定相依。詳見[安裝指南](npm-installation.md)。
+`setup` 詢問保存範圍、語言、時區與選配 Codex 接線，不代裝宿主、不匯入私人歷史、不授予付費呼叫或主動派送。POSIX 執行檔在 `<prefix>/node_modules/.bin/cmcp-time`，Windows 在 `<prefix>/node_modules/.bin/cmcp-time.cmd`；後續範例請替換成自己的完整執行檔，不假設已改 PATH。來源使用者可用 `node bin/cmcp-time.mjs`，先 `npm ci` 裝妥選配 MCP 的鎖定相依。詳見[安裝指南](npm-installation.md)。
 
 受管理的本機 Codex Hook 須核對精靈產出的專案並完成原生核准。官方 Harness Desktop 是另一個宿主，npm setup 不會自動建立它的部署；已有 CMCP Desktop 部署者依下文查核 profile 與生命週期操作。只有程式副本不等於完整接線。
 
 ### 0.1.1 維護：互動輸入與選配 Codex
 
-下列修正納入 GitHub 0.1.1；已發布的 npm 0.1.0 套件保持原樣。`setup`／`update` 不帶 `--answers` 時須在終端機（TTY）逐題回答；批次管線或空 stdin 會在寫設定前拒絕，途中 EOF 會取消，缺答不等於同意。自動化請先依 `examples/setup-host.json` 明確填妥自己的選項，再執行 `cmcp-time setup --workspace <既有工作區> --answers <工作區內的 answers.json>`。不使用 Codex 時選 `attachCodex: false`；不用安裝或啟動 Codex。
+下列修正納入兩個 0.1.1 通道；先前已發布的 npm 0.1.0 套件保持原樣。`setup`／`update` 不帶 `--answers` 時須在終端機（TTY）逐題回答；批次管線或空 stdin 會在寫設定前拒絕，途中 EOF 會取消，缺答不等於同意。自動化請先依 `examples/setup-host.json` 明確填妥自己的選項，再執行 `cmcp-time setup --workspace <既有工作區> --answers <工作區內的 answers.json>`。不使用 Codex 時選 `attachCodex: false`；不用安裝或啟動 Codex。
 
 `setup --status` 保留相容的 `state`／`cmcp_codex_binding`，但 `stateScope=managed_codex_hook_binding` 明示它只代表 Codex 接線。請分別查看 `layers.configuration`、`layers.hostConnection`、`layers.runtime` 與 `layers.sources`：已設定、宿主接線、有效控制、原件保存與正式可讀資格是不同狀態。其他宿主未經查核會顯示 `not_inspected`；reader 資格不代表模型已讀取。`disable` 只停用受管理的 Codex 接線，保留 Runtime 控制與 History；以原生非 Codex 入口使用時仍須自己的有效授權。
 

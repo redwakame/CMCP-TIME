@@ -1,12 +1,18 @@
 {
-  "kind": "cmcp_github_release_identity",
+  "kind": "cmcp_npm_release_source_identity",
   "version": "0.1.1",
-  "channel": "github-only",
-  "tag": "v0.1.1",
+  "channel": "npm",
   "npm": {
-    "publishedByThisRelease": false,
-    "packagePrivate": true,
-    "unchangedBaselineVersion": "0.1.0"
+    "package": "@redwakame-skill/cmcp-time",
+    "version": "0.1.1",
+    "registry": "https://registry.npmjs.org/",
+    "access": "public",
+    "targetTags": [
+      "latest",
+      "next"
+    ],
+    "packagePrivate": false,
+    "publicationStatus": "Verify registry and external publication receipt; source settings do not certify upload."
   },
   "baselineCommit": "19be651efb8e0295dd6fa37b4948d0793fd17784",
   "verifiedCandidate": {
@@ -21,5 +27,12 @@
     "PUBLICATION-VERIFICATION.json"
   ],
   "releaseNotes": "docs/release-0.1.1.md",
-  "evidence": "Exact commit, tarball digest and public readback belong to external Release manifests; source metadata does not certify upload."
+  "evidence": "Exact npm-source commit, package hashes, registry metadata and readback are recorded in an external publication mapping. GitHub v0.1.1 and its four attachments remain unchanged.",
+  "githubRelease": {
+    "tag": "v0.1.1",
+    "commit": "3ad1a130f2c2fca086257856107b82af8d89beeb",
+    "tarballSha256": "37503288af82f8e0bda1b50c46be9e675bebadde1a3d6e6429592eb65465c0c8",
+    "relationship": "Preserved GitHub-only release; this tag is not the exact npm-channel source."
+  },
+  "installationGuide": "docs/npm-installation.md"
 }
