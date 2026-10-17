@@ -1,94 +1,137 @@
 # CMCP-TIME
 
-**保留原話，理解交流之間的時間。**
+[English](README.md) · **繁體中文** · [Español](README.es.md) · [日本語](README.ja.md)
 
-[English](https://github.com/redwakame/CMCP-TIME/blob/main/README.md) · [繁體中文](https://github.com/redwakame/CMCP-TIME/blob/main/README.zh-TW.md) · [Español](https://github.com/redwakame/CMCP-TIME/blob/main/README.es.md) · [日本語](https://github.com/redwakame/CMCP-TIME/blob/main/README.ja.md)
+![CMCP-TIME：以原話、時間與可控制的讀取，接續同一個專案。](docs/assets/cmcp-time-hero.png)
 
-**讓 AI 助理依原文與時間接續工作的技能：** 找回原話、圖片、角色及時間，沿用原本的宿主與模型。
+## 保留原話，讓下一次接續有跡可循。
 
-**0.1.1 · Apache-2.0 · 原作者：[redwakame](https://github.com/redwakame)**
+**給 AI 助理使用的時間與對話接續技能。** CMCP-TIME 保留獲授權的原話、圖片、說話角色與時間，在需要時提供相關來源，協助助理接回先前的工作。
 
-## 回到真正需要的原件
+它也讓「原本打算做什麼」「後來改了哪裡」「使用者回報完成了什麼」可以分開整理。**你的模型繼續負責思考；CMCP-TIME 負責提供可查核的來源、時間與受控的接續流程。**
 
-昨天完成草稿，今天只改其中一項。換到新對話後，CMCP 協助找回原稿與修訂，分清 User 的決定和 Assistant 的提案。圖片修訂保留各自原檔與來源關係，不只留下描述。
+**v0.1.1 · Apache-2.0 · 原作者與維護者：[redwakame](https://github.com/redwakame)**
 
-![原稿、修訂與跨對話正式回查的用途示意](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/continuity-source-flow.png)
+[開始使用](#開始使用) · [運作原理](#運作原理) · [版本差異](docs/version-comparison.zh-TW.md) · [交流與回饋](#交流與回饋)
 
-Σ 表示衍生摘要的概念，不表示本版新增摘要功能。
+*插圖是使用概念，不是實際介面或測試截圖。圖中的人物、對話與時間都是示意；可用能力以本文及版本文件為準。*
 
-圖解是用途說明，不是真模型回答紀錄。CMCP 提供來源材料，不取代宿主推理或改寫最後答案；模型仍可能誤解已正確取得的原文。
+## 只改一部分，不必把整件事重新說一遍
 
-## 從 npm 安裝固定 0.1.1 版本
+昨天討論好一份計畫，今天你只說：
 
-由官方 npm registry 安裝固定版本 [`@redwakame-skill/cmcp-time@0.1.1`](https://www.npmjs.com/package/@redwakame-skill/cmcp-time/v/0.1.1)。先前的 [GitHub-only v0.1.1 Release](https://github.com/redwakame/CMCP-TIME/releases/tag/v0.1.1)、[固定來源 tag](https://github.com/redwakame/CMCP-TIME/tree/v0.1.1) 與四份附件保持原樣。npm 包沿用相同 Runtime 與契約，另有後續發布設定及安裝文件，因此位元組／雜湊與精確來源提交不同；見[通道與來源身分說明](https://github.com/redwakame/CMCP-TIME/blob/main/docs/npm-installation.md#version-and-publication-evidence)。
+> 「把交期改成週五，預算和原本的審核條件不變。」
 
-先準備 Node.js **22.16.0 以上**與 npm。選兩個持久目錄，分別存程式與獲授權的工作區資料。以下 PowerShell 範例不需要管理員或修改全域 PATH：
+換到新對話後，真正需要接回的不只是「有一個計畫」，而是原來的內容、這次修改，以及仍然有效的條件。CMCP-TIME 的設計，是讓宿主按需找回這些來源，而不是只憑一段無法追溯的摘要繼續往下做。
 
-```powershell
-$cmcpPrefix = Join-Path $PWD 'cmcp-0.1.1'
-$cmcpWorkspace = Join-Path $PWD 'cmcp-workspace'
-New-Item -ItemType Directory -Force -Path $cmcpPrefix, $cmcpWorkspace | Out-Null
-npm.cmd install --prefix "$cmcpPrefix" @redwakame-skill/cmcp-time@0.1.1 --no-audit --no-fund
-& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') --version
-& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') setup --workspace "$cmcpWorkspace"
-& (Join-Path $cmcpPrefix 'node_modules/.bin/cmcp-time.cmd') status --workspace "$cmcpWorkspace"
+這是用途示例，不是保證每次回答都正確。模型仍可能誤解已取得的原文；CMCP 不會替它改寫最後答案。
+
+| 你需要的事情 | CMCP-TIME 的責任 |
+|---|---|
+| 找回當時怎麼說 | 保存獲授權的原文、角色、原時間及來源關係。 |
+| 釐清哪些條件改了 | 按正式來源整理目前計畫、局部修訂、回報與明說的理由。 |
+| 延續長對話或已接宿主的工作 | 先定位相關來源，再有界閱讀；缺頁、缺權限或未讀內容要明示。 |
+| 決定何時追蹤、何時不要打擾 | 將保存、Buffer、Pin、勿擾與主動開關分開管理。 |
+
+CMCP-TIME 可以與宿主原生記憶共存。它不是另一個完整聊天平台，也不是對所有 AI 工具原生記憶的優越性保證。
+
+## 開始使用
+
+準備 **Node.js 22.16.0 以上版本**與 npm，選擇持久的安裝位置。從 npm 安裝固定版本 `0.1.1`：
+
+```sh
+npm install --prefix ./cmcp-0.1.1 @redwakame-skill/cmcp-time@0.1.1
+node ./cmcp-0.1.1/node_modules/@redwakame-skill/cmcp-time/bin/cmcp-time.mjs --version
+node ./cmcp-0.1.1/node_modules/@redwakame-skill/cmcp-time/bin/cmcp-time.mjs setup --help
 ```
 
-精靈處理本機設定與受管理 Codex 接線；官方 Harness Desktop、選配 MCP／Hermes 的步驟另見[正式操作指南](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-readiness.zh-TW.md)。安裝不等於已掛載宿主、匯入私人聊天、授權付費模型或開啟主動派送。不要把永久接線指向短期 `npx` 快取。
+接著依[設定與更新指南](docs/npm-installation.md)選定獲授權的工作區。有終端機可使用互動精靈；自動化環境使用 `--answers`。**不支援把整批互動答案直接透過管線送入精靈。**
 
-[POSIX、本機套件與更新方式](https://github.com/redwakame/CMCP-TIME/blob/main/docs/npm-installation.md) · [快速開始](https://github.com/redwakame/CMCP-TIME/blob/main/docs/quick-start.md)
+**安裝不等於接入宿主。** 它不會自動匯入私人聊天、取得模型使用授權、啟用主動派送，或替換你的日常部署。Codex 是選配，不是必要依賴。不要把永久接線指向短期 `npx` 快取或未確認會保留的暫存目錄。
 
-**0.1.1 的增量：**分開保留有來源的目前計畫、事實回報、修改範圍與理由。沒有 Codex 也能初始化；正常互動須使用 TTY，自動化採明確 `--answers`。按需狀態保留真正歧義與有界覆蓋，結構 `ready` 不等於語意認證或執行授權。詳見 [0.1.1 更新與限制](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-0.1.1.md)。
+GitHub 與 npm 成品的發布設定和文件可能不同，執行內容與來源映射請見各自發布紀錄。固定版本安裝不代表 GitHub 與 npm 的壓縮檔位元組相同；不要以 `latest` 代替固定來源。
 
-## 選擇有對應證據的入口
+## 運作原理
 
-![同一授權原文庫與選配宿主、MCP 介接](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/host-interoperability.png)
+![五個步驟：擷取授權來源、保留出處、選擇性閱讀、套用獨立控制，再交回宿主接續。](docs/assets/cmcp-time-how-it-works.png)
 
-圖示兩組分別成立的順序交接：Codex ↔ Harness、Hermes ↔ Harness，不代表三宿主並行或同一輪三方驗收；虛線 MCP 為共用同一 Core 的選配入口。
-
-| 入口 | 已驗範圍 | 界線 |
-|---|---|---|
-| 官方 DeepSeek Harness Desktop 0.2.0-rc.2 | 原生文字、圖片原件、新對話回查、控制與明確 Pin 站內跟進 | Desktop 畫面與隔離 SDK 證據分列，不保證全天候或手機通知 |
-| Codex | Skill／Hook、官方 app-server 文字交接與限定原生壓縮 | 使用明示專案與帳戶路線；不自動擷取任意 App 對話 |
-| Hermes v2026.9.24／0.21.5 | 官方無 UI 生命週期、原生工具、與 Harness SDK 的文字交接 | 另需 Python／Git Bash 相依；已驗 DeepSeek 路線，不是 TUI 或 Desktop GUI 認證 |
-| MCP stdio／Streamable HTTP | 真 client、正式閱讀、媒體 handle、範圍／撤權及持久本機服務 | 選配傳輸；本機通過不代表遠端雲端、TLS 部署或平台審核通過 |
-
-OpenClaw、dots、Grok Bot、Muse 的接點與帳戶條件不同，見[能力矩陣](https://github.com/redwakame/CMCP-TIME/blob/main/docs/interop-capabilities.zh-TW.md)。最新互通增量實跑 Windows Node 24.18.0；先前 Linux／Node 22.16.0 證據不代表每個新增介接與作業系統已驗。四語文件也不是四語行為認證。
-
-## 日常使用、查證與停止
-
-![最小入口、按需詳細資料，以及分開的對話授權與保存控制](https://raw.githubusercontent.com/redwakame/CMCP-TIME/v0.1.1/docs/assets/controls-modes.png)
-
-概念線框，不是真實 GUI 截圖：1 最小化、2 一般列、3 隱藏。
-
-| 需求 | 操作入口 |
+| 步驟 | 實際意思 |
 |---|---|
-| Desktop 原生控制 | `/cmcp help`；`/cmcp on` 加入目前對話，`/cmcp off` 退出 |
-| 最小化、單列或隱藏 | `/cmcp ui minimized`、`/cmcp ui row`、`/cmcp ui hidden`；隱藏不等於停用 |
-| 來源、時間與圖片原件 | 來源清冊 → 正式原文閱讀 → 獲授權媒體預覽；**READ-ALL** 是選定授權集合的完整分頁，不是 top-k |
-| 無 UI 專案交接 | `cmcp-time project init` 後執行 `project open --config <entry.json>`，再明確啟用所選宿主 |
-| 明確跟進 | 在 Pin 介面選正式來源、目標與選配時間；沒設時間就不自動提醒 |
-| 資料與生命週期 | `data help`、`desktop help`、`mcp help`、`hermes help`；包含備份還原與可逆解除接線 |
+| **1. 取得獲授權來源** | 透過已接好的宿主入口，取得真正的 User／Assistant 內容、角色、時間與支援的圖片原件。 |
+| **2. 保留原件與來源關係** | 保存原話，不把模型的重述冒充原文；保留之後核對所需的身分與關係。 |
+| **3. 只讀這次需要的內容** | 先定位，再正式閱讀。`READ-ALL` 指選定且獲授權集合的完整分頁，不是全庫、不只是搜尋前幾筆，也不表示全部已進模型脈絡。 |
+| **4. 套用獨立控制** | 保存、近期追蹤、明確目標及勿擾各有責任；取得資料不等於取得外部操作授權。 |
+| **5. 讓原宿主繼續工作** | 把已讀來源與時間交給原模型；需要時整理有來源的目前狀態，保留未解之處與覆蓋限制。 |
 
-History、Buffer 與 Pin 各司其職。Buffer 預設 12 小時，可設 6–48 小時；到期或 Clear 不刪 History 與獨立 Pin。主動派送首次為 OFF，遵守 DND、目前來源授權、取消及去重；已送出不等於完成或已讀。對話加入不能偷偷解除共用 OFF／Clean 或修改保存設定。
+**Skill 說明使用方法，Runtime 執行保存與讀取，Adapter 接上宿主。** 只放入一份技能說明，不會自動接入所有 ChatGPT 或其他平台對話。缺少必要事件、來源或權限時，應明示限制。
 
-**已保存不等於已可回查。** 狀態分開呈現原件保存、登錄待辦／失敗、正式可讀資格與跨宿主評估狀態。單憑儲存狀態未評估接收端交接，須另查正式閱讀與宿主回執。查看或切換介面不刷新原時間／TTL、不建立授權或派送。缺件、變版或撤權時明確拒絕。
+## History、Buffer、Pin 與勿擾，分別管什麼？
 
-更新前請依[備份還原與更新操作](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-readiness.zh-TW.md)保留資料。程式、工作區 History、宿主原生歷史與受保護憑證責任分開；解除 CMCP 保留原件，不代表清除宿主紀錄或完整刪除治理。0.1.1 不宣稱向量、音訊／影片、雲端同步或多人並行 writer 已交付。
+| 功能 | 用途與界線 |
+|---|---|
+| **History** | 保存已授權的原話與來源，供之後正式回查。已保存不等於目前已具備回查資格。 |
+| **Buffer** | 管理近期追蹤。預設 12 小時，可調整為 6–48 小時；到期或清除不刪除 History 與獨立 Pin。 |
+| **Pin** | 使用者明確選定的追蹤目標；沒有指定時間，不自動成為提醒。 |
+| **DND／勿擾** | 控制主動派送的打擾時段，**不是停止保存原文的開關**。 |
+| **主動派送** | 首次預設關閉，仍受來源授權、目標、取消、去重及有效時間控制；保留的 60 秒欄位不代表每分鐘會發送。 |
 
-## 文件與專案
+在已接好的 Harness Desktop，可使用 `/cmcp help`、`/cmcp on`、`/cmcp off`，以及 `/cmcp ui minimized`、`row`、`hidden` 選擇顯示方式。**隱藏介面不等於停用。** 這些是該宿主的入口，不宣稱所有代理都使用同一組斜線指令。
 
-[正式操作指南](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-readiness.zh-TW.md) · [MCP／Hermes 與自架](https://github.com/redwakame/CMCP-TIME/blob/main/docs/interop.zh-TW.md) · [命令](https://github.com/redwakame/CMCP-TIME/blob/main/docs/commands.md) · [設定](https://github.com/redwakame/CMCP-TIME/blob/main/docs/configuration.md) · [隱私](https://github.com/redwakame/CMCP-TIME/blob/main/docs/privacy.md) · [證據與限制](https://github.com/redwakame/CMCP-TIME/blob/main/docs/verification.md) · [後續方向](https://github.com/redwakame/CMCP-TIME/blob/main/docs/roadmap.md)
+沒有 UI 時，使用既有 CLI／專案或 MCP 入口。詳見[命令](docs/commands.md)、[設定](docs/configuration.md)與[正式操作指南](docs/release-readiness.zh-TW.md)。
 
-**CMCP-TIME 是目前開發主線。** [OpenClaw Continuity](https://github.com/redwakame/openclaw-continuity) 與 [cmcp](https://github.com/redwakame/cmcp) 保留早期程式與政策，各自保留授權與驗收身分；不代表可直接替換或自動搬移資料。
+## 哪些入口已有驗收紀錄？
 
-## 參與與授權
+下表描述本專案已記錄的範圍，不是所有版本或所有平台的相容性保證。
 
+| 入口 | 已記錄能力 | 仍須注意 |
+|---|---|---|
+| **DeepSeek Harness Desktop 0.2.0-rc.2／SDK** | 文字、圖片原件、新對話回查、控制與明確 Pin；SDK 接續證據另列。 | Desktop 與隔離 SDK 不是同一種驗收，不保證全天候或手機送達。 |
+| **Codex** | Skill／Hook、官方 app-server 的文字交接與限定原生壓縮。 | 明示專案與帳戶路線；不是任意 App 對話自動擷取。 |
+| **Hermes v2026.9.24／0.21.5** | 官方無 UI 生命週期、原生工具，與 Harness SDK 的限定文字接續。 | 記錄中的 DeepSeek 路線；不等於 TUI／GUI 全面驗證。 |
+| **MCP stdio／Streamable HTTP** | 正式閱讀、媒體 handle、授權範圍、撤回與持久本機服務。 | 本機測試不等於遠端 TLS、公網或平台審核完成。 |
 
-歡迎提出可重現問題、使用回饋、獨立驗證與合作。請勿把私人聊天、金鑰或完整資料目錄貼到公開 Issue。詳見[貢獻方式](https://github.com/redwakame/CMCP-TIME/blob/main/CONTRIBUTING.md)、[安全說明](https://github.com/redwakame/CMCP-TIME/blob/main/SECURITY.md)、[隱私與資料](https://github.com/redwakame/CMCP-TIME/blob/main/docs/privacy.md)及[後續方向](https://github.com/redwakame/CMCP-TIME/blob/main/docs/roadmap.md)。
+**不強制 Codex，不等於所有宿主已自動相容。** `0.1.1` 未新增 Dots、Muse、Grok Bot 的完整生命週期整合。詳見[能力與證據矩陣](docs/interop-capabilities.zh-TW.md)。
 
-如果你對 CMCP-TIME 有興趣，歡迎來信交流想法與使用心得。若這個專案對你有幫助，也歡迎在 GitHub 給顆星支持。我會持續優化與更新，並歡迎商業合作洽談。聯絡信箱：[adarobot666@gmail.com](mailto:adarobot666@gmail.com)／[redwakame616@gmail.com](mailto:redwakame616@gmail.com)。
+## 0.1.0 到 0.1.1，改了什麼？
 
-原作者與維護者為 **redwakame**。目前專案發布採 [Apache-2.0](https://github.com/redwakame/CMCP-TIME/blob/main/LICENSE)，保留 [NOTICE](https://github.com/redwakame/CMCP-TIME/blob/main/NOTICE) 與[上游授權沿革](https://github.com/redwakame/CMCP-TIME/blob/main/docs/license-provenance-v0.1.md)。舊版本已授出的權利不撤銷；內部相容識別仍為 `cmcp`，對外名稱為 **CMCP-TIME**。[CITATION.cff](https://github.com/redwakame/CMCP-TIME/blob/main/CITATION.cff) 提供方便引用的資訊，不新增每次使用都必須宣傳作者的條款。
+![版本對照：0.1.0 建立原文與控制基礎，0.1.1 加入累積接續改進與四項可用性維護。](docs/assets/cmcp-time-version-diff.png)
 
-[0.1.1 更新與限制](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-0.1.1.md) · [0.1.0 歷史](https://github.com/redwakame/CMCP-TIME/blob/main/docs/release-0.1.0.md) · [可重跑核對](https://github.com/redwakame/CMCP-TIME/blob/main/docs/testing.md)
+**0.1.0** 建立原文與時間保存、有界讀取、獨立控制及既有宿主入口。**0.1.1** 納入 S1／S1-R1 累積改進：分開計畫與事實回報、保留局部修訂的適用範圍及理由，並改善初始化、指定狀態的完成路徑、主動狀態說明與發布資料一致性。
+
+`--answers` 原本就存在；此次改善的是非互動／EOF 處理及沒有 Codex 時的初始化說明。這不是新增全平台接線，也不是只有換封面。
+
+[閱讀完整版本差異](docs/version-comparison.zh-TW.md) · [0.1.1 原始發布與限制](docs/release-0.1.1.md) · [0.1.0 歷史](docs/release-0.1.0.md)
+
+<details>
+<summary><strong>發布範圍與已知限制</strong></summary>
+
+- 機械結構、來源一致、語意判斷及執行授權是不同層次。`ready` 不是零錯誤保證。
+- H4 指定回報與完整投影分頁的維護結果來自新 Session。正常鏈未走 resolution 分支；該分支另有 13 項固定原件測試。額外選取的 r8 未進模型，不宣稱全選取 `READ-ALL` 或原中間回合重演。
+- C27 163／236 的既有容量限制保留；舊回執 `be087644…` 正文前像未找到。沒有刪除這些限制來宣稱全綠。
+- 0.1.1 發布流程實跑 Windows／Node 24.18.0；最低 Node 聲明為 22.16.0。既有或後續局部 Linux 核對不等於所有宿主全面認證。四語文件不等於四語行為皆已驗收。
+- 向量、音訊／影片、全面雲端同步、多人並行 writer 與完整 24/7 代理，均非本版全部完成的能力。
+
+[證據與限制](docs/verification.md) · [測試說明](docs/testing.md) · [隱私](docs/privacy.md) · [後續方向](docs/roadmap.md)
+
+</details>
+
+## 文件、更新與專案沿革
+
+[快速開始](docs/quick-start.md) · [安裝與更新](docs/npm-installation.md) · [繁中操作指南](docs/release-readiness.zh-TW.md) · [MCP／Hermes](docs/interop.zh-TW.md) · [貢獻方式](CONTRIBUTING.md) · [安全回報](SECURITY.md)
+
+升級或解除接線前，先依指南備份。程式安裝、CMCP History、宿主原生歷史與憑證是不同責任；解除接線不等於清除全部資料。
+
+CMCP-TIME 是此專案的開發主線。[OpenClaw Continuity](https://github.com/redwakame/openclaw-continuity) 與 [cmcp](https://github.com/redwakame/cmcp) 保留早期程式與各自授權，不表示可直接互換或自動遷移。
+
+## 交流與回饋
+
+我是 **redwakame**，會持續研發與維護 CMCP-TIME。歡迎分享使用情境、遇到的問題、整合想法及實際效果，也歡迎討論合作。
+
+**[adarobot666@gmail.com](mailto:adarobot666@gmail.com)**  
+**[redwakame616@gmail.com](mailto:redwakame616@gmail.com)**
+
+可重現問題也可以提交到 [GitHub Issues](https://github.com/redwakame/CMCP-TIME/issues)。請附版本、宿主與最小重現步驟；不要公開私人聊天、金鑰或完整資料目錄。覺得專案有幫助，也歡迎給顆 Star。
+
+## 授權
+
+[Apache-2.0](LICENSE)。保留原作者 **redwakame**、[NOTICE](NOTICE) 與[上游授權沿革](docs/license-provenance-v0.1.md)。[CITATION.cff](CITATION.cff) 提供引用資訊；不新增每次使用都必須宣傳作者的條款。

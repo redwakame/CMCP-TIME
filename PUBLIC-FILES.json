@@ -1,7 +1,7 @@
 {
   "kind": "cmcp-time-public-source-allowlist",
   "version": "0.1.1",
-  "publicationRevision": "0.1.1-npm-channel-source",
+  "publicationRevision": "0.1.1-homepage-github-sync",
   "hashAlgorithm": "SHA-256",
   "selfHash": "Git commit and archive digest cover this index; the index does not hash itself.",
   "sourceOnlyFiles": [
@@ -554,23 +554,23 @@
     },
     {
       "path": "README.es.md",
-      "bytes": 11069,
-      "sha256": "74363ef10988b4a1199f720de2a37f438088518b12a36f68bee1a417c3e641a2"
+      "bytes": 12772,
+      "sha256": "cae136e52fbc13d2deeedc783c9aedb97ee11257b84e69f124a61e566636ec28"
     },
     {
       "path": "README.ja.md",
-      "bytes": 11981,
-      "sha256": "e26df48af4793b9053b756c0efb7e6ab7f9ea6677694cbc3cd15b70a8b31ee4c"
+      "bytes": 13991,
+      "sha256": "a71aaaa032ea1939692c35d0dd0d949bebc3e95ff62a2395f5e28ee8e0048099"
     },
     {
       "path": "README.md",
-      "bytes": 10965,
-      "sha256": "d53243489ddce007db83366d4eff5fe4d34c31972e9b82478c44407816ce940a"
+      "bytes": 11986,
+      "sha256": "04268f05042f0fca2a3d611e854c0975fe6e0681269e0aee7385c4ee24d2e244"
     },
     {
       "path": "README.zh-TW.md",
-      "bytes": 9894,
-      "sha256": "f86555b40b0d0a7da275aa6974fb1b39353fdc0ea2e301de14916d8673c5caaf"
+      "bytes": 10435,
+      "sha256": "ad90994b5b3171ff058c442006999ac160c2b54aa4a0b5ab2169ecc9f79df201"
     },
     {
       "path": "RELEASE-IDENTITY.json",
@@ -954,8 +954,8 @@
     },
     {
       "path": "docs/assets/README.md",
-      "bytes": 2773,
-      "sha256": "4aadd9cdf31c98de30a9988e57b8f10bfb41b88016f61a5aea96f77c80c19ccd"
+      "bytes": 3680,
+      "sha256": "6c01d1b2b9660d619279e0e24877c3ef1351f847d6db4e19a2a72acdd97e30e2"
     },
     {
       "path": "docs/assets/architecture.en.png",
@@ -996,6 +996,21 @@
       "path": "docs/assets/architecture.zh-TW.svg",
       "bytes": 2961,
       "sha256": "3664473af5a763a8b42bbb60962cefd5b19ed8ec7675f28ce7ce5033bfb21c2d"
+    },
+    {
+      "path": "docs/assets/cmcp-time-hero.png",
+      "bytes": 1755034,
+      "sha256": "19540ffb5e6d963aeb01069015e571d47137f50d6b09c8c0d03f5d5b7de6db92"
+    },
+    {
+      "path": "docs/assets/cmcp-time-how-it-works.png",
+      "bytes": 1843391,
+      "sha256": "91b3ccd45360d9a7a10d14feedef0293f9ddd0c4c4234630e79c0e5259473d16"
+    },
+    {
+      "path": "docs/assets/cmcp-time-version-diff.png",
+      "bytes": 1807770,
+      "sha256": "34b69f9d33723bfc41b4c6331db67b889bc9aba868b34b321eb6bc2bf7769f09"
     },
     {
       "path": "docs/assets/continuity-source-flow.png",
@@ -1218,6 +1233,26 @@
       "sha256": "fb5899a79d8cabbdbf2dc9c65d6290ab3cf515dba0f0a8c8426342619fd688d6"
     },
     {
+      "path": "docs/version-comparison.es.md",
+      "bytes": 4194,
+      "sha256": "e2fbf0ff19c1c26dea268a332c5080412b8e1ab9078960a4c02dfcbdb284ec7c"
+    },
+    {
+      "path": "docs/version-comparison.ja.md",
+      "bytes": 4408,
+      "sha256": "efd98076c0ec790af4ded18c0f0134e844c2bbafead2e44a2004cba59b489b53"
+    },
+    {
+      "path": "docs/version-comparison.md",
+      "bytes": 4047,
+      "sha256": "74a0bbd363536b5ed6ba41c914ed18c9cdb27bd1363e88738f5c73b7effb0487"
+    },
+    {
+      "path": "docs/version-comparison.zh-TW.md",
+      "bytes": 3365,
+      "sha256": "29a85127c7fa33bee8b2c993910085dbe7ba128a48dc89b513e6c1c768522098"
+    },
+    {
       "path": "examples/reading-limits.json",
       "bytes": 123,
       "sha256": "ba62bd04f2f4460dec01e4f3124acfacef1dce4800ad6bfd41a598b0d2174dd0"
@@ -1239,8 +1274,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 13966,
-      "sha256": "55b453fb390e63c981b8888c614aa628fd8cdf142544b7c275c323f1d50b8dd3"
+      "bytes": 14244,
+      "sha256": "e0a013d85f9c4e96fef851667666bc26668476c70337420e096cd6c79b04d53a"
     },
     {
       "path": "scripts/check-cmcp-bundle.mjs",
@@ -1911,5 +1946,5 @@
     "currentIncrementLinuxTested": false
   },
   "releaseChannel": "npm",
-  "publicationEvidence": "Exact npm-source commit and registry readback are external; v0.1.1 remains the original GitHub-only source tag."
+  "publicationEvidence": "Exact npm-source commit and registry readback are external; v0.1.1 remains the original GitHub-only source tag. This revision covers GitHub homepage documentation and images only. Existing npm 0.1.1 bytes, GitHub tag, Release and assets remain unchanged; the documentation commit and public readback are recorded externally."
 }
