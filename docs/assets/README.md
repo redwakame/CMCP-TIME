@@ -4,13 +4,21 @@
 
 ## 本次首頁圖文套用
 
-以下三張 PNG 為使用者提供套用包內的校對副本，保留原始位元組；並非由下方 SVG 產生，也不是實際 GUI 或模型驗收截圖。圖內共用英文說明，四語 README 與版本比較頁提供對應圖說及正文。
+以下三張不含語系後綴的 PNG 為既有英文校對圖，保留原始位元組；新增繁中、西文與日文各三張使用者提供的圖片。它們並非由下方 SVG 產生，也不是實際 GUI 或模型驗收截圖。四語 README 使用對應語言圖片、圖說及正文。
 
 | 圖檔 | 用途 |
 | --- | --- |
 | `cmcp-time-hero.png` | 首頁概念封面：原文、時間、選取閱讀與獨立控制。 |
 | `cmcp-time-how-it-works.png` | 原理流程；READ-ALL 限選定授權集合，DND 為主動派送控制。 |
 | `cmcp-time-version-diff.png` | 0.1.0 至 0.1.1 累積接續與限定維護差異。 |
+
+| 語言 | 封面 | 五步流程 | 版本差異 |
+| --- | --- | --- | --- |
+| 繁體中文 | `cmcp-time-hero.zh-TW.png` | `cmcp-time-how-it-works.zh-TW.png` | `cmcp-time-version-diff.zh-TW.png` |
+| 西班牙文 | `cmcp-time-hero.es.png` | `cmcp-time-how-it-works.es.png` | `cmcp-time-version-diff.es.png` |
+| 日文 | `cmcp-time-hero.ja.png` | `cmcp-time-how-it-works.ja.png` | `cmcp-time-version-diff.ja.png` |
+
+新增九圖依實際標題、語言與構圖分類，保留原始位元組。日文流程圖的「ソースコード」在對應 README 圖說澄清為原文紀錄；西文版本圖重複底條與日文空白裝飾條保留原樣。
 
 四語首頁均標示概念圖，不以圖示宣稱所有宿主、多模態或全天候支援。圖片縮至手機寬度時可開啟原尺寸閱讀，等價文字亦在正文。未校對原圖、編輯紀錄與套用包預覽只留管理根，不加入產品散布。
 

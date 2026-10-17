@@ -3,7 +3,7 @@
 [English](version-comparison.md) · **繁體中文** · [Español](version-comparison.es.md) · [日本語](version-comparison.ja.md)  
 [回到繁中首頁](../README.zh-TW.md)
 
-![0.1.0 與 0.1.1 的功能對照。](assets/cmcp-time-version-diff.png)
+![0.1.0 與 0.1.1 的功能對照。](assets/cmcp-time-version-diff.zh-TW.png)
 
 **0.1.1 不只是安裝說明的更新。** 它納入原文接續的累積改進，再補上四項既有功能的定點維護。下表以使用者能理解的行為說明差異，工程細節留在原始發布文件。
 

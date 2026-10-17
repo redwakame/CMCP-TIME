@@ -3,7 +3,7 @@
 [English](version-comparison.md) · [繁體中文](version-comparison.zh-TW.md) · [Español](version-comparison.es.md) · **日本語**  
 [日本語のトップへ](../README.ja.md)
 
-![0.1.0 と 0.1.1 の機能比較。](assets/cmcp-time-version-diff.png)
+![0.1.0 と 0.1.1 の機能比較。](assets/cmcp-time-version-diff.ja.png)
 
 **0.1.1 はインストール説明だけの更新ではありません。** 出典を保つ会話継続の累積改善と、四つの保守修正を含みます。次の表は利用者に関係する違いをまとめたもので、工程の詳細は元の公開資料に残しています。
 

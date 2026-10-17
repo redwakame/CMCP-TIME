@@ -1,7 +1,7 @@
 {
   "kind": "cmcp-time-public-source-allowlist",
   "version": "0.1.1",
-  "publicationRevision": "0.1.1-homepage-github-sync",
+  "publicationRevision": "0.1.1-localized-homepage-images",
   "hashAlgorithm": "SHA-256",
   "selfHash": "Git commit and archive digest cover this index; the index does not hash itself.",
   "sourceOnlyFiles": [
@@ -554,23 +554,23 @@
     },
     {
       "path": "README.es.md",
-      "bytes": 12772,
-      "sha256": "cae136e52fbc13d2deeedc783c9aedb97ee11257b84e69f124a61e566636ec28"
+      "bytes": 12798,
+      "sha256": "06515ec5afe1ccaa48f08d8f221e3e606d1eb90186f464ab0b00b160c1b5796f"
     },
     {
       "path": "README.ja.md",
-      "bytes": 13991,
-      "sha256": "a71aaaa032ea1939692c35d0dd0d949bebc3e95ff62a2395f5e28ee8e0048099"
+      "bytes": 14149,
+      "sha256": "0159992ad2371502067d18a7a71cadc172d5be59eaa842da5de787d183e7438a"
     },
     {
       "path": "README.md",
-      "bytes": 11986,
-      "sha256": "04268f05042f0fca2a3d611e854c0975fe6e0681269e0aee7385c4ee24d2e244"
+      "bytes": 11989,
+      "sha256": "45703e07be96928f7f6ec2f31b421245661e00b92a3e9c476326f8bd6da63fbd"
     },
     {
       "path": "README.zh-TW.md",
-      "bytes": 10435,
-      "sha256": "ad90994b5b3171ff058c442006999ac160c2b54aa4a0b5ab2169ecc9f79df201"
+      "bytes": 10451,
+      "sha256": "4c4989f58dbd61185b900893ae27772dccbb1ebb0336d9aa6bfd1fac36a5568c"
     },
     {
       "path": "RELEASE-IDENTITY.json",
@@ -954,8 +954,8 @@
     },
     {
       "path": "docs/assets/README.md",
-      "bytes": 3680,
-      "sha256": "6c01d1b2b9660d619279e0e24877c3ef1351f847d6db4e19a2a72acdd97e30e2"
+      "bytes": 4370,
+      "sha256": "d5f427d9053f82fc601a3a5d28a9b97d65ae31272cd8a3bd90a42c055883319c"
     },
     {
       "path": "docs/assets/architecture.en.png",
@@ -998,9 +998,34 @@
       "sha256": "3664473af5a763a8b42bbb60962cefd5b19ed8ec7675f28ce7ce5033bfb21c2d"
     },
     {
+      "path": "docs/assets/cmcp-time-hero.es.png",
+      "bytes": 2146268,
+      "sha256": "3c0b4418b9932a4714728f82c11c3107acdf677534742469791acfc04bfcae48"
+    },
+    {
+      "path": "docs/assets/cmcp-time-hero.ja.png",
+      "bytes": 2168628,
+      "sha256": "cbdd27650cc3ad529f0f3bb4645d8596d17d40e1e6acfcbbd13db7852ba02913"
+    },
+    {
       "path": "docs/assets/cmcp-time-hero.png",
       "bytes": 1755034,
       "sha256": "19540ffb5e6d963aeb01069015e571d47137f50d6b09c8c0d03f5d5b7de6db92"
+    },
+    {
+      "path": "docs/assets/cmcp-time-hero.zh-TW.png",
+      "bytes": 2176376,
+      "sha256": "093b9ac956598208cb475d89d678e92186a01da0dda7ecb01d689c542043ef43"
+    },
+    {
+      "path": "docs/assets/cmcp-time-how-it-works.es.png",
+      "bytes": 2196801,
+      "sha256": "0113e3314c5c8bb0966f3fe1878e8759ce862ae55bbe5b4c7fa4822aa40d9aad"
+    },
+    {
+      "path": "docs/assets/cmcp-time-how-it-works.ja.png",
+      "bytes": 2193182,
+      "sha256": "ddb7b6589fad1bdb7c22a4fa9ff12e06d236b74edee3eade3698cb715d37a696"
     },
     {
       "path": "docs/assets/cmcp-time-how-it-works.png",
@@ -1008,9 +1033,29 @@
       "sha256": "91b3ccd45360d9a7a10d14feedef0293f9ddd0c4c4234630e79c0e5259473d16"
     },
     {
+      "path": "docs/assets/cmcp-time-how-it-works.zh-TW.png",
+      "bytes": 2140872,
+      "sha256": "94295a29848318e583c7514323b940a71ffce1394ac1c3cef88624c14a8a65ef"
+    },
+    {
+      "path": "docs/assets/cmcp-time-version-diff.es.png",
+      "bytes": 2044528,
+      "sha256": "daf70148ee7918b6f758887a671b5f428e2e737f286af059a1321a7cbe6f8966"
+    },
+    {
+      "path": "docs/assets/cmcp-time-version-diff.ja.png",
+      "bytes": 2069718,
+      "sha256": "21f65072ffede2f16417285a4c4bba3bc7f890d6891b1f76ac64d505441a0617"
+    },
+    {
       "path": "docs/assets/cmcp-time-version-diff.png",
       "bytes": 1807770,
       "sha256": "34b69f9d33723bfc41b4c6331db67b889bc9aba868b34b321eb6bc2bf7769f09"
+    },
+    {
+      "path": "docs/assets/cmcp-time-version-diff.zh-TW.png",
+      "bytes": 2068677,
+      "sha256": "beb2a4a40189311890c8bae46e4288943245c09d12ce9105a69fcba09f24ac6f"
     },
     {
       "path": "docs/assets/continuity-source-flow.png",
@@ -1234,13 +1279,13 @@
     },
     {
       "path": "docs/version-comparison.es.md",
-      "bytes": 4194,
-      "sha256": "e2fbf0ff19c1c26dea268a332c5080412b8e1ab9078960a4c02dfcbdb284ec7c"
+      "bytes": 4197,
+      "sha256": "097af8ae5a378a20f74be3b9c044c47a38b8135d475951429639f0aad28994b2"
     },
     {
       "path": "docs/version-comparison.ja.md",
-      "bytes": 4408,
-      "sha256": "efd98076c0ec790af4ded18c0f0134e844c2bbafead2e44a2004cba59b489b53"
+      "bytes": 4411,
+      "sha256": "710c69b9ca6ddc51f2b7bcf385e0317aa069cd07fa7cf447eb3ff3e05c97b14c"
     },
     {
       "path": "docs/version-comparison.md",
@@ -1249,8 +1294,8 @@
     },
     {
       "path": "docs/version-comparison.zh-TW.md",
-      "bytes": 3365,
-      "sha256": "29a85127c7fa33bee8b2c993910085dbe7ba128a48dc89b513e6c1c768522098"
+      "bytes": 3371,
+      "sha256": "074ee933e8492df2d695c10129d15db1d6fab2a80e232e2245ebbc47d7ff9c76"
     },
     {
       "path": "examples/reading-limits.json",
@@ -1274,8 +1319,8 @@
     },
     {
       "path": "package.json",
-      "bytes": 14244,
-      "sha256": "e0a013d85f9c4e96fef851667666bc26668476c70337420e096cd6c79b04d53a"
+      "bytes": 14670,
+      "sha256": "c7e47b77f53490083ea9fdb9e243b6b811a05a550ac520f76d4b5a5435674719"
     },
     {
       "path": "scripts/check-cmcp-bundle.mjs",
@@ -1946,5 +1991,5 @@
     "currentIncrementLinuxTested": false
   },
   "releaseChannel": "npm",
-  "publicationEvidence": "Exact npm-source commit and registry readback are external; v0.1.1 remains the original GitHub-only source tag. This revision covers GitHub homepage documentation and images only. Existing npm 0.1.1 bytes, GitHub tag, Release and assets remain unchanged; the documentation commit and public readback are recorded externally."
+  "publicationEvidence": "GitHub-only homepage image localization and neutral host wording. Existing npm 0.1.1 bytes, v0.1.1 tag, Release and assets remain unchanged. The documentation commit and public readback are recorded externally."
 }

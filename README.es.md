@@ -2,7 +2,7 @@
 
 [English](README.md) · [繁體中文](README.zh-TW.md) · **Español** · [日本語](README.ja.md)
 
-![CMCP-TIME: continuar un proyecto con las palabras originales, sus fechas y una lectura controlada.](docs/assets/cmcp-time-hero.png)
+![CMCP-TIME: continuar un proyecto con las palabras originales, sus fechas y una lectura controlada.](docs/assets/cmcp-time-hero.es.png)
 
 ## Conserva las palabras originales. Da a la próxima conversación un punto de partida verificable.
 
@@ -53,7 +53,7 @@ Los artefactos de GitHub y npm pueden diferir en configuración de publicación 
 
 ## Cómo funciona
 
-![Cinco etapas: recibir fuentes autorizadas, conservar su procedencia, leer un conjunto seleccionado, aplicar controles y devolver el contexto al asistente.](docs/assets/cmcp-time-how-it-works.png)
+![Cinco etapas: recibir fuentes autorizadas, conservar su procedencia, leer un conjunto seleccionado, aplicar controles y devolver el contexto al asistente.](docs/assets/cmcp-time-how-it-works.es.png)
 
 | Etapa | Significado |
 |---|---|
@@ -63,7 +63,7 @@ Los artefactos de GitHub y npm pueden diferir en configuración de publicación 
 | **4. Aplicar controles independientes** | Guardado, seguimiento reciente, objetivos explícitos y silencio tienen responsabilidades distintas. Acceder a datos no autoriza acciones externas. |
 | **5. Dejar que el asistente original continúe** | Devolver las fuentes y su información temporal al modelo. Cuando se solicite, organizar el estado actual con respaldo documental, incertidumbres y límites de cobertura. |
 
-**La Skill explica el flujo, el Runtime ejecuta el guardado y la lectura, y un Adapter conecta el asistente.** Un archivo de habilidad por sí solo no incorpora todas las conversaciones de ChatGPT u otras plataformas. La falta de eventos, fuentes o permisos debe mostrarse.
+**La Skill explica el flujo, el Runtime ejecuta el guardado y la lectura, y un Adapter conecta el asistente.** Un archivo de habilidad por sí solo no incorpora todas las conversaciones de los distintos asistentes o plataformas de IA. La falta de eventos, fuentes o permisos debe mostrarse.
 
 ## History, Buffer, Pin y silencio
 
@@ -94,7 +94,7 @@ La tabla describe el alcance registrado por el proyecto, no una garantía genera
 
 ## ¿Qué cambió de 0.1.0 a 0.1.1?
 
-![Comparación: 0.1.0 estableció fuentes y controles; 0.1.1 reúne mejoras de continuidad y cuatro correcciones de mantenimiento.](docs/assets/cmcp-time-version-diff.png)
+![Comparación: 0.1.0 estableció fuentes y controles; 0.1.1 reúne mejoras de continuidad y cuatro correcciones de mantenimiento.](docs/assets/cmcp-time-version-diff.es.png)
 
 **0.1.0** estableció la conservación de originales y fechas, la lectura acotada, los controles independientes y las entradas existentes. **0.1.1** incorpora el trabajo acumulado de S1/S1-R1: separar planes de hechos comunicados, conservar el alcance y las razones de cambios parciales, y mejorar la configuración, determinadas rutas de estado, la explicación del envío proactivo y la trazabilidad de publicación.
 

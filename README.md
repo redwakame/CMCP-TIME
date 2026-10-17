@@ -63,7 +63,7 @@ The GitHub and npm artifacts can differ in publication settings and documentatio
 | **4. Apply independent controls** | Saving, recent tracking, explicit targets and quiet hours have separate responsibilities. Access to information does not grant authority for external actions. |
 | **5. Let the existing host continue** | Return source material and time information to the original model. When needed, organize source-backed current state while retaining uncertainty and coverage limits. |
 
-**The Skill explains the workflow, the Runtime executes storage and reading, and an Adapter connects the host.** A Skill file alone cannot attach every ChatGPT or other platform conversation. Missing events, sources or permissions must remain visible.
+**The Skill explains the workflow, the Runtime executes storage and reading, and an Adapter connects the host.** A Skill file alone cannot attach every conversation across AI hosts or platforms. Missing events, sources or permissions must remain visible.
 
 ## History, Buffer, Pin and quiet hours
 

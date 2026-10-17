@@ -3,7 +3,7 @@
 [English](version-comparison.md) · [繁體中文](version-comparison.zh-TW.md) · **Español** · [日本語](version-comparison.ja.md)  
 [Volver a la portada](../README.es.md)
 
-![Comparación de funciones de 0.1.0 y 0.1.1.](assets/cmcp-time-version-diff.png)
+![Comparación de funciones de 0.1.0 y 0.1.1.](assets/cmcp-time-version-diff.es.png)
 
 **0.1.1 no es solo una actualización de las instrucciones de instalación.** Reúne mejoras acumuladas de continuidad basada en fuentes y cuatro correcciones de mantenimiento. La tabla describe comportamientos útiles; los detalles de ingeniería permanecen en la documentación original.
 
